@@ -9,6 +9,8 @@ from metacat.webapi import AuthenticationError
 from .client import get_client
 from .datasets import list_datasets, show_dataset
 from .errors import ConfigError, DatasetNotFoundError, DunecatError
+from .files import file_did, find_files
+from .filters import FileFilters, parse_runs
 from .format import render_dataset_table
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -58,6 +60,39 @@ def dataset_list(
     with _handled_errors():
         for did in list_datasets(pattern=pattern, namespace=namespace):
             typer.echo(did)
+
+
+@dataset_app.command("files")
+def dataset_files(
+    did: str = typer.Argument(..., help="Dataset DID as 'NAMESPACE:NAME'."),
+    runs: str | None = typer.Option(
+        None, "--runs", help="Comma-separated list of run numbers."
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        "--namespace",
+        "-n",
+        help="Restrict results to files in this namespace.",
+    ),
+    with_metadata: bool = typer.Option(
+        False, "--with-metadata", help="Include file metadata in output."
+    ),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit JSONL (one JSON object per line)."
+    ),
+    batch_size: int = typer.Option(
+        1000, "--batch-size", help="Server-side batch size for streaming."
+    ),
+) -> None:
+    filters = FileFilters(runs=parse_runs(runs), namespace=namespace)
+    with _handled_errors():
+        for item in find_files(
+            did, filters, with_metadata=with_metadata, batch_size=batch_size
+        ):
+            if json_out:
+                typer.echo(json.dumps(item, default=str))
+            else:
+                typer.echo(file_did(item))
 
 
 @dataset_app.command("show")

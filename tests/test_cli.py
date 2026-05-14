@@ -134,6 +134,105 @@ def test_dataset_show_json_emits_single_line(monkeypatch):
     assert parsed["metadata"]["core.runs"] == "(27731, 27732)"
 
 
+_FILE_ITEMS = [
+    {
+        "fid": "abc1",
+        "namespace": "hd-protodune-det-reco",
+        "name": "np04hd_raw_run027731_0001.root",
+        "metadata": {"core.runs": [27731]},
+    },
+    {
+        "fid": "abc2",
+        "namespace": "hd-protodune-det-reco",
+        "name": "np04hd_raw_run027732_0001.root",
+        "metadata": {"core.runs": [27732]},
+    },
+]
+
+
+def test_dataset_files_plain_output_streams_dids(monkeypatch):
+    captured = {}
+
+    def fake_find_files(did, filters, with_metadata=False, batch_size=1000):
+        captured["did"] = did
+        captured["filters"] = filters
+        captured["with_metadata"] = with_metadata
+        captured["batch_size"] = batch_size
+        for item in _FILE_ITEMS:
+            yield item
+
+    monkeypatch.setattr(cli, "find_files", fake_find_files)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "files",
+            "hd-protodune-det-reco:ds",
+            "--runs",
+            "27731,27732",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == [
+        "hd-protodune-det-reco:np04hd_raw_run027731_0001.root",
+        "hd-protodune-det-reco:np04hd_raw_run027732_0001.root",
+    ]
+    assert captured["did"] == "hd-protodune-det-reco:ds"
+    assert captured["filters"].runs == (27731, 27732)
+    assert captured["with_metadata"] is False
+    assert captured["batch_size"] == 1000
+
+
+def test_dataset_files_json_emits_one_object_per_line(monkeypatch):
+    monkeypatch.setattr(
+        cli, "find_files", lambda *a, **kw: iter(_FILE_ITEMS)
+    )
+
+    result = runner.invoke(
+        cli.app,
+        ["dataset", "files", "hd-protodune-det-reco:ds", "--json"],
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 2
+    assert json.loads(lines[0])["fid"] == "abc1"
+    assert json.loads(lines[1])["fid"] == "abc2"
+
+
+def test_dataset_files_with_metadata_flag_passed_through(monkeypatch):
+    captured = {}
+
+    def fake_find_files(did, filters, with_metadata=False, batch_size=1000):
+        captured["with_metadata"] = with_metadata
+        return iter(())
+
+    monkeypatch.setattr(cli, "find_files", fake_find_files)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "files",
+            "hd-protodune-det-reco:ds",
+            "--with-metadata",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert captured["with_metadata"] is True
+
+
+def test_dataset_files_empty_result_exits_zero(monkeypatch):
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: iter(()))
+    result = runner.invoke(cli.app, ["dataset", "files", "ns:ds"])
+    assert result.exit_code == 0
+    assert result.stdout == ""
+
+
 def test_dataset_show_missing_did_exits_1(monkeypatch):
     def raises(did):
         raise DatasetNotFoundError(f"Dataset not found: {did}")
