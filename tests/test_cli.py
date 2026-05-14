@@ -233,6 +233,101 @@ def test_dataset_files_empty_result_exits_zero(monkeypatch):
     assert result.stdout == ""
 
 
+_DATED_FILES = [
+    {"namespace": "ns", "name": "a_20250101T120000.root"},
+    {"namespace": "ns", "name": "b_20250215T120000.root"},
+    {"namespace": "ns", "name": "c_20250215T130000.root"},
+    {"namespace": "ns", "name": "d_20250301T120000.root"},
+]
+
+
+def test_dataset_files_date_range_filters_by_run_time(monkeypatch):
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: iter(_DATED_FILES))
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "files",
+            "ns:ds",
+            "--date-range",
+            "2025-02-01:2025-02-28",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == [
+        "ns:b_20250215T120000.root",
+        "ns:c_20250215T130000.root",
+    ]
+
+
+def test_dataset_files_one_per_day_dedupes_by_utc_date(monkeypatch):
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: iter(_DATED_FILES))
+    result = runner.invoke(
+        cli.app, ["dataset", "files", "ns:ds", "--one-per-day"]
+    )
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == [
+        "ns:a_20250101T120000.root",
+        "ns:b_20250215T120000.root",
+        "ns:d_20250301T120000.root",
+    ]
+
+
+def test_dataset_files_date_range_max_candidates_exits_1(monkeypatch):
+    big_stream = (
+        {"namespace": "ns", "name": f"f_2025010{i % 10}T120000.root"}
+        for i in range(100)
+    )
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: big_stream)
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "files",
+            "ns:ds",
+            "--date-range",
+            "1900-01-01:1901-01-01",  # nothing will match → all become candidates
+            "--date-range-max-candidates",
+            "5",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Exceeded --date-range-max-candidates" in result.stderr
+
+
+def test_dataset_files_filename_time_regex_override(monkeypatch):
+    custom = [
+        {"namespace": "ns", "name": "foo_run20250215_x.root"},
+        {"namespace": "ns", "name": "foo_run20250301_x.root"},
+    ]
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: iter(custom))
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "files",
+            "ns:ds",
+            "--date-range",
+            "2025-02-01:2025-02-28",
+            "--filename-time-regex",
+            r"run(\d{8})_",
+            "--filename-time-format",
+            "%Y%m%d",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == ["ns:foo_run20250215_x.root"]
+
+
+def test_dataset_files_bad_filename_regex_exits_2(monkeypatch):
+    monkeypatch.setattr(cli, "find_files", lambda *a, **kw: iter(()))
+    result = runner.invoke(
+        cli.app,
+        ["dataset", "files", "ns:ds", "--filename-time-regex", "(unclosed"],
+    )
+    assert result.exit_code == 2
+
+
 def test_dataset_show_missing_did_exits_1(monkeypatch):
     def raises(did):
         raise DatasetNotFoundError(f"Dataset not found: {did}")

@@ -9,9 +9,20 @@ from metacat.webapi import AuthenticationError
 from .client import get_client
 from .datasets import list_datasets, show_dataset
 from .errors import ConfigError, DatasetNotFoundError, DunecatError
+import re
+
 from .files import file_did, find_files
 from .filters import FileFilters, parse_meta, parse_run_range, parse_runs
 from .format import render_dataset_table
+from .timestamps import (
+    DEFAULT_FORMAT,
+    DEFAULT_MAX_CANDIDATES,
+    DEFAULT_REGEX,
+    CandidateLimitExceeded,
+    apply_date_range,
+    apply_one_per_day,
+    parse_date_range,
+)
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 dataset_app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -82,6 +93,31 @@ def dataset_files(
         "--meta",
         help="Metadata equality filter 'KEY=VALUE'. Repeatable; multiple filters AND together.",
     ),
+    date_range: str | None = typer.Option(
+        None,
+        "--date-range",
+        help="UTC date range 'YYYY-MM-DD:YYYY-MM-DD' against the run timestamp extracted from each filename. Inclusive.",
+    ),
+    one_per_day: bool = typer.Option(
+        False,
+        "--one-per-day",
+        help="Keep the first file streamed for each UTC calendar date (run-time).",
+    ),
+    filename_time_regex: str | None = typer.Option(
+        None,
+        "--filename-time-regex",
+        help="Override the regex used to extract the run timestamp from filenames.",
+    ),
+    filename_time_format: str = typer.Option(
+        DEFAULT_FORMAT,
+        "--filename-time-format",
+        help="strptime format for the timestamp captured by --filename-time-regex.",
+    ),
+    date_range_max_candidates: int = typer.Option(
+        DEFAULT_MAX_CANDIDATES,
+        "--date-range-max-candidates",
+        help="Abort if more than N candidates stream in before the client-side date/one-per-day filter.",
+    ),
     with_metadata: bool = typer.Option(
         False, "--with-metadata", help="Include file metadata in output."
     ),
@@ -99,17 +135,44 @@ def dataset_files(
             namespace=namespace,
             meta=parse_meta(meta),
         )
-    except ValueError as e:
+        parsed_date_range = parse_date_range(date_range) if date_range else None
+        regex = (
+            re.compile(filename_time_regex)
+            if filename_time_regex
+            else DEFAULT_REGEX
+        )
+    except (ValueError, re.error) as e:
         typer.echo(str(e), err=True)
         raise typer.Exit(2)
+
     with _handled_errors():
-        for item in find_files(
+        stream = find_files(
             did, filters, with_metadata=with_metadata, batch_size=batch_size
-        ):
-            if json_out:
-                typer.echo(json.dumps(item, default=str))
-            else:
-                typer.echo(file_did(item))
+        )
+        if parsed_date_range is not None:
+            stream = apply_date_range(
+                stream,
+                parsed_date_range,
+                regex=regex,
+                fmt=filename_time_format,
+                max_candidates=date_range_max_candidates,
+            )
+        if one_per_day:
+            stream = apply_one_per_day(
+                stream,
+                regex=regex,
+                fmt=filename_time_format,
+                max_candidates=date_range_max_candidates,
+            )
+        try:
+            for item in stream:
+                if json_out:
+                    typer.echo(json.dumps(item, default=str))
+                else:
+                    typer.echo(file_did(item))
+        except CandidateLimitExceeded as e:
+            typer.echo(str(e), err=True)
+            raise typer.Exit(1)
 
 
 @dataset_app.command("show")
