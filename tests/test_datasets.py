@@ -97,3 +97,51 @@ def test_show_dataset_raises_when_missing(monkeypatch):
     monkeypatch.setattr(datasets, "get_client", lambda: fc)
     with pytest.raises(DatasetNotFoundError, match="ns:n"):
         datasets.show_dataset("ns:n")
+
+
+def _file(name: str, **meta) -> dict:
+    return {"namespace": "ns", "name": name, "metadata": meta}
+
+
+def test_dataset_values_flattens_list_metadata(monkeypatch):
+    items = [
+        _file("a.root", **{"core.runs": [27731]}),
+        _file("b.root", **{"core.runs": [27732, 27734]}),
+        _file("c.root", **{"core.runs": [27731, 27740]}),
+    ]
+    monkeypatch.setattr(datasets, "find_files", lambda *a, **kw: iter(items))
+
+    assert datasets.dataset_values("ns:ds", "core.runs") == {27731, 27732, 27734, 27740}
+
+
+def test_dataset_values_scalar_values_collected_directly(monkeypatch):
+    items = [
+        _file("a.root", **{"dune.output_status": "confirmed"}),
+        _file("b.root", **{"dune.output_status": "confirmed"}),
+        _file("c.root", **{"dune.output_status": "rejected"}),
+    ]
+    monkeypatch.setattr(datasets, "find_files", lambda *a, **kw: iter(items))
+
+    assert datasets.dataset_values("ns:ds", "dune.output_status") == {
+        "confirmed",
+        "rejected",
+    }
+
+
+def test_dataset_values_skips_none_and_missing(monkeypatch):
+    items = [
+        _file("a.root", **{"some.field": None}),
+        {"namespace": "ns", "name": "b.root", "metadata": {}},
+        _file("c.root", **{"some.field": "x"}),
+        _file("d.root", **{"some.field": [None, "y"]}),
+    ]
+    monkeypatch.setattr(datasets, "find_files", lambda *a, **kw: iter(items))
+
+    assert datasets.dataset_values("ns:ds", "some.field") == {"x", "y"}
+
+
+def test_dataset_values_absent_field_returns_empty(monkeypatch):
+    items = [_file("a.root"), _file("b.root")]
+    monkeypatch.setattr(datasets, "find_files", lambda *a, **kw: iter(items))
+
+    assert datasets.dataset_values("ns:ds", "nope") == set()

@@ -3,6 +3,8 @@ from typing import Any
 
 from .client import get_client
 from .errors import DatasetNotFoundError
+from .files import find_files
+from .filters import FileFilters
 
 
 def show_dataset(did: str) -> dict[str, Any]:
@@ -11,6 +13,22 @@ def show_dataset(did: str) -> dict[str, Any]:
     if ds is None:
         raise DatasetNotFoundError(f"Dataset not found: {did}")
     return ds
+
+
+def dataset_values(did: str, field: str) -> set[Any]:
+    seen: set[Any] = set()
+    for item in find_files(did, FileFilters(), with_metadata=True):
+        metadata = item.get("metadata") or {}
+        if field not in metadata:
+            continue
+        value = metadata[field]
+        if value is None:
+            continue
+        if isinstance(value, (list, tuple)):
+            seen.update(v for v in value if v is not None)
+        else:
+            seen.add(value)
+    return seen
 
 
 def list_datasets(

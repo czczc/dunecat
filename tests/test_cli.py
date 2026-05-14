@@ -328,6 +328,36 @@ def test_dataset_files_bad_filename_regex_exits_2(monkeypatch):
     assert result.exit_code == 2
 
 
+def test_dataset_values_prints_sorted_one_per_line(monkeypatch):
+    monkeypatch.setattr(
+        cli, "dataset_values", lambda did, field: {27732, 27734, 27731, 27740}
+    )
+    result = runner.invoke(cli.app, ["dataset", "values", "ns:ds", "core.runs"])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == ["27731", "27732", "27734", "27740"]
+
+
+def test_dataset_values_json_array(monkeypatch):
+    monkeypatch.setattr(
+        cli, "dataset_values", lambda did, field: {"confirmed", "rejected"}
+    )
+    result = runner.invoke(
+        cli.app, ["dataset", "values", "ns:ds", "dune.output_status", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout)
+    assert parsed == ["confirmed", "rejected"]
+
+
+def test_dataset_values_empty_field_exits_zero(monkeypatch):
+    monkeypatch.setattr(cli, "dataset_values", lambda did, field: set())
+    result = runner.invoke(cli.app, ["dataset", "values", "ns:ds", "nope"])
+    assert result.exit_code == 0
+    assert result.stdout == ""
+
+
 def test_dataset_show_missing_did_exits_1(monkeypatch):
     def raises(did):
         raise DatasetNotFoundError(f"Dataset not found: {did}")

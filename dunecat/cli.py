@@ -2,12 +2,13 @@ import json
 import logging
 import os
 import sys
+from typing import Any
 
 import typer
 from metacat.webapi import AuthenticationError
 
 from .client import get_client
-from .datasets import list_datasets, show_dataset
+from .datasets import dataset_values, list_datasets, show_dataset
 from .errors import ConfigError, DatasetNotFoundError, DunecatError
 import re
 
@@ -173,6 +174,32 @@ def dataset_files(
         except CandidateLimitExceeded as e:
             typer.echo(str(e), err=True)
             raise typer.Exit(1)
+
+
+@dataset_app.command("values")
+def dataset_values_cmd(
+    did: str = typer.Argument(..., help="Dataset DID as 'NAMESPACE:NAME'."),
+    field: str = typer.Argument(..., help="Metadata key, e.g. 'core.runs'."),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit a JSON array of the sorted distinct values."
+    ),
+) -> None:
+    with _handled_errors():
+        values = dataset_values(did, field)
+    sorted_values = sorted(values, key=_sort_key)
+    if json_out:
+        typer.echo(json.dumps(sorted_values, default=str))
+    else:
+        for v in sorted_values:
+            typer.echo(str(v))
+
+
+def _sort_key(value: Any) -> tuple[int, Any]:
+    if isinstance(value, bool):
+        return (0, int(value))
+    if isinstance(value, (int, float)):
+        return (0, value)
+    return (1, str(value))
 
 
 @dataset_app.command("show")
