@@ -401,6 +401,54 @@ def test_query_mql_error_exits_1(monkeypatch):
     assert result.exit_code == 1
 
 
+def test_file_datasets_plain_output(monkeypatch):
+    monkeypatch.setattr(
+        cli,
+        "file_datasets",
+        lambda did: [
+            "dune:all",
+            "hd-protodune-det-reco:batch-set0",
+        ],
+    )
+    result = runner.invoke(
+        cli.app, ["file", "datasets", "ns:f.root"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == [
+        "dune:all",
+        "hd-protodune-det-reco:batch-set0",
+    ]
+
+
+def test_file_datasets_json_array(monkeypatch):
+    monkeypatch.setattr(
+        cli, "file_datasets", lambda did: ["dune:all", "ns:b"]
+    )
+    result = runner.invoke(
+        cli.app, ["file", "datasets", "ns:f.root", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout)
+    assert parsed == ["dune:all", "ns:b"]
+
+
+def test_file_datasets_unknown_did_exits_1(monkeypatch):
+    from dunecat.errors import FileDIDNotFoundError
+
+    def raises(did):
+        raise FileDIDNotFoundError(f"File not found: {did}")
+
+    monkeypatch.setattr(cli, "file_datasets", raises)
+    result = runner.invoke(
+        cli.app, ["file", "datasets", "ns:nope.root"]
+    )
+
+    assert result.exit_code == 1
+    assert "File not found: ns:nope.root" in result.stderr
+
+
 def test_dataset_list_meta_flag_passes_through(monkeypatch):
     captured = {}
 

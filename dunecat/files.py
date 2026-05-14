@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .client import get_client
+from .errors import FileDIDNotFoundError
 from .filters import FileFilters
 
 
@@ -30,3 +31,13 @@ def build_mql(did: str, filters: FileFilters) -> str:
 
 def file_did(item: dict[str, Any]) -> str:
     return f"{item['namespace']}:{item['name']}"
+
+
+def file_datasets(did: str) -> list[str]:
+    client = get_client()
+    record = client.get_file(did=did, with_datasets=True)
+    if record is None:
+        raise FileDIDNotFoundError(f"File not found: {did}")
+    return [
+        f"{d['namespace']}:{d['name']}" for d in record.get("datasets", [])
+    ]

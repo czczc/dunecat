@@ -109,6 +109,22 @@ uv run dunecat dataset values "$DS" core.runs
 uv run dunecat dataset values "$DS" dune.output_status --json
 ```
 
+### Which datasets contain a file
+
+Given a file DID (a single file's `namespace:name`), list the datasets it belongs to.
+A file commonly lives in several datasets: an umbrella like `dune:all`, a per-batch
+production set, and curated subsets.
+
+```bash
+uv run dunecat file datasets \
+  'hd-protodune-det-reco:np04hd_raw_run027731_0003_dataflow1_datawriter_0_20240705T122251_reco_stage1_reco_stage2_20241004T202612_keepup.root'
+
+# JSON array
+uv run dunecat file datasets "$FILE_DID" --json
+```
+
+Unknown file DID → exit 1 with `File not found: <did>` on stderr.
+
 ### Raw MQL
 
 When the structured filters don't cover what you need, pass raw MQL through:

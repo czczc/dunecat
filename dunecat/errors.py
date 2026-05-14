@@ -12,3 +12,7 @@ class TokenExpiredError(DunecatError):
 
 class DatasetNotFoundError(DunecatError):
     pass
+
+
+class FileDIDNotFoundError(DunecatError):
+    pass

@@ -10,8 +10,13 @@ from metacat.webapi import AuthenticationError, MCWebAPIError
 
 from .client import get_client
 from .datasets import dataset_values, list_datasets, show_dataset
-from .errors import ConfigError, DatasetNotFoundError, DunecatError
-from .files import file_did, find_files
+from .errors import (
+    ConfigError,
+    DatasetNotFoundError,
+    DunecatError,
+    FileDIDNotFoundError,
+)
+from .files import file_datasets, file_did, find_files
 from .filters import FileFilters, parse_meta, parse_run_range, parse_runs
 from .format import render_dataset_table
 from .query import run_query
@@ -27,7 +32,9 @@ from .timestamps import (
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 dataset_app = typer.Typer(no_args_is_help=True, add_completion=False)
+file_app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(dataset_app, name="dataset")
+app.add_typer(file_app, name="file")
 
 
 @app.callback()
@@ -84,6 +91,22 @@ def dataset_list(
             pattern=pattern, namespace=namespace, meta=meta_pairs
         ):
             typer.echo(did)
+
+
+@file_app.command("datasets")
+def file_datasets_cmd(
+    did: str = typer.Argument(..., help="File DID as 'NAMESPACE:NAME'."),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit a JSON array of dataset DIDs."
+    ),
+) -> None:
+    with _handled_errors():
+        datasets = file_datasets(did)
+    if json_out:
+        typer.echo(json.dumps(datasets))
+    else:
+        for d in datasets:
+            typer.echo(d)
 
 
 @app.command("query")
@@ -266,7 +289,7 @@ class _handled_errors:
         if isinstance(exc, ConfigError):
             typer.echo(str(exc), err=True)
             raise typer.Exit(2)
-        if isinstance(exc, DatasetNotFoundError):
+        if isinstance(exc, (DatasetNotFoundError, FileDIDNotFoundError)):
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
         if isinstance(exc, AuthenticationError):
