@@ -1,9 +1,24 @@
 [project]
-name = "metacat"
+name = "dunecat"
 version = "0.1.0"
-description = "Add your description here"
+description = "Locate DUNE data files via metacat queries."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "metacat-client>=4.1.4",
+    "typer>=0.12",
+    "python-dotenv>=1.0",
+    "rich>=13.7",
+]
+
+[project.scripts]
+dunecat = "dunecat.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
 ]

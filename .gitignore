@@ -8,3 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+
+.idea/
+
+# Secrets and local config
+.env
+
+# Test artefacts
+.pytest_cache/
