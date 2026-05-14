@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -6,8 +7,9 @@ import typer
 from metacat.webapi import AuthenticationError
 
 from .client import get_client
-from .datasets import list_datasets
-from .errors import ConfigError, DunecatError
+from .datasets import list_datasets, show_dataset
+from .errors import ConfigError, DatasetNotFoundError, DunecatError
+from .format import render_dataset_table
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 dataset_app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -58,6 +60,21 @@ def dataset_list(
             typer.echo(did)
 
 
+@dataset_app.command("show")
+def dataset_show(
+    did: str = typer.Argument(..., help="Dataset DID as 'NAMESPACE:NAME'."),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit the full dataset record as one-line JSON."
+    ),
+) -> None:
+    with _handled_errors():
+        ds = show_dataset(did)
+    if json_out:
+        typer.echo(json.dumps(ds, default=str))
+    else:
+        render_dataset_table(ds)
+
+
 class _handled_errors:
     def __enter__(self) -> "_handled_errors":
         return self
@@ -68,6 +85,9 @@ class _handled_errors:
         if isinstance(exc, ConfigError):
             typer.echo(str(exc), err=True)
             raise typer.Exit(2)
+        if isinstance(exc, DatasetNotFoundError):
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
         if isinstance(exc, AuthenticationError):
             typer.echo(_token_expired_message(exc), err=True)
             raise typer.Exit(2)

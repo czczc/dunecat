@@ -2,18 +2,24 @@ import pytest
 
 from dunecat import datasets
 from dunecat.datasets import _split_pattern
-from dunecat.errors import ConfigError
+from dunecat.errors import ConfigError, DatasetNotFoundError
 
 
 class FakeClient:
-    def __init__(self, items):
-        self._items = items
+    def __init__(self, items=None, dataset=None):
+        self._items = items or []
+        self._dataset = dataset
         self.calls: list[tuple[str | None, str | None]] = []
+        self.get_calls: list[str] = []
 
     def list_datasets(self, namespace_pattern=None, name_pattern=None):
         self.calls.append((namespace_pattern, name_pattern))
         for item in self._items:
             yield item
+
+    def get_dataset(self, did=None, namespace=None, name=None, exact_file_count=False):
+        self.get_calls.append(did)
+        return self._dataset
 
 
 @pytest.fixture
@@ -66,3 +72,28 @@ def test_conflicting_namespace_raises():
 
 def test_split_pattern_none_inputs():
     assert _split_pattern(None, None) == (None, None)
+
+
+def test_show_dataset_returns_dict(monkeypatch):
+    record = {
+        "namespace": "ns",
+        "name": "n",
+        "frozen": True,
+        "monotonic": False,
+        "metadata": {"core.runs": "(1, 2, 3)"},
+        "creator": "alice",
+        "created_timestamp": 1738712710.5,
+        "file_count": 4,
+    }
+    fc = FakeClient(dataset=record)
+    monkeypatch.setattr(datasets, "get_client", lambda: fc)
+
+    assert datasets.show_dataset("ns:n") == record
+    assert fc.get_calls == ["ns:n"]
+
+
+def test_show_dataset_raises_when_missing(monkeypatch):
+    fc = FakeClient(dataset=None)
+    monkeypatch.setattr(datasets, "get_client", lambda: fc)
+    with pytest.raises(DatasetNotFoundError, match="ns:n"):
+        datasets.show_dataset("ns:n")

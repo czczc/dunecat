@@ -8,3 +8,7 @@ class ConfigError(DunecatError):
 
 class TokenExpiredError(DunecatError):
     pass
+
+
+class DatasetNotFoundError(DunecatError):
+    pass

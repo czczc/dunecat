@@ -1,6 +1,16 @@
 from collections.abc import Iterator
+from typing import Any
 
 from .client import get_client
+from .errors import DatasetNotFoundError
+
+
+def show_dataset(did: str) -> dict[str, Any]:
+    client = get_client()
+    ds = client.get_dataset(did=did)
+    if ds is None:
+        raise DatasetNotFoundError(f"Dataset not found: {did}")
+    return ds
 
 
 def list_datasets(

@@ -1,8 +1,10 @@
+import json
+
 import pytest
 from typer.testing import CliRunner
 
 from dunecat import cli, client
-from dunecat.errors import ConfigError
+from dunecat.errors import ConfigError, DatasetNotFoundError
 
 
 runner = CliRunner()
@@ -91,3 +93,53 @@ def test_server_flag_overrides_env(monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert captured["server"] == "https://from-flag.example/app"
+
+
+_SAMPLE_DATASET = {
+    "namespace": "hd-protodune-det-reco",
+    "name": "example",
+    "frozen": True,
+    "monotonic": False,
+    "creator": "dunepro",
+    "created_timestamp": 1738712710.5,
+    "updated_by": None,
+    "updated_timestamp": None,
+    "file_count": 4,
+    "metadata": {"core.runs": "(27731, 27732)"},
+}
+
+
+def test_dataset_show_renders_table(monkeypatch):
+    monkeypatch.setattr(cli, "show_dataset", lambda did: _SAMPLE_DATASET)
+    result = runner.invoke(cli.app, ["dataset", "show", "hd-protodune-det-reco:example"])
+
+    assert result.exit_code == 0, result.output
+    assert "hd-protodune-det-reco:example" in result.stdout
+    assert "dunepro" in result.stdout
+    assert "core.runs" in result.stdout
+    assert "(27731, 27732)" in result.stdout
+
+
+def test_dataset_show_json_emits_single_line(monkeypatch):
+    monkeypatch.setattr(cli, "show_dataset", lambda did: _SAMPLE_DATASET)
+    result = runner.invoke(
+        cli.app, ["dataset", "show", "hd-protodune-det-reco:example", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 1
+    parsed = json.loads(lines[0])
+    assert parsed["namespace"] == "hd-protodune-det-reco"
+    assert parsed["metadata"]["core.runs"] == "(27731, 27732)"
+
+
+def test_dataset_show_missing_did_exits_1(monkeypatch):
+    def raises(did):
+        raise DatasetNotFoundError(f"Dataset not found: {did}")
+
+    monkeypatch.setattr(cli, "show_dataset", raises)
+    result = runner.invoke(cli.app, ["dataset", "show", "nope:not-here"])
+
+    assert result.exit_code == 1
+    assert "Dataset not found: nope:not-here" in result.stderr
