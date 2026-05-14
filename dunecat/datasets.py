@@ -4,7 +4,7 @@ from typing import Any
 from .client import get_client
 from .errors import DatasetNotFoundError
 from .files import find_files
-from .filters import FileFilters
+from .filters import FileFilters, value_matches
 
 
 def show_dataset(did: str) -> dict[str, Any]:
@@ -34,6 +34,7 @@ def dataset_values(did: str, field: str) -> set[Any]:
 def list_datasets(
     pattern: str | None = None,
     namespace: str | None = None,
+    meta: tuple[tuple[str, str], ...] = (),
 ) -> Iterator[str]:
     namespace_pattern, name_pattern = _split_pattern(pattern, namespace)
     client = get_client()
@@ -41,7 +42,16 @@ def list_datasets(
         namespace_pattern=namespace_pattern,
         name_pattern=name_pattern,
     ):
+        if meta and not _matches_meta(ds, meta):
+            continue
         yield f"{ds['namespace']}:{ds['name']}"
+
+
+def _matches_meta(
+    dataset: dict[str, Any], meta: tuple[tuple[str, str], ...]
+) -> bool:
+    metadata = dataset.get("metadata") or {}
+    return all(value_matches(metadata.get(k), v) for k, v in meta)
 
 
 def _split_pattern(

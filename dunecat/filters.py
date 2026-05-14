@@ -75,3 +75,13 @@ def _format_value(value: str) -> str:
     else:
         return repr(f)
     return f"'{_escape(value)}'"
+
+
+def value_matches(metadata_value, user_value: str) -> bool:
+    if metadata_value is None:
+        return False
+    try:
+        return float(metadata_value) == float(user_value)
+    except (ValueError, TypeError):
+        pass
+    return str(metadata_value) == user_value

@@ -15,7 +15,9 @@ class FakeClient:
     def list_datasets(self, namespace_pattern=None, name_pattern=None):
         self.calls.append((namespace_pattern, name_pattern))
         for item in self._items:
-            yield item
+            # M1 fake yielded {namespace, name} only; here we also support
+            # callers that pre-populate full dataset dicts for --meta tests.
+            yield item if isinstance(item, dict) and "namespace" in item else item
 
     def get_dataset(self, did=None, namespace=None, name=None, exact_file_count=False):
         self.get_calls.append(did)
@@ -138,6 +140,68 @@ def test_dataset_values_skips_none_and_missing(monkeypatch):
     monkeypatch.setattr(datasets, "find_files", lambda *a, **kw: iter(items))
 
     assert datasets.dataset_values("ns:ds", "some.field") == {"x", "y"}
+
+
+def test_list_datasets_meta_filter_drops_non_matching(monkeypatch):
+    items = [
+        {
+            "namespace": "ns",
+            "name": "a",
+            "metadata": {"core.data_tier": "full-reconstructed"},
+        },
+        {
+            "namespace": "ns",
+            "name": "b",
+            "metadata": {"core.data_tier": "raw"},
+        },
+        {
+            "namespace": "ns",
+            "name": "c",
+            "metadata": {"core.data_tier": "full-reconstructed"},
+        },
+    ]
+    fc = FakeClient(items=items)
+    monkeypatch.setattr(datasets, "get_client", lambda: fc)
+
+    result = list(
+        datasets.list_datasets(
+            meta=(("core.data_tier", "full-reconstructed"),)
+        )
+    )
+    assert result == ["ns:a", "ns:c"]
+
+
+def test_list_datasets_meta_filter_ands_multiple_pairs(monkeypatch):
+    items = [
+        {
+            "namespace": "ns",
+            "name": "a",
+            "metadata": {
+                "core.data_tier": "full-reconstructed",
+                "dune.output_status": "confirmed",
+            },
+        },
+        {
+            "namespace": "ns",
+            "name": "b",
+            "metadata": {
+                "core.data_tier": "full-reconstructed",
+                "dune.output_status": "rejected",
+            },
+        },
+    ]
+    fc = FakeClient(items=items)
+    monkeypatch.setattr(datasets, "get_client", lambda: fc)
+
+    result = list(
+        datasets.list_datasets(
+            meta=(
+                ("core.data_tier", "full-reconstructed"),
+                ("dune.output_status", "confirmed"),
+            )
+        )
+    )
+    assert result == ["ns:a"]
 
 
 def test_dataset_values_absent_field_returns_empty(monkeypatch):

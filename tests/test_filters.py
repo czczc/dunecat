@@ -139,6 +139,32 @@ def test_meta_value_with_apostrophe_escaped():
     assert f.to_mql_where_clauses() == [r"k = 'o\'malley'"]
 
 
+def test_value_matches_string_equality():
+    from dunecat.filters import value_matches
+
+    assert value_matches("full-reconstructed", "full-reconstructed") is True
+    assert value_matches("full-reconstructed", "raw") is False
+
+
+def test_value_matches_int_via_float():
+    from dunecat.filters import value_matches
+
+    assert value_matches(27731, "27731") is True
+    assert value_matches(27731, "27732") is False
+
+
+def test_value_matches_float_string_int_form():
+    from dunecat.filters import value_matches
+
+    assert value_matches(42.0, "42") is True
+
+
+def test_value_matches_none_returns_false():
+    from dunecat.filters import value_matches
+
+    assert value_matches(None, "anything") is False
+
+
 def test_all_filters_combine_with_and_semantics():
     f = FileFilters(
         runs=(27731,),

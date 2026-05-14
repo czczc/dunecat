@@ -1,20 +1,20 @@
 import json
 import logging
 import os
+import re
 import sys
 from typing import Any
 
 import typer
-from metacat.webapi import AuthenticationError
+from metacat.webapi import AuthenticationError, MCWebAPIError
 
 from .client import get_client
 from .datasets import dataset_values, list_datasets, show_dataset
 from .errors import ConfigError, DatasetNotFoundError, DunecatError
-import re
-
 from .files import file_did, find_files
 from .filters import FileFilters, parse_meta, parse_run_range, parse_runs
 from .format import render_dataset_table
+from .query import run_query
 from .timestamps import (
     DEFAULT_FORMAT,
     DEFAULT_MAX_CANDIDATES,
@@ -68,10 +68,49 @@ def dataset_list(
     namespace: str | None = typer.Option(
         None, "--namespace", "-n", help="Restrict to this namespace."
     ),
+    meta: list[str] | None = typer.Option(
+        None,
+        "--meta",
+        help="Metadata equality filter 'KEY=VALUE'. Repeatable; applied client-side over dataset metadata.",
+    ),
+) -> None:
+    try:
+        meta_pairs = parse_meta(meta)
+    except ValueError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(2)
+    with _handled_errors():
+        for did in list_datasets(
+            pattern=pattern, namespace=namespace, meta=meta_pairs
+        ):
+            typer.echo(did)
+
+
+@app.command("query")
+def query_cmd(
+    mql: str = typer.Argument(..., help="Raw MQL query string."),
+    with_metadata: bool = typer.Option(
+        False, "--with-metadata", help="Include file metadata in output."
+    ),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit JSONL (one JSON object per line)."
+    ),
+    batch_size: int = typer.Option(
+        1000, "--batch-size", help="Server-side batch size for streaming."
+    ),
 ) -> None:
     with _handled_errors():
-        for did in list_datasets(pattern=pattern, namespace=namespace):
-            typer.echo(did)
+        for item in run_query(mql, with_metadata=with_metadata, batch_size=batch_size):
+            if json_out:
+                typer.echo(json.dumps(item, default=str))
+            else:
+                typer.echo(_render_query_item(item))
+
+
+def _render_query_item(item: dict[str, Any]) -> str:
+    if "namespace" in item and "name" in item:
+        return f"{item['namespace']}:{item['name']}"
+    return json.dumps(item, default=str)
 
 
 @dataset_app.command("files")
@@ -233,6 +272,9 @@ class _handled_errors:
         if isinstance(exc, AuthenticationError):
             typer.echo(_token_expired_message(exc), err=True)
             raise typer.Exit(2)
+        if isinstance(exc, MCWebAPIError):
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
         if isinstance(exc, DunecatError):
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)

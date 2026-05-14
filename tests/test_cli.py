@@ -18,7 +18,7 @@ def _clear_client_cache():
 
 
 def test_dataset_list_prints_one_did_per_line(monkeypatch):
-    def fake_list_datasets(pattern, namespace):
+    def fake_list_datasets(pattern, namespace, meta=()):
         assert pattern == "hd-protodune-det-reco:*cosmic*"
         assert namespace is None
         yield "hd-protodune-det-reco:alpha_cosmic"
@@ -38,7 +38,7 @@ def test_dataset_list_prints_one_did_per_line(monkeypatch):
 
 
 def test_config_error_exits_2_with_stderr_message(monkeypatch):
-    def fake_list_datasets(pattern, namespace):
+    def fake_list_datasets(pattern, namespace, meta=()):
         raise ConfigError("METACAT_SERVER_URL is not set.")
         yield  # pragma: no cover - generator marker
 
@@ -53,7 +53,7 @@ def test_config_error_exits_2_with_stderr_message(monkeypatch):
 def test_authentication_error_exits_2_with_login_instructions(monkeypatch):
     from metacat.webapi import AuthenticationError
 
-    def fake_list_datasets(pattern, namespace):
+    def fake_list_datasets(pattern, namespace, meta=()):
         raise AuthenticationError("token expired")
         yield  # pragma: no cover
 
@@ -72,7 +72,7 @@ def test_authentication_error_exits_2_with_login_instructions(monkeypatch):
 def test_server_flag_overrides_env(monkeypatch):
     captured = {}
 
-    def fake_list_datasets(pattern, namespace):
+    def fake_list_datasets(pattern, namespace, meta=()):
         captured["server"] = __import__("os").environ.get("METACAT_SERVER_URL")
         return iter(())
 
@@ -356,6 +356,78 @@ def test_dataset_values_empty_field_exits_zero(monkeypatch):
     result = runner.invoke(cli.app, ["dataset", "values", "ns:ds", "nope"])
     assert result.exit_code == 0
     assert result.stdout == ""
+
+
+def test_query_plain_emits_dids(monkeypatch):
+    items = [
+        {"namespace": "ns", "name": "a"},
+        {"namespace": "ns", "name": "b"},
+    ]
+    monkeypatch.setattr(cli, "run_query", lambda *a, **kw: iter(items))
+    result = runner.invoke(cli.app, ["query", "files from ns:ds"])
+    assert result.exit_code == 0, result.output
+    assert result.stdout.splitlines() == ["ns:a", "ns:b"]
+
+
+def test_query_json_emits_jsonl(monkeypatch):
+    items = [{"namespace": "ns", "name": "a", "fid": "X"}]
+    monkeypatch.setattr(cli, "run_query", lambda *a, **kw: iter(items))
+    result = runner.invoke(cli.app, ["query", "files from ns:ds", "--json"])
+    assert result.exit_code == 0, result.output
+    lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 1
+    assert json.loads(lines[0])["fid"] == "X"
+
+
+def test_query_summary_item_falls_back_to_json(monkeypatch):
+    monkeypatch.setattr(
+        cli, "run_query", lambda *a, **kw: iter([{"count": 42, "total_size": 100}])
+    )
+    result = runner.invoke(cli.app, ["query", "files from ns:ds count"])
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout.strip())
+    assert parsed == {"count": 42, "total_size": 100}
+
+
+def test_query_mql_error_exits_1(monkeypatch):
+    from metacat.webapi import MCWebAPIError
+
+    def raises(*a, **kw):
+        raise MCWebAPIError("url", "bad-mql")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(cli, "run_query", raises)
+    result = runner.invoke(cli.app, ["query", "bogus"])
+    assert result.exit_code == 1
+
+
+def test_dataset_list_meta_flag_passes_through(monkeypatch):
+    captured = {}
+
+    def fake(*, pattern, namespace, meta):
+        captured["pattern"] = pattern
+        captured["namespace"] = namespace
+        captured["meta"] = meta
+        return iter(("ns:a", "ns:b"))
+
+    monkeypatch.setattr(cli, "list_datasets", fake)
+    result = runner.invoke(
+        cli.app,
+        [
+            "dataset",
+            "list",
+            "--meta",
+            "core.data_tier=full-reconstructed",
+            "--meta",
+            "dune.output_status=confirmed",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert captured["meta"] == (
+        ("core.data_tier", "full-reconstructed"),
+        ("dune.output_status", "confirmed"),
+    )
+    assert result.stdout.splitlines() == ["ns:a", "ns:b"]
 
 
 def test_dataset_show_missing_did_exits_1(monkeypatch):
