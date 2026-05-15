@@ -7,6 +7,7 @@
   name: ProtoDUNE-VD
   namespaces:
     - vd-protodune
+    - vd-protodune-det-reco
 - id: fardet-hd
   name: DUNE FD-HD
   namespaces:
@@ -15,4 +16,3 @@
   name: DUNE FD-VD
   namespaces:
     - fardet-vd
-    - fd_vd_mc_reco

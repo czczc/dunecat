@@ -131,6 +131,7 @@ def list_datasets(
     detector: str = Query(...),
     pattern: str | None = Query(None),
     tier: str | None = Query(None),
+    file_type: str | None = Query(None),
     meta: list[str] = Query(default_factory=list),
     official_only: bool = Query(True),
     with_metadata_only: bool = Query(True),
@@ -147,7 +148,9 @@ def list_datasets(
         official_only=official_only,
         with_metadata_only=with_metadata_only,
     )
-    filtered = _apply_filters(items, pattern=pattern, tier=tier, meta=meta)
+    filtered = _apply_filters(
+        items, pattern=pattern, tier=tier, file_type=file_type, meta=meta
+    )
 
     total = len(filtered)
     start = (page - 1) * page_size
@@ -160,6 +163,47 @@ def list_datasets(
         "page_size": page_size,
         "fetched_at": fetched_at.isoformat(),
         "rows": rows,
+    }
+
+
+@app.get("/api/datasets/facets")
+def datasets_facets(
+    detector: str = Query(...),
+    official_only: bool = Query(True),
+    with_metadata_only: bool = Query(True),
+) -> dict[str, list[dict[str, Any]]]:
+    """Distinct values + counts for core.data_tier and core.file_type
+    across the detector's datasets, after default filters."""
+    from collections import Counter
+
+    det = detector_by_id(detector)
+    if det is None:
+        raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
+
+    items, _ = datasets_for_detector(det["namespaces"])
+    items = apply_default_filters(
+        items,
+        official_only=official_only,
+        with_metadata_only=with_metadata_only,
+    )
+
+    tier_counts: Counter = Counter()
+    type_counts: Counter = Counter()
+    for ds in items:
+        md = ds.get("metadata") or {}
+        tier_counts[md.get("core.data_tier")] += 1
+        type_counts[md.get("core.file_type")] += 1
+
+    def _format(counter: Counter) -> list[dict[str, Any]]:
+        return [
+            {"value": k, "count": c}
+            for k, c in counter.most_common()
+            if k is not None
+        ]
+
+    return {
+        "tiers": _format(tier_counts),
+        "file_types": _format(type_counts),
     }
 
 
@@ -576,6 +620,7 @@ def _apply_filters(
     items: list[dict[str, Any]],
     pattern: str | None,
     tier: str | None,
+    file_type: str | None,
     meta: list[str],
 ) -> list[dict[str, Any]]:
     meta_pairs = _parse_meta(meta)
@@ -586,6 +631,8 @@ def _apply_filters(
             continue
         md = ds.get("metadata") or {}
         if tier and not value_matches(md.get("core.data_tier"), tier):
+            continue
+        if file_type and not value_matches(md.get("core.file_type"), file_type):
             continue
         if not all(value_matches(md.get(k), v) for k, v in meta_pairs):
             continue

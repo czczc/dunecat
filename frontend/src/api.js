@@ -29,6 +29,9 @@ export const getDetectorCounts = () => jsonFetch('/api/detectors/counts');
 export const getDatasets = (params) =>
   jsonFetch(`/api/datasets?${buildQuery(params)}`);
 
+export const getDatasetsFacets = (params) =>
+  jsonFetch(`/api/datasets/facets?${buildQuery(params)}`);
+
 export const refreshDatasets = (detectorId) =>
   jsonFetch(`/api/datasets/refresh?${buildQuery({ detector: detectorId })}`, {
     method: 'POST',

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getDatasets, refreshDatasets } from '../api.js';
+import { getDatasets, getDatasetsFacets, refreshDatasets } from '../api.js';
 import {
   nav,
   loadDetectors,
@@ -19,7 +19,8 @@ const activeDetector = computed(
 const activeCounts = computed(() => nav.counts[detectorId.value] || null);
 
 const pattern = ref('');
-const tier = ref('all');
+const tier = ref('');         // '' = All
+const fileType = ref('');     // '' = All
 const officialOnly = ref(true);
 const withMetadataOnly = ref(true);
 const page = ref(1);
@@ -29,13 +30,7 @@ const loading = ref(false);
 const error = ref(null);
 const data = ref(null);
 
-const TIERS = [
-  { id: 'all', label: 'All tiers', value: null },
-  { id: 'raw', label: 'raw', value: 'raw' },
-  { id: 'reco', label: 'reco', value: 'full-reconstructed' },
-  { id: 'mc', label: 'mc', value: 'mc' },
-  { id: 'cal', label: 'cal', value: 'cal' },
-];
+const facets = ref({ tiers: [], file_types: [] });
 
 let debounceTimer = null;
 
@@ -47,11 +42,11 @@ async function fetchPage() {
   loading.value = true;
   error.value = null;
   try {
-    const tierValue = TIERS.find((t) => t.id === tier.value)?.value;
     data.value = await getDatasets({
       detector: detectorId.value,
       pattern: pattern.value || null,
-      tier: tierValue,
+      tier: tier.value || null,
+      file_type: fileType.value || null,
       official_only: officialOnly.value,
       with_metadata_only: withMetadataOnly.value,
       page: page.value,
@@ -65,9 +60,29 @@ async function fetchPage() {
   }
 }
 
-watch([detectorId, tier, officialOnly, withMetadataOnly], () => {
+async function fetchFacets() {
+  if (!detectorId.value) {
+    facets.value = { tiers: [], file_types: [] };
+    return;
+  }
+  try {
+    facets.value = await getDatasetsFacets({
+      detector: detectorId.value,
+      official_only: officialOnly.value,
+      with_metadata_only: withMetadataOnly.value,
+    });
+  } catch {
+    facets.value = { tiers: [], file_types: [] };
+  }
+}
+
+watch([detectorId, tier, fileType, officialOnly, withMetadataOnly], () => {
   page.value = 1;
   fetchPage();
+});
+
+watch([detectorId, officialOnly, withMetadataOnly], () => {
+  fetchFacets();
 });
 
 watch(pattern, () => {
@@ -104,6 +119,7 @@ function selectDetector(id) {
 onMounted(async () => {
   await loadDetectors();
   loadCounts();
+  fetchFacets();
   fetchPage();
 });
 
@@ -232,17 +248,25 @@ const totalPages = computed(() =>
 
       <!-- Filter row -->
       <div class="filters">
+        <label class="facet">
+          <span class="facet-label">Tier</span>
+          <select v-model="tier" class="facet-select">
+            <option value="">All</option>
+            <option v-for="t in facets.tiers" :key="t.value" :value="t.value">
+              {{ t.value }} ({{ t.count }})
+            </option>
+          </select>
+        </label>
+        <label class="facet">
+          <span class="facet-label">File type</span>
+          <select v-model="fileType" class="facet-select">
+            <option value="">All</option>
+            <option v-for="t in facets.file_types" :key="t.value" :value="t.value">
+              {{ t.value }} ({{ t.count }})
+            </option>
+          </select>
+        </label>
         <div class="chips">
-          <button
-            v-for="t in TIERS"
-            :key="t.id"
-            class="chip"
-            :class="{ active: tier === t.id }"
-            @click="tier = t.id"
-          >
-            {{ t.label }}
-          </button>
-          <span class="chip-divider" />
           <button
             class="chip"
             :class="{ active: officialOnly }"
@@ -462,11 +486,24 @@ const totalPages = computed(() =>
   flex-wrap: wrap;
 }
 .chips { display: flex; align-items: center; gap: 6px; }
-.chip-divider {
-  width: 1px;
-  height: 18px;
-  background: var(--rule);
-  margin: 0 4px;
+.facet { display: inline-flex; align-items: center; gap: 6px; }
+.facet-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.facet-select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  background: var(--page);
+  border-radius: 7px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--body);
+  max-width: 220px;
 }
 .chip {
   padding: 5px 10px;
