@@ -56,6 +56,7 @@ def fetch_runs(
     start_unix: float | None = None,
     stop_unix: float | None = None,  # exclusive upper bound
     run_type: str | None = None,
+    data_stream: str | None = None,
     beam_setp_min: float | None = None,
     beam_setp_max: float | None = None,
     polarity: str | None = None,  # "positive" or "negative" (case-insensitive); None = any
@@ -80,6 +81,7 @@ def fetch_runs(
     has_column_filter = (
         start_unix is not None
         or stop_unix is not None
+        or data_stream is not None
         or beam_setp_min is not None
         or beam_setp_max is not None
         or polarity is not None
@@ -90,6 +92,7 @@ def fetch_runs(
             start_unix=start_unix,
             stop_unix=stop_unix,
             run_type=run_type,
+            data_stream=data_stream,
             beam_setp_min=beam_setp_min,
             beam_setp_max=beam_setp_max,
             polarity=polarity,
@@ -143,6 +146,7 @@ def _search_with_bounds(
     start_unix: float | None,
     stop_unix: float | None,
     run_type: str | None,
+    data_stream: str | None,
     beam_setp_min: float | None,
     beam_setp_max: float | None,
     polarity: str | None,
@@ -168,6 +172,8 @@ def _search_with_bounds(
         common.append(f"start_time < {int(stop_unix)}")
     if run_type:
         common.append(f"run_type = '{run_type}'")
+    if data_stream:
+        common.append(f"data_stream = '{data_stream}'")
 
     have_beam_bounds = beam_setp_min is not None or beam_setp_max is not None
     pol_map = _POLARITY_BY_FOLDER.get(folder, {})

@@ -16,6 +16,8 @@ const beamMin = ref(route.query.beam_setp_min || '');
 const beamMax = ref(route.query.beam_setp_max || '');
 // 'any' = no polarity filter. Server-side translation: 'positive' or 'Negative'.
 const polarity = ref(route.query.polarity || 'any');
+// 'any' = no stream filter; else one of cosmics / calibration / physics.
+const dataStream = ref(route.query.data_stream || 'any');
 // PROD is the default — TEST runs are usually noise. 'ALL' means no filter.
 const runType = ref(route.query.run_type || 'PROD');
 
@@ -38,9 +40,17 @@ const hasBeamFilter = computed(
     beamMax.value !== '' ||
     (polarity.value && polarity.value !== 'any'),
 );
+const hasStreamFilter = computed(
+  () => dataStream.value && dataStream.value !== 'any',
+);
 const canApply = computed(() => {
   if (!selectedDetector.value?.condb_folder) return false;
-  if (!hasRunRange.value && !hasDateRange.value && !hasBeamFilter.value)
+  if (
+    !hasRunRange.value &&
+    !hasDateRange.value &&
+    !hasBeamFilter.value &&
+    !hasStreamFilter.value
+  )
     return false;
   if (hasRunRange.value && Number(runMin.value) > Number(runMax.value)) return false;
   if (
@@ -71,6 +81,7 @@ async function fetchRows() {
       start: startDate.value,
       stop: stopDate.value,
       run_type: runType.value,
+      data_stream: dataStream.value,
       beam_setp_min: beamMin.value,
       beam_setp_max: beamMax.value,
       polarity: polarity.value,
@@ -93,6 +104,7 @@ function onApply() {
       start: startDate.value,
       stop: stopDate.value,
       run_type: runType.value,
+      data_stream: dataStream.value,
       beam_setp_min: beamMin.value,
       beam_setp_max: beamMax.value,
       polarity: polarity.value,
@@ -181,6 +193,15 @@ function beamSetOf(r) {
           <option value="PROD">PROD only</option>
           <option value="TEST">TEST only</option>
           <option value="ALL">All</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Stream</span>
+        <select v-model="dataStream" class="control">
+          <option value="any">Any</option>
+          <option value="cosmics">cosmics</option>
+          <option value="calibration">calibration</option>
+          <option value="physics">physics</option>
         </select>
       </label>
       <label class="field">

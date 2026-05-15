@@ -564,6 +564,13 @@ def get_runs_conditions(
             "any other value matches that string exactly."
         ),
     ),
+    data_stream: str = Query(
+        "any",
+        description=(
+            "Filter by data_stream column. Pass 'any' (default) for no "
+            "filter; otherwise one of 'cosmics', 'calibration', 'physics'."
+        ),
+    ),
     beam_setp_min: float | None = Query(
         None, ge=0,
         description="Beam setpoint magnitude lower bound (>=0). Sign comes from polarity.",
@@ -606,6 +613,12 @@ def get_runs_conditions(
             status_code=400,
             detail="polarity must be 'positive', 'negative', or 'any'.",
         )
+    ds_norm = data_stream.lower() if data_stream else "any"
+    if ds_norm not in ("any", "cosmics", "calibration", "physics"):
+        raise HTTPException(
+            status_code=400,
+            detail="data_stream must be 'cosmics', 'calibration', 'physics', or 'any'.",
+        )
 
     # Parse dates (YYYY-MM-DD → UTC unix; stop is inclusive day, so add 1 day for exclusive upper bound).
     start_unix: float | None = None
@@ -634,12 +647,18 @@ def get_runs_conditions(
         or beam_setp_max is not None
         or polarity_norm != "any"
     )
-    if not have_run_range and not have_date_range and not have_beam_filter:
+    have_stream_filter = ds_norm != "any"
+    if (
+        not have_run_range
+        and not have_date_range
+        and not have_beam_filter
+        and not have_stream_filter
+    ):
         raise HTTPException(
             status_code=400,
             detail=(
                 "At least one filter is required: run range, date range, "
-                "or beam (momentum / polarity)."
+                "beam (momentum / polarity), or data stream."
             ),
         )
 
@@ -654,6 +673,7 @@ def get_runs_conditions(
         )
     rt = None if run_type.upper() == "ALL" else run_type
     pol = None if polarity_norm == "any" else polarity_norm
+    ds = None if ds_norm == "any" else ds_norm
     try:
         rows = condb.fetch_runs(
             folder,
@@ -662,6 +682,7 @@ def get_runs_conditions(
             start_unix=start_unix,
             stop_unix=stop_unix,
             run_type=rt,
+            data_stream=ds,
             beam_setp_min=beam_setp_min,
             beam_setp_max=beam_setp_max,
             polarity=pol,
@@ -681,6 +702,7 @@ def get_runs_conditions(
         "start": start,
         "stop": stop,
         "run_type": rt,
+        "data_stream": ds,
         "beam_setp_min": beam_setp_min,
         "beam_setp_max": beam_setp_max,
         "polarity": pol,
