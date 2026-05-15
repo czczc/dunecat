@@ -217,19 +217,33 @@ def count_files(
     meta: list[str] = Query(default_factory=list),
 ) -> dict[str, Any]:
     filters = _build_file_filters(runs, run_range, namespace, meta)
-    base_mql = build_mql(dataset, filters)
     client = _get_metacat_client()
-
     start = time.monotonic()
+
+    # Fast path: no filters → dataset's own file_count, fetched in one
+    # cheap call instead of a summary=count MQL query that can take
+    # minutes on large datasets.
+    if not (filters.runs or filters.run_range or filters.namespace or filters.meta):
+        ds = client.get_dataset(did=dataset)
+        if ds is None:
+            raise HTTPException(status_code=404, detail=f"Dataset not found: {dataset}")
+        total = ds.get("file_count") or 0
+        log.info(
+            "/api/files/count fast-path dataset=%s total=%d took=%.2fs",
+            dataset, total, time.monotonic() - start,
+        )
+        return {"total": total, "source": "dataset.file_count"}
+
+    base_mql = build_mql(dataset, filters)
     total = 0
     for summary in client.query(base_mql, summary="count"):
         total = summary.get("count", 0) if isinstance(summary, dict) else 0
         break
     log.info(
-        "/api/files/count dataset=%s total=%d took=%.2fs",
+        "/api/files/count slow-path dataset=%s total=%d took=%.2fs",
         dataset, total, time.monotonic() - start,
     )
-    return {"total": total}
+    return {"total": total, "source": "summary=count"}
 
 
 def _file_row(item: dict[str, Any]) -> dict[str, Any]:

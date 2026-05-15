@@ -426,13 +426,59 @@ def test_files_has_more_false_on_last_page(monkeypatch, client):
     assert len(body["rows"]) == 20
 
 
-def test_files_count_endpoint(monkeypatch, client):
-    items = [_file(f"f{i}.root") for i in range(250)]
-    fake = _install_query_client(monkeypatch, items)
+def test_files_count_fast_path_uses_dataset_file_count(monkeypatch, client):
+    class FakeClient:
+        def __init__(self):
+            self.query_calls = 0
+
+        def get_dataset(self, did=None, **kw):
+            return {"namespace": "ns", "name": "ds", "file_count": 18386}
+
+        def query(self, *a, **kw):
+            self.query_calls += 1
+            return iter(())
+
+    fc = FakeClient()
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: fc, raising=False
+    )
     response = client.get("/api/files/count", params={"dataset": "ns:ds"})
     assert response.status_code == 200
-    assert response.json() == {"total": 250}
-    assert fake.queries[0]["summary"] == "count"
+    body = response.json()
+    assert body["total"] == 18386
+    assert body["source"] == "dataset.file_count"
+    assert fc.query_calls == 0  # the fast path must NOT call client.query
+
+
+def test_files_count_fast_path_404_when_dataset_missing(monkeypatch, client):
+    class FakeClient:
+        def get_dataset(self, did=None, **kw):
+            return None
+
+        def query(self, *a, **kw):
+            return iter(())
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/files/count", params={"dataset": "ns:nope"})
+    assert response.status_code == 404
+
+
+def test_files_count_slow_path_when_filters_active(monkeypatch, client):
+    items = [_file(f"f{i}.root") for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+    # add get_dataset stub so fast-path check works
+    fake.get_dataset = lambda did=None, **kw: {"file_count": 0}
+    response = client.get(
+        "/api/files/count",
+        params={"dataset": "ns:ds", "runs": "27731"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 250
+    assert body["source"] == "summary=count"
+    assert any(q["summary"] == "count" for q in fake.queries)
 
 
 def test_files_count_endpoint_bad_filter_400(monkeypatch, client):

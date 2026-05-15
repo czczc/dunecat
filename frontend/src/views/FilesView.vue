@@ -297,31 +297,6 @@ function pickEvents(row) {
         </div>
 
         <template v-else-if="data">
-          <div class="table-card">
-            <div class="table-head" :class="{ 'with-meta': applied.withMetadata }">
-              <div class="th col-name">File</div>
-              <div class="th col-run" v-if="applied.withMetadata">Run</div>
-              <div class="th col-events" v-if="applied.withMetadata">Events</div>
-              <div class="th col-size">Size</div>
-              <div class="th col-created">Created</div>
-            </div>
-            <div
-              v-for="row in data.rows"
-              :key="row.did"
-              class="tr"
-              :class="{ 'with-meta': applied.withMetadata }"
-              @click="openFile(row.did)"
-            >
-              <div class="td col-name">
-                <span class="ns">{{ row.namespace }}:</span><span class="nm">{{ row.name }}</span>
-              </div>
-              <div class="td col-run" v-if="applied.withMetadata">{{ pickRun(row) }}</div>
-              <div class="td col-events" v-if="applied.withMetadata">{{ fmtNum(pickEvents(row)) }}</div>
-              <div class="td col-size">{{ fmtBytes(row.size) }}</div>
-              <div class="td col-created">{{ fmtTimestamp(row.created_timestamp) }}</div>
-            </div>
-          </div>
-
           <div class="pager">
             <div class="pager-info">
               Showing <strong>{{ (page - 1) * pageSize + 1 }}</strong>–<strong>{{
@@ -349,6 +324,31 @@ function pickEvents(row) {
               >
                 Next →
               </button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-head" :class="{ 'with-meta': applied.withMetadata }">
+              <div class="th col-name">File</div>
+              <div class="th col-run" v-if="applied.withMetadata">Run</div>
+              <div class="th col-events" v-if="applied.withMetadata">Events</div>
+              <div class="th col-size">Size</div>
+              <div class="th col-created">Created</div>
+            </div>
+            <div
+              v-for="row in data.rows"
+              :key="row.did"
+              class="tr"
+              :class="{ 'with-meta': applied.withMetadata }"
+              @click="openFile(row.did)"
+            >
+              <div class="td col-name">
+                <span class="ns">{{ row.namespace }}:</span><span class="nm">{{ row.name }}</span>
+              </div>
+              <div class="td col-run" v-if="applied.withMetadata">{{ pickRun(row) }}</div>
+              <div class="td col-events" v-if="applied.withMetadata">{{ fmtNum(pickEvents(row)) }}</div>
+              <div class="td col-size">{{ fmtBytes(row.size) }}</div>
+              <div class="td col-created">{{ fmtTimestamp(row.created_timestamp) }}</div>
             </div>
           </div>
         </template>
