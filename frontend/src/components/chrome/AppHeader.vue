@@ -1,5 +1,24 @@
 <script setup>
-import { RouterLink } from 'vue-router';
+import { onMounted } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
+import { nav, loadSavedQueries } from '../../composables/useNav.js';
+
+const router = useRouter();
+
+onMounted(() => {
+  loadSavedQueries();
+});
+
+function onSavedPicked(e) {
+  const raw = e.target.value;
+  e.target.value = '';
+  if (!raw) return;
+  if (raw === '__new__') {
+    router.push({ name: 'query' });
+  } else {
+    router.push({ name: 'query', query: { id: Number(raw) } });
+  }
+}
 </script>
 
 <template>
@@ -26,15 +45,16 @@ import { RouterLink } from 'vue-router';
       </RouterLink>
     </nav>
 
-    <div class="search">
-      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-        <circle cx="6" cy="6" r="4.5" fill="none" stroke="var(--faint)" stroke-width="1.5" />
-        <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" />
-      </svg>
-      <input type="text" placeholder="Search datasets, files, runs, queries…" disabled />
-    </div>
-
     <div class="right">
+      <select class="saved-picker" :value="''" @change="onSavedPicked">
+        <option value="" disabled>
+          {{ nav.savedQueries.length ? `★ Saved queries (${nav.savedQueries.length})…` : '★ Saved queries' }}
+        </option>
+        <option value="__new__">+ New query</option>
+        <option v-for="q in nav.savedQueries" :key="q.id" :value="q.id">
+          ★ {{ q.name }}
+        </option>
+      </select>
       <div class="user">CZ</div>
     </div>
   </header>
@@ -85,27 +105,19 @@ import { RouterLink } from 'vue-router';
   background: var(--accent);
 }
 
-.search {
-  flex: 1;
-  max-width: 440px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
+.saved-picker {
+  height: 30px;
   padding: 0 10px;
-  background: var(--surface);
   border: 1px solid var(--rule);
+  background: var(--page);
   border-radius: 8px;
-}
-.search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
   color: var(--body);
+  max-width: 260px;
+  cursor: pointer;
 }
-.search input::placeholder { color: var(--faint); }
+.saved-picker:hover { background: var(--surface); }
 
 .right {
   display: flex;

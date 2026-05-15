@@ -81,17 +81,6 @@ onMounted(async () => {
   loadPrefill();
 });
 
-function onSavedPicked(e) {
-  const raw = e.target.value;
-  e.target.value = '';
-  if (!raw) return;
-  if (raw === '__new__') {
-    router.push({ name: 'query' });
-  } else {
-    router.push({ name: 'query', query: { id: Number(raw) } });
-  }
-}
-
 // Validation
 const validating = ref(false);
 const validateResult = ref(null);  // null | {ok, error?}
@@ -295,21 +284,6 @@ function fmtTimestamp(ts) {
         >
           {{ isDraft ? 'draft' : '✓ saved' }}
         </span>
-        <select
-          class="saved-picker"
-          :value="''"
-          @change="onSavedPicked"
-        >
-          <option value="" disabled>
-            {{ nav.savedQueries.length ? `Saved queries (${nav.savedQueries.length})…` : 'No saved queries yet' }}
-          </option>
-          <option value="__new__">+ New query</option>
-          <option
-            v-for="q in nav.savedQueries"
-            :key="q.id"
-            :value="q.id"
-          >★ {{ q.name }}</option>
-        </select>
       </div>
       <p class="subtitle">
         Run raw MQL queries against the catalog. See the cheatsheet on the right or
@@ -636,19 +610,6 @@ function fmtTimestamp(ts) {
 }
 .save-status.draft { background: var(--surface); color: var(--dim); }
 .save-status.saved { background: var(--good-bg); color: var(--good); }
-
-.saved-picker {
-  margin-left: auto;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--rule);
-  background: var(--page);
-  border-radius: 7px;
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  color: var(--body);
-  max-width: 260px;
-}
 
 .name-input {
   border: none;
