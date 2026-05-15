@@ -264,7 +264,7 @@ const totalPages = computed(() =>
           v-model="pattern"
           type="text"
           class="search"
-          placeholder="fnmatch pattern — e.g. *cosmic* or *beam_2024*"
+          placeholder="Filter dataset name — e.g. cosmic or beam_2024"
         />
       </div>
 

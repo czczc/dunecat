@@ -1,4 +1,3 @@
-import fnmatch
 import logging
 import os
 import sqlite3
@@ -580,9 +579,10 @@ def _apply_filters(
     meta: list[str],
 ) -> list[dict[str, Any]]:
     meta_pairs = _parse_meta(meta)
+    needle = pattern.lower() if pattern else None
     out = []
     for ds in items:
-        if pattern and not fnmatch.fnmatch(ds["name"], pattern):
+        if needle and needle not in ds["name"].lower():
             continue
         md = ds.get("metadata") or {}
         if tier and not value_matches(md.get("core.data_tier"), tier):
