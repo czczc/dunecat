@@ -17,6 +17,11 @@ const router = createRouter({
       name: 'file-detail',
       component: () => import('./views/DetailView.vue'),
     },
+    {
+      path: '/query',
+      name: 'query',
+      component: () => import('./views/QueryView.vue'),
+    },
   ],
 });
 

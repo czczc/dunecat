@@ -548,6 +548,109 @@ def test_get_dataset_404_when_missing(monkeypatch, client):
     assert response.status_code == 404
 
 
+# --- /api/query/* ----------------------------------------------------------
+
+
+def test_query_run_pages_via_skip_limit(monkeypatch, client):
+    items = [_file(f"q{i}.root") for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+    response = client.post(
+        "/api/query/run",
+        json={"mql": "files from ns:ds", "page": 2, "page_size": 100},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["page"] == 2
+    assert body["has_more"] is True
+    assert len(body["rows"]) == 100
+    assert body["rows"][0]["name"] == "q100.root"
+    assert "skip 100 limit 100" in fake.queries[0]["mql"]
+
+
+def test_query_run_empty_mql_400(client):
+    response = client.post("/api/query/run", json={"mql": "   "})
+    assert response.status_code == 400
+
+
+def test_query_count_returns_total_and_size(monkeypatch, client):
+    class FakeClient:
+        def query(self, mql, summary=None, **kw):
+            assert summary == "count"
+            yield {"count": 384208, "total_size": 1_690_000_000_000}
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.post("/api/query/count", json={"mql": "files from ns:ds"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 384208
+    assert body["total_size"] == 1_690_000_000_000
+
+
+def test_query_validate_happy_path(monkeypatch, client):
+    class FakeClient:
+        def query(self, mql, summary=None, **kw):
+            yield {"count": 0, "total_size": 0}
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.post("/api/query/validate", json={"mql": "files from ns:ds"})
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_query_validate_returns_ok_false_on_mql_error(monkeypatch, client):
+    from unittest.mock import Mock
+
+    from metacat.webapi import MCWebAPIError
+
+    fake_response = Mock(status_code=400, text="MQL syntax error")
+    fake_response.headers = {}
+
+    class FakeClient:
+        def query(self, mql, summary=None, **kw):
+            raise MCWebAPIError("url", fake_response)
+            yield  # pragma: no cover
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.post("/api/query/validate", json={"mql": "bogus"})
+    assert response.status_code == 200  # validate never raises 400 — caller wants the message
+    body = response.json()
+    assert body["ok"] is False
+    assert "MQL syntax error" in body["error"]
+
+
+def test_query_validate_empty_mql_returns_ok_false(client):
+    response = client.post("/api/query/validate", json={"mql": ""})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is False
+    assert "empty" in body["error"].lower()
+
+
+def test_query_run_mql_error_returns_400(monkeypatch, client):
+    from unittest.mock import Mock
+    from metacat.webapi import MCWebAPIError as MCErr
+
+    fake_response = Mock(status_code=400, text="syntax error")
+    fake_response.headers = {}
+
+    class FakeClient:
+        def query(self, mql, **kw):
+            raise MCErr("url", fake_response)
+            yield  # pragma: no cover
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.post("/api/query/run", json={"mql": "bad"})
+    assert response.status_code == 400
+
+
 def test_files_count_slow_path_when_filters_active(monkeypatch, client):
     items = [_file(f"f{i}.root") for i in range(250)]
     fake = _install_query_client(monkeypatch, items)

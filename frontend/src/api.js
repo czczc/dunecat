@@ -42,3 +42,24 @@ export const getFilesCount = (params) =>
 
 export const getFile = (did) => jsonFetch(`/api/file?${buildQuery({ did })}`);
 export const getDataset = (did) => jsonFetch(`/api/dataset?${buildQuery({ did })}`);
+
+export const runQuery = (mql, page, pageSize) =>
+  jsonFetch('/api/query/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mql, page, page_size: pageSize }),
+  });
+
+export const countQuery = (mql) =>
+  jsonFetch('/api/query/count', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mql }),
+  });
+
+export const validateQuery = (mql) =>
+  jsonFetch('/api/query/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mql }),
+  });

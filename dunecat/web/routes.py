@@ -7,7 +7,8 @@ from typing import Any
 
 log = logging.getLogger("uvicorn.error")
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Body, FastAPI, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from metacat.webapi import AuthenticationError, MCWebAPIError
@@ -206,6 +207,72 @@ def list_files(
         "rows": rows,
         "has_more": len(rows) == page_size,
     }
+
+
+class _QueryRequest(BaseModel):
+    mql: str
+
+
+class _QueryRunRequest(BaseModel):
+    mql: str
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=100, ge=1, le=500)
+
+
+@app.post("/api/query/run")
+def query_run(req: _QueryRunRequest) -> dict[str, Any]:
+    mql = req.mql.strip()
+    if not mql:
+        raise HTTPException(status_code=400, detail="mql is required")
+    paged_mql = f"({mql}) ordered skip {(req.page - 1) * req.page_size} limit {req.page_size}"
+    client = _get_metacat_client()
+    start = time.monotonic()
+    rows = [_file_row(item) for item in client.query(paged_mql)]
+    log.info(
+        "/api/query/run page=%d rows=%d took=%.2fs",
+        req.page, len(rows), time.monotonic() - start,
+    )
+    return {
+        "page": req.page,
+        "page_size": req.page_size,
+        "rows": rows,
+        "has_more": len(rows) == req.page_size,
+    }
+
+
+@app.post("/api/query/count")
+def query_count(req: _QueryRequest) -> dict[str, Any]:
+    mql = req.mql.strip()
+    if not mql:
+        raise HTTPException(status_code=400, detail="mql is required")
+    client = _get_metacat_client()
+    start = time.monotonic()
+    total = 0
+    total_size = 0
+    for summary in client.query(mql, summary="count"):
+        if isinstance(summary, dict):
+            total = summary.get("count", 0)
+            total_size = summary.get("total_size", 0)
+        break
+    log.info(
+        "/api/query/count total=%d took=%.2fs",
+        total, time.monotonic() - start,
+    )
+    return {"total": total, "total_size": total_size}
+
+
+@app.post("/api/query/validate")
+def query_validate(req: _QueryRequest) -> dict[str, Any]:
+    mql = req.mql.strip()
+    if not mql:
+        return {"ok": False, "error": "MQL is empty"}
+    client = _get_metacat_client()
+    try:
+        for _ in client.query(mql, summary="count"):
+            break
+    except MCWebAPIError as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True}
 
 
 @app.get("/api/file")
