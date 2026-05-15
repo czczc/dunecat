@@ -33,3 +33,6 @@ export const refreshDatasets = (detectorId) =>
   jsonFetch(`/api/datasets/refresh?${buildQuery({ detector: detectorId })}`, {
     method: 'POST',
   });
+
+export const getFiles = (params) =>
+  jsonFetch(`/api/files?${buildQuery(params)}`);

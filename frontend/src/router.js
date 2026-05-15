@@ -10,6 +10,11 @@ const router = createRouter({
     {
       path: '/dataset/:did/files',
       name: 'dataset-files',
+      component: () => import('./views/FilesView.vue'),
+    },
+    {
+      path: '/file/:did',
+      name: 'file-detail',
       component: () => import('./views/PlaceholderView.vue'),
     },
   ],

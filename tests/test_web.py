@@ -331,3 +331,173 @@ def test_datasets_official_only_false_keeps_non_dunepro(monkeypatch, client):
     assert "delta_user_test" in names
     # Empty still dropped
     assert "epsilon_empty" not in names
+
+
+# --- /api/files ------------------------------------------------------------
+
+
+class _FakeQueryClient:
+    """Mimics MetaCatClient.query for /api/files tests.
+
+    Returns a count summary for summary='count', else streams from a
+    fixture list applying naive skip/limit parsing of the MQL.
+    """
+
+    def __init__(self, items, raises=None):
+        self._items = items
+        self._raises = raises
+        self.queries: list[dict] = []
+
+    def query(self, mql, summary=None, with_metadata=False, batch_size=0):
+        self.queries.append(
+            {"mql": mql, "summary": summary, "with_metadata": with_metadata}
+        )
+        if self._raises is not None:
+            raise self._raises
+        if summary == "count":
+            yield {"count": len(self._items), "total_size": 0}
+            return
+        # Crude parse of "(...) ordered skip N limit M" to slice the fixture
+        skip = 0
+        limit = len(self._items)
+        if "skip" in mql and "limit" in mql:
+            tail = mql.split("ordered ", 1)[1]
+            parts = tail.split()
+            skip = int(parts[1])
+            limit = int(parts[3])
+        for item in self._items[skip : skip + limit]:
+            yield item
+
+
+def _install_query_client(monkeypatch, items, raises=None):
+    fake = _FakeQueryClient(items, raises=raises)
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: fake, raising=False
+    )
+    return fake
+
+
+def _file(name, run=None, size=1000):
+    item = {
+        "namespace": "hd-protodune-det-reco",
+        "name": name,
+        "fid": f"fid-{name}",
+        "size": size,
+        "created_timestamp": 1.0,
+    }
+    if run is not None:
+        item["metadata"] = {"core.runs": [run]}
+    return item
+
+
+def test_files_pagination_returns_total_and_page_rows(monkeypatch, client):
+    items = [_file(f"f{i}.root", run=27731 + i) for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "page": 2,
+            "page_size": 100,
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["total"] == 250
+    assert body["page"] == 2
+    assert body["page_size"] == 100
+    assert len(body["rows"]) == 100
+    assert body["rows"][0]["name"] == "f100.root"
+    # First call must be summary=count, second the paged fetch
+    assert fake.queries[0]["summary"] == "count"
+    assert "skip 100 limit 100" in fake.queries[1]["mql"]
+
+
+def test_files_runs_filter_composes_into_mql(monkeypatch, client):
+    fake = _install_query_client(monkeypatch, [_file("a.root", run=27731)])
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "runs": "27731,27732",
+        },
+    )
+    assert response.status_code == 200
+    assert "core.runs in (27731,27732)" in fake.queries[0]["mql"]
+
+
+def test_files_run_range_and_meta_filters_compose(monkeypatch, client):
+    fake = _install_query_client(monkeypatch, [])
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "run_range": "27000-28000",
+            "meta": ["dune.output_status=confirmed"],
+        },
+    )
+    assert response.status_code == 200
+    mql = fake.queries[0]["mql"]
+    assert "core.runs >= 27000 and core.runs <= 27999" not in mql  # confirm inclusive range
+    assert "core.runs >= 27000 and core.runs <= 28000" in mql
+    assert "dune.output_status = 'confirmed'" in mql
+
+
+def test_files_with_metadata_flag_passes_through(monkeypatch, client):
+    items = [_file("a.root", run=27731)]
+    fake = _install_query_client(monkeypatch, items)
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "with_metadata": "true",
+        },
+    )
+    body = response.json()
+    assert body["rows"][0]["metadata"] == {"core.runs": [27731]}
+    # Second query was the paged fetch with with_metadata=True
+    assert fake.queries[1]["with_metadata"] is True
+
+
+def test_files_bad_run_range_400(monkeypatch, client):
+    _install_query_client(monkeypatch, [])
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "run_range": "not-a-range",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_files_bad_meta_400(monkeypatch, client):
+    _install_query_client(monkeypatch, [])
+    response = client.get(
+        "/api/files",
+        params={
+            "dataset": "hd-protodune-det-reco:ds",
+            "meta": ["nope"],
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_files_mql_error_surfaces_as_400(monkeypatch, client):
+    from unittest.mock import Mock
+
+    from metacat.webapi import MCWebAPIError
+
+    fake_response = Mock(status_code=400, text="MQL syntax error at col 5")
+    fake_response.headers = {}
+    _install_query_client(
+        monkeypatch, [], raises=MCWebAPIError("https://meta.example/q", fake_response)
+    )
+
+    response = client.get(
+        "/api/files",
+        params={"dataset": "hd-protodune-det-reco:ds"},
+    )
+    assert response.status_code == 400
+    assert "MQL syntax error" in response.json()["detail"]

@@ -8,7 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from metacat.webapi import AuthenticationError, MCWebAPIError
 
-from dunecat.filters import value_matches
+from dunecat.client import get_client as _get_metacat_client
+from dunecat.files import build_mql
+from dunecat.filters import (
+    FileFilters,
+    parse_run_range,
+    parse_runs,
+    value_matches,
+)
 
 from . import cache
 from .detectors import (
@@ -142,6 +149,64 @@ def list_datasets(
         "page_size": page_size,
         "fetched_at": fetched_at.isoformat(),
         "rows": rows,
+    }
+
+
+@app.get("/api/files")
+def list_files(
+    dataset: str = Query(...),
+    runs: str | None = Query(None),
+    run_range: str | None = Query(None),
+    namespace: str | None = Query(None),
+    meta: list[str] = Query(default_factory=list),
+    with_metadata: bool = Query(False),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
+) -> dict[str, Any]:
+    try:
+        filters = FileFilters(
+            runs=parse_runs(runs),
+            run_range=parse_run_range(run_range),
+            namespace=namespace,
+            meta=tuple(_parse_meta(meta)),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    base_mql = build_mql(dataset, filters)
+    client = _get_metacat_client()
+
+    total = 0
+    for summary in client.query(base_mql, summary="count"):
+        total = summary.get("count", 0) if isinstance(summary, dict) else 0
+        break
+
+    offset = (page - 1) * page_size
+    paged_mql = f"({base_mql}) ordered skip {offset} limit {page_size}"
+    rows = [
+        _file_row(item)
+        for item in client.query(paged_mql, with_metadata=with_metadata)
+    ]
+
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "rows": rows,
+    }
+
+
+def _file_row(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "did": f"{item['namespace']}:{item['name']}",
+        "namespace": item["namespace"],
+        "name": item["name"],
+        "fid": item.get("fid"),
+        "size": item.get("size"),
+        "created_timestamp": item.get("created_timestamp"),
+        "updated_timestamp": item.get("updated_timestamp"),
+        "checksums": item.get("checksums"),
+        "metadata": item.get("metadata"),
     }
 
 

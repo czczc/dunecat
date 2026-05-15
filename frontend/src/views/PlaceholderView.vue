@@ -11,7 +11,7 @@ const route = useRoute();
     </div>
     <div class="placeholder">
       <div class="placeholder-body">
-        FilesView lands in F3 — this route is a placeholder for clicks coming from DatasetsView.
+        File detail view lands in F4 — this route is a placeholder for clicks coming from FilesView.
       </div>
     </div>
   </div>
