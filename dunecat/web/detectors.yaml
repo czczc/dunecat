@@ -1,0 +1,18 @@
+- id: protodune-hd
+  name: ProtoDUNE-HD
+  namespaces:
+    - hd-protodune
+    - hd-protodune-det-reco
+- id: protodune-vd
+  name: ProtoDUNE-VD
+  namespaces:
+    - vd-protodune
+- id: fardet-hd
+  name: DUNE FD-HD
+  namespaces:
+    - fardet-hd
+- id: fardet-vd
+  name: DUNE FD-VD
+  namespaces:
+    - fardet-vd
+    - fd_vd_mc_reco

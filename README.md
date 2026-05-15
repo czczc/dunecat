@@ -142,8 +142,40 @@ exit 1.
 ## Development
 
 ```bash
-uv run pytest          # 101 unit tests, no network
+uv run pytest          # backend unit tests, no network
 ```
 
 Unit tests mock `MetaCatClient` at the boundary. There are no integration tests in CI;
 the live verification path is running the CLI against the production server manually.
+
+## Web UI (in progress)
+
+A FastAPI backend (`dunecat/web/`) plus a Vite + Vue 3 frontend (`frontend/`) provide a
+browser-based explorer for the same catalog. Single-user local app; reuses
+`~/.token_library` for auth.
+
+### Dev runbook
+
+Two terminals — `uvicorn` is **not** run with `--reload` (the file-watcher is CPU-heavy
+on macOS); restart manually after backend code changes.
+
+```bash
+# Terminal 1 — backend
+uv run uvicorn dunecat.web:app --port 8000
+
+# Terminal 2 — frontend
+cd frontend
+npm install              # first time only
+npm run dev              # → http://localhost:5173
+```
+
+The frontend's Vite dev server proxies `/api/*` to `http://localhost:8000`.
+
+### Endpoints (so far)
+
+- `GET /api/detectors` — list of sub-detectors with live `datasets_count` and
+  `files_count` per detector, sourced from `dunecat/web/detectors.yaml` and
+  enriched from metacat.
+
+Token-expired → 401 with the same `metacat auth login` instruction the CLI emits.
+MQL / metacat server errors → 400 with the server's message in `detail`.

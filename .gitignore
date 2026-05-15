@@ -16,3 +16,4 @@ wheels/
 
 # Test artefacts
 .pytest_cache/
+.design/

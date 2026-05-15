@@ -1,0 +1,44 @@
+:root {
+  /* surfaces */
+  --bg:        #fbf8f1;
+  --page:      #fefcf7;
+  --surface:   #f4efe3;
+  --surface-2: #ebe4d4;
+
+  /* text */
+  --ink:   #1c1812;
+  --body:  #2a241b;
+  --dim:   #6e6453;
+  --faint: #a59982;
+
+  /* rules */
+  --rule:      #e6dfcd;
+  --rule-soft: #ede7d7;
+  --rule-hard: #cdc3aa;
+
+  /* accent (amber) */
+  --accent:      oklch(0.55 0.13 55);
+  --accent-ink:  oklch(0.42 0.13 55);
+  --accent-soft: oklch(0.96 0.03 70);
+  --accent-bg:   oklch(0.93 0.05 70);
+
+  /* status */
+  --good:    oklch(0.50 0.10 145);
+  --good-bg: oklch(0.94 0.04 145);
+  --warn:    oklch(0.58 0.13 50);
+  --warn-bg: oklch(0.95 0.05 60);
+  --bad:     oklch(0.52 0.16 25);
+  --bad-bg:  oklch(0.94 0.05 25);
+  --info:    oklch(0.50 0.10 220);
+
+  /* type */
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* radii / shadow */
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+  --shadow-card: 0 1px 0 var(--rule-soft);
+}
