@@ -59,7 +59,9 @@ def datasets_for_detector(
 
 
 def apply_default_filters(
-    items: list[dict[str, Any]], official_only: bool = True
+    items: list[dict[str, Any]],
+    official_only: bool = True,
+    with_metadata_only: bool = False,
 ) -> list[dict[str, Any]]:
     out = []
     for ds in items:
@@ -67,5 +69,9 @@ def apply_default_filters(
             continue
         if official_only and ds.get("creator") != "dunepro":
             continue
+        if with_metadata_only:
+            md = ds.get("metadata") or {}
+            if not md or list(md.keys()) == ["dune.workflow"]:
+                continue
         out.append(ds)
     return out

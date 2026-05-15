@@ -21,6 +21,7 @@ const activeCounts = computed(() => nav.counts[detectorId.value] || null);
 const pattern = ref('');
 const tier = ref('all');
 const officialOnly = ref(true);
+const withMetadataOnly = ref(true);
 const page = ref(1);
 const PAGE_SIZE = 100;
 
@@ -52,6 +53,7 @@ async function fetchPage() {
       pattern: pattern.value || null,
       tier: tierValue,
       official_only: officialOnly.value,
+      with_metadata_only: withMetadataOnly.value,
       page: page.value,
       page_size: PAGE_SIZE,
     });
@@ -63,7 +65,7 @@ async function fetchPage() {
   }
 }
 
-watch([detectorId, tier, officialOnly], () => {
+watch([detectorId, tier, officialOnly, withMetadataOnly], () => {
   page.value = 1;
   fetchPage();
 });
@@ -183,7 +185,17 @@ const totalPages = computed(() =>
     <template v-else>
       <!-- Detector hero card -->
       <div class="hero" v-if="activeDetector">
-        <div class="hero-name">{{ activeDetector.name }}</div>
+        <div class="hero-main">
+          <div class="hero-name">{{ activeDetector.name }}</div>
+          <div class="hero-namespaces">
+            <span class="ns-label">namespaces</span>
+            <code
+              v-for="ns in activeDetector.namespaces"
+              :key="ns"
+              class="ns-tag"
+            >{{ ns }}</code>
+          </div>
+        </div>
         <div class="hero-stats">
           <div class="stat">
             <div class="stat-label">Datasets</div>
@@ -220,6 +232,14 @@ const totalPages = computed(() =>
             :title="officialOnly ? 'Showing only datasets created by dunepro' : 'Showing datasets from all creators'"
           >
             Official only
+          </button>
+          <button
+            class="chip"
+            :class="{ active: withMetadataOnly }"
+            @click="withMetadataOnly = !withMetadataOnly"
+            :title="withMetadataOnly ? 'Hiding datasets that report no metadata (often test datasets)' : 'Showing all datasets, including those with empty metadata'"
+          >
+            With metadata
           </button>
         </div>
         <input
@@ -377,7 +397,32 @@ const totalPages = computed(() =>
   border-radius: 10px;
   margin-bottom: 16px;
 }
-.hero-name { font-size: 17px; font-weight: 600; color: var(--ink); flex: 1; }
+.hero-main { flex: 1; min-width: 0; }
+.hero-name { font-size: 17px; font-weight: 600; color: var(--ink); }
+.hero-namespaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ns-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-right: 2px;
+}
+.ns-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
 .hero-stats { display: flex; gap: 28px; }
 .stat-label {
   font-size: 11px;
@@ -502,7 +547,9 @@ const totalPages = computed(() =>
   transition: background 0.12s;
 }
 .tr:hover { background: var(--surface); }
+.td, .th { min-width: 0; }
 .td { font-size: 12.5px; color: var(--ink); }
+.col-name { overflow-wrap: anywhere; }
 .col-name .ns {
   font-family: var(--font-mono);
   color: var(--faint);

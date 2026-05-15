@@ -134,6 +134,7 @@ def list_datasets(
     tier: str | None = Query(None),
     meta: list[str] = Query(default_factory=list),
     official_only: bool = Query(True),
+    with_metadata_only: bool = Query(True),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
 ) -> dict[str, Any]:
@@ -142,7 +143,11 @@ def list_datasets(
         raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
 
     items, fetched_at = datasets_for_detector(det["namespaces"])
-    items = apply_default_filters(items, official_only=official_only)
+    items = apply_default_filters(
+        items,
+        official_only=official_only,
+        with_metadata_only=with_metadata_only,
+    )
     filtered = _apply_filters(items, pattern=pattern, tier=tier, meta=meta)
 
     total = len(filtered)
