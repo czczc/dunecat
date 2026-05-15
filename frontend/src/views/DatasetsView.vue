@@ -130,6 +130,24 @@ function fmtTimestamp(ts) {
   return d.toISOString().slice(0, 10);
 }
 
+function fmtRuns(runs) {
+  let arr = null;
+  if (Array.isArray(runs)) {
+    arr = runs.filter((r) => Number.isFinite(Number(r))).map(Number);
+  } else if (typeof runs === 'string') {
+    const nums = runs.match(/\d+/g);
+    if (nums) arr = nums.map(Number);
+  }
+  if (!arr || arr.length === 0) return '—';
+  let min = arr[0];
+  let max = arr[0];
+  for (const r of arr) {
+    if (r < min) min = r;
+    if (r > max) max = r;
+  }
+  return min === max ? `${min}` : `${min}–${max}`;
+}
+
 function fmtRelative(iso) {
   if (!iso) return '';
   const then = new Date(iso).getTime();
@@ -300,6 +318,7 @@ const totalPages = computed(() =>
         <div class="table-card">
           <div class="table-head">
             <div class="th col-name">Dataset</div>
+            <div class="th col-runs">Runs</div>
             <div class="th col-files">Files</div>
             <div class="th col-tier">Tier</div>
             <div class="th col-updated">Updated</div>
@@ -313,6 +332,7 @@ const totalPages = computed(() =>
             <div class="td col-name">
               <span class="ns">{{ row.namespace }}</span><span class="sep">:</span><span class="nm">{{ row.name }}</span>
             </div>
+            <div class="td col-runs">{{ fmtRuns(row.metadata['core.runs']) }}</div>
             <div class="td col-files">{{ fmtNum(row.file_count) }}</div>
             <div class="td col-tier">{{ row.metadata['core.data_tier'] || '—' }}</div>
             <div class="td col-updated">{{ fmtTimestamp(row.updated_timestamp || row.created_timestamp) }}</div>
@@ -524,7 +544,7 @@ const totalPages = computed(() =>
 }
 .table-head, .tr {
   display: grid;
-  grid-template-columns: 2.4fr 110px 140px 110px;
+  grid-template-columns: 2.4fr 130px 100px 140px 110px;
   gap: 12px;
   padding: 8px 16px;
   align-items: center;
@@ -557,7 +577,7 @@ const totalPages = computed(() =>
 }
 .col-name .sep { color: var(--faint); margin: 0 2px; }
 .col-name .nm { font-family: var(--font-sans); font-weight: 500; }
-.col-files, .col-tier, .col-updated {
+.col-runs, .col-files, .col-tier, .col-updated {
   font-family: var(--font-mono);
   text-align: right;
   color: var(--dim);
