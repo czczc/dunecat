@@ -1,5 +1,6 @@
 import fnmatch
 import os
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -174,19 +175,26 @@ def list_files(
         raise HTTPException(status_code=400, detail=str(e))
 
     base_mql = build_mql(dataset, filters)
-    client = _get_metacat_client()
-
-    total = 0
-    for summary in client.query(base_mql, summary="count"):
-        total = summary.get("count", 0) if isinstance(summary, dict) else 0
-        break
-
     offset = (page - 1) * page_size
     paged_mql = f"({base_mql}) ordered skip {offset} limit {page_size}"
-    rows = [
-        _file_row(item)
-        for item in client.query(paged_mql, with_metadata=with_metadata)
-    ]
+    client = _get_metacat_client()
+
+    def fetch_total() -> int:
+        for summary in client.query(base_mql, summary="count"):
+            return summary.get("count", 0) if isinstance(summary, dict) else 0
+        return 0
+
+    def fetch_rows() -> list[dict[str, Any]]:
+        return [
+            _file_row(item)
+            for item in client.query(paged_mql, with_metadata=with_metadata)
+        ]
+
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        total_future = ex.submit(fetch_total)
+        rows_future = ex.submit(fetch_rows)
+        total = total_future.result()
+        rows = rows_future.result()
 
     return {
         "total": total,
