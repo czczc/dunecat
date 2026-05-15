@@ -230,16 +230,21 @@ const totalPages = computed(() =>
         />
       </div>
 
-      <!-- Toolbar: pager + refresh, above the table -->
+      <!-- Toolbar: refresh on the left, pager on the right -->
       <div class="toolbar" v-if="data && data.total > 0">
-        <div class="pager-info">
-          Showing
-          <strong>{{ (page - 1) * PAGE_SIZE + 1 }}</strong>
-          –<strong>{{ Math.min(page * PAGE_SIZE, data.total) }}</strong>
-          of <strong>{{ fmtNum(data.total) }}</strong>
-          · Fetched {{ fmtRelative(data.fetched_at) }}
+        <div class="toolbar-left">
+          <button class="btn" :disabled="loading" @click="onRefresh">
+            {{ loading ? 'Refreshing…' : 'Refresh' }}
+          </button>
+          <span class="fetched">Fetched {{ fmtRelative(data.fetched_at) }}</span>
         </div>
         <div class="pager-controls">
+          <span class="pager-info">
+            Showing
+            <strong>{{ (page - 1) * PAGE_SIZE + 1 }}</strong>
+            –<strong>{{ Math.min(page * PAGE_SIZE, data.total) }}</strong>
+            of <strong>{{ fmtNum(data.total) }}</strong>
+          </span>
           <button class="btn" :disabled="page <= 1 || loading" @click="page -= 1">
             ← Prev
           </button>
@@ -250,9 +255,6 @@ const totalPages = computed(() =>
             @click="page += 1"
           >
             Next →
-          </button>
-          <button class="btn" :disabled="loading" @click="onRefresh">
-            {{ loading ? 'Refreshing…' : 'Refresh' }}
           </button>
         </div>
       </div>
@@ -435,7 +437,7 @@ const totalPages = computed(() =>
 }
 .search:focus { border-color: var(--accent); }
 
-/* Toolbar above table: pager + refresh */
+/* Toolbar above table: refresh on left, pager on right */
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -445,6 +447,8 @@ const totalPages = computed(() =>
   flex-wrap: wrap;
   gap: 10px;
 }
+.toolbar-left { display: flex; align-items: center; gap: 10px; }
+.fetched { color: var(--faint); font-family: var(--font-mono); font-size: 12px; }
 
 /* Generic btn */
 .btn {
