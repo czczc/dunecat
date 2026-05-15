@@ -1,8 +1,12 @@
 import fnmatch
+import logging
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import Any
+
+log = logging.getLogger("uvicorn.error")
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -180,21 +184,38 @@ def list_files(
     client = _get_metacat_client()
 
     def fetch_total() -> int:
-        for summary in client.query(base_mql, summary="count"):
-            return summary.get("count", 0) if isinstance(summary, dict) else 0
-        return 0
+        start = time.monotonic()
+        try:
+            for summary in client.query(base_mql, summary="count"):
+                return summary.get("count", 0) if isinstance(summary, dict) else 0
+            return 0
+        finally:
+            log.info("count query took %.2fs", time.monotonic() - start)
 
     def fetch_rows() -> list[dict[str, Any]]:
-        return [
-            _file_row(item)
-            for item in client.query(paged_mql, with_metadata=with_metadata)
-        ]
+        start = time.monotonic()
+        try:
+            return [
+                _file_row(item)
+                for item in client.query(paged_mql, with_metadata=with_metadata)
+            ]
+        finally:
+            log.info(
+                "page query took %.2fs (with_metadata=%s)",
+                time.monotonic() - start,
+                with_metadata,
+            )
 
+    request_start = time.monotonic()
     with ThreadPoolExecutor(max_workers=2) as ex:
         total_future = ex.submit(fetch_total)
         rows_future = ex.submit(fetch_rows)
         total = total_future.result()
         rows = rows_future.result()
+    log.info(
+        "/api/files dataset=%s page=%d total=%d wall=%.2fs",
+        dataset, page, total, time.monotonic() - request_start,
+    )
 
     return {
         "total": total,
