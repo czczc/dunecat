@@ -68,6 +68,8 @@ async function fetchFacets() {
   try {
     facets.value = await getDatasetsFacets({
       detector: detectorId.value,
+      tier: tier.value || null,
+      file_type: fileType.value || null,
       official_only: officialOnly.value,
       with_metadata_only: withMetadataOnly.value,
     });
@@ -76,12 +78,28 @@ async function fetchFacets() {
   }
 }
 
+const tierOptions = computed(() => {
+  const list = facets.value.tiers || [];
+  if (tier.value && !list.some((t) => t.value === tier.value)) {
+    return [...list, { value: tier.value, count: 0 }];
+  }
+  return list;
+});
+
+const fileTypeOptions = computed(() => {
+  const list = facets.value.file_types || [];
+  if (fileType.value && !list.some((t) => t.value === fileType.value)) {
+    return [...list, { value: fileType.value, count: 0 }];
+  }
+  return list;
+});
+
 watch([detectorId, tier, fileType, officialOnly, withMetadataOnly], () => {
   page.value = 1;
   fetchPage();
 });
 
-watch([detectorId, officialOnly, withMetadataOnly], () => {
+watch([detectorId, tier, fileType, officialOnly, withMetadataOnly], () => {
   fetchFacets();
 });
 
@@ -252,7 +270,7 @@ const totalPages = computed(() =>
           <span class="facet-label">Tier</span>
           <select v-model="tier" class="facet-select">
             <option value="">All</option>
-            <option v-for="t in facets.tiers" :key="t.value" :value="t.value">
+            <option v-for="t in tierOptions" :key="t.value" :value="t.value">
               {{ t.value }} ({{ t.count }})
             </option>
           </select>
@@ -261,7 +279,7 @@ const totalPages = computed(() =>
           <span class="facet-label">File type</span>
           <select v-model="fileType" class="facet-select">
             <option value="">All</option>
-            <option v-for="t in facets.file_types" :key="t.value" :value="t.value">
+            <option v-for="t in fileTypeOptions" :key="t.value" :value="t.value">
               {{ t.value }} ({{ t.count }})
             </option>
           </select>

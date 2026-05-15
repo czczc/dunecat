@@ -1,181 +1,94 @@
 # dunecat
 
-Locate DUNE data files via metacat queries. A thin Python library + CLI on top of
-[`metacat-client`](https://fermitools.github.io/metacat/) tailored to the workflows of
-finding datasets, inspecting metadata, and filtering files by run, run range, date, or
-arbitrary metadata.
+A local web app for browsing the DUNE metacat file catalog: pick a detector,
+narrow datasets by tier / file type, look up runs, and run raw MQL queries —
+all from a browser, against the production metacat server.
+
+A Python CLI ships alongside for scripting the same operations from the
+terminal; see [`dunecat/README.md`](dunecat/README.md) for that.
+
+## Requirements
+
+- Python 3.12+ and [`uv`](https://docs.astral.sh/uv/)
+- Node.js 20+ and `npm`
+- A DUNE metacat account
 
 ## Install
-
-Requires Python 3.12+ and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 git clone git@github.com:czczc/dunecat.git
 cd dunecat
-uv sync
+uv sync                 # backend deps + the dunecat CLI
+cd frontend && npm install && cd ..   # frontend deps (first time only)
 ```
 
 ## Configure
-
-Copy the template and fill in the server URLs:
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` defaults to the production DUNE instance:
+`.env` defaults to the production DUNE instance. Fill in your DUNE username
+and preferred auth method:
 
 ```
 METACAT_SERVER_URL=https://metacat.fnal.gov:9443/dune_meta_prod/app
 METACAT_AUTH_SERVER_URL=https://metacat.fnal.gov:8143/auth/dune
+METACAT_USER=<your-username>
+METACAT_AUTH_METHOD=password          # or x509 / token; see `metacat auth login --help`
 ```
 
-Authenticate once with the upstream `metacat` CLI to populate `~/.token_library`:
+Authenticate once to populate `~/.token_library` (reused by both the web app
+and the CLI):
 
 ```bash
-metacat -s $METACAT_SERVER_URL -a $METACAT_AUTH_SERVER_URL auth login -m <method> <username>
+uv run dunecat login                  # uses .env defaults; --user/--method override
 ```
 
-Tokens expire after one week. When `dunecat` returns exit code 2 with
-`Token missing or expired`, re-run the command above.
+This wraps the upstream `metacat auth login` command using the URLs and
+defaults from `.env`. Tokens expire after one week. When the app returns
+`Token missing or expired`, re-run `uv run dunecat login`.
 
-## Commands
+## Run the web app
 
-All commands write payload to stdout and progress/errors to stderr. List-shaped output
-is one identifier per line by default; `--json` emits JSONL (one object per line) so the
-stream stays memory-bounded. `dataset show` prints a `rich` table for humans and a
-single-line JSON object with `--json`.
-
-### List datasets
+Two terminals — `uvicorn` is **not** run with `--reload` (the macOS file-watcher
+is CPU-heavy); restart manually after backend code changes.
 
 ```bash
-# fnmatch pattern as 'NAMESPACE:NAME_PATTERN'
+# Terminal 1 — backend (FastAPI on :8000)
+uv run uvicorn dunecat.web:app --port 8000
+
+# Terminal 2 — frontend (Vite dev server on :5173)
+cd frontend
+npm run dev
+```
+
+Open <http://127.0.0.1:5173>. Use `127.0.0.1`, not `localhost` — macOS prefers
+IPv6 for `localhost` while uvicorn binds IPv4 only.
+
+The frontend proxies `/api/*` to the backend; switching detectors, dataset
+metadata, file lineage, run lookups, and saved MQL queries all live in the UI.
+
+## CLI
+
+```bash
 uv run dunecat dataset list 'hd-protodune-det-reco:*cosmic*'
-
-# restrict to a namespace, filter by dataset metadata (client-side)
-uv run dunecat dataset list \
-  --namespace hd-protodune-det-reco \
-  --meta core.data_tier=full-reconstructed
 ```
 
-### Inspect one dataset
-
-```bash
-uv run dunecat dataset show \
-  'hd-protodune-det-reco:full-reconstructed__v09_91_02d01__standard_reco_stage2_calibration_protodunehd_keepup__cosmic_runchunk4_v1_official'
-```
-
-### List files in a dataset, filtered
-
-```bash
-DS='hd-protodune-det-reco:full-reconstructed__v09_91_02d01__standard_reco_stage2_calibration_protodunehd_keepup__cosmic_runchunk4_v1_official'
-
-# explicit run numbers
-uv run dunecat dataset files "$DS" --runs 27731,27732
-
-# inclusive numeric range
-uv run dunecat dataset files "$DS" --run-range 27000-28000
-
-# generic metadata equality (repeatable; ANDed)
-uv run dunecat dataset files "$DS" --meta dune.output_status=confirmed
-
-# UTC date range against the run timestamp extracted from the filename
-uv run dunecat dataset files "$DS" --date-range 2024-07-01:2024-07-31
-
-# one representative file per UTC calendar date (post-filter)
-uv run dunecat dataset files "$DS" --one-per-day
-
-# include full file metadata in the output
-uv run dunecat dataset files "$DS" --runs 27731 --json --with-metadata
-```
-
-The default filename timestamp regex is `(\d{8}T\d{6})` — the first
-`YYYYMMDDTHHMMSS` match in the file's name portion of the DID, parsed as UTC. Override
-with `--filename-time-regex PATTERN` and `--filename-time-format STRFTIME` for other
-naming conventions.
-
-To prevent client-side date filters from chewing through huge candidate sets, the
-streaming pipeline aborts (exit 1) if more than `--date-range-max-candidates` files
-arrive before the post-filter (default 10000). Narrow with `--runs`, `--run-range`,
-`--namespace`, or `--meta` first.
-
-### Distinct values for a metadata field
-
-```bash
-# what runs are in this dataset?
-uv run dunecat dataset values "$DS" core.runs
-
-# JSON array of distinct status values
-uv run dunecat dataset values "$DS" dune.output_status --json
-```
-
-### Which datasets contain a file
-
-Given a file DID (a single file's `namespace:name`), list the datasets it belongs to.
-A file commonly lives in several datasets: an umbrella like `dune:all`, a per-batch
-production set, and curated subsets.
-
-```bash
-uv run dunecat file datasets \
-  'hd-protodune-det-reco:np04hd_raw_run027731_0003_dataflow1_datawriter_0_20240705T122251_reco_stage1_reco_stage2_20241004T202612_keepup.root'
-
-# JSON array
-uv run dunecat file datasets "$FILE_DID" --json
-```
-
-Unknown file DID → exit 1 with `File not found: <did>` on stderr.
-
-### Raw MQL
-
-When the structured filters don't cover what you need, pass raw MQL through:
-
-```bash
-uv run dunecat query "files from $DS where core.runs in (27731,27732) and dune.output_status='confirmed'"
-
-# JSONL with full metadata
-uv run dunecat query "files from $DS where core.runs in (27731)" --json --with-metadata
-```
-
-MQL syntax errors from the server surface with the server's full message on stderr and
-exit 1.
+Full command reference: [`dunecat/README.md`](dunecat/README.md).
 
 ## Development
 
 ```bash
-uv run pytest          # backend unit tests, no network
+uv run pytest           # backend unit tests, no network
 ```
 
-Unit tests mock `MetaCatClient` at the boundary. There are no integration tests in CI;
-the live verification path is running the CLI against the production server manually.
+Unit tests mock `MetaCatClient` at the boundary. There are no integration tests
+in CI; live verification is running the app against the production server.
 
-## Web UI (in progress)
+## Configuration files
 
-A FastAPI backend (`dunecat/web/`) plus a Vite + Vue 3 frontend (`frontend/`) provide a
-browser-based explorer for the same catalog. Single-user local app; reuses
-`~/.token_library` for auth.
-
-### Dev runbook
-
-Two terminals — `uvicorn` is **not** run with `--reload` (the file-watcher is CPU-heavy
-on macOS); restart manually after backend code changes.
-
-```bash
-# Terminal 1 — backend
-uv run uvicorn dunecat.web:app --port 8000
-
-# Terminal 2 — frontend
-cd frontend
-npm install              # first time only
-npm run dev              # → http://localhost:5173
-```
-
-The frontend's Vite dev server proxies `/api/*` to `http://localhost:8000`.
-
-### Endpoints (so far)
-
-- `GET /api/detectors` — list of sub-detectors with live `datasets_count` and
-  `files_count` per detector, sourced from `dunecat/web/detectors.yaml` and
-  enriched from metacat.
-
-Token-expired → 401 with the same `metacat auth login` instruction the CLI emits.
-MQL / metacat server errors → 400 with the server's message in `detail`.
+- `dunecat/web/detectors.yaml` — detector → namespace map. Add a detector by
+  appending an entry; restart uvicorn for changes to take effect.
+- `~/.dunecat/dunecat.db` — local SQLite cache (per-namespace dataset list and
+  saved queries). Safe to delete; the app will rebuild on next use.

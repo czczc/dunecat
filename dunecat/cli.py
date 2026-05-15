@@ -2,10 +2,13 @@ import json
 import logging
 import os
 import re
+import shutil
+import subprocess
 import sys
 from typing import Any
 
 import typer
+from dotenv import load_dotenv
 from metacat.webapi import AuthenticationError, MCWebAPIError
 
 from .client import get_client
@@ -107,6 +110,48 @@ def file_datasets_cmd(
     else:
         for d in datasets:
             typer.echo(d)
+
+
+@app.command("login")
+def login_cmd(
+    user: str | None = typer.Option(
+        None, "--user", "-u",
+        help="Username (defaults to METACAT_USER from .env).",
+    ),
+    method: str | None = typer.Option(
+        None, "--method", "-m",
+        help="Auth method (defaults to METACAT_AUTH_METHOD from .env).",
+    ),
+) -> None:
+    """Wrap `metacat auth login`, sourcing server URLs and defaults from .env."""
+    load_dotenv()
+    server = os.environ.get("METACAT_SERVER_URL")
+    auth = os.environ.get("METACAT_AUTH_SERVER_URL")
+    user = user or os.environ.get("METACAT_USER") or None
+    method = method or os.environ.get("METACAT_AUTH_METHOD") or None
+    missing = []
+    if not server:
+        missing.append("METACAT_SERVER_URL")
+    if not auth:
+        missing.append("METACAT_AUTH_SERVER_URL")
+    if not user:
+        missing.append("METACAT_USER (or pass --user)")
+    if not method:
+        missing.append("METACAT_AUTH_METHOD (or pass --method)")
+    if missing:
+        typer.echo("Missing: " + ", ".join(missing), err=True)
+        raise typer.Exit(2)
+    if shutil.which("metacat") is None:
+        typer.echo(
+            "`metacat` CLI not found on PATH. Try `uv run dunecat login` "
+            "so it can find the one in the project's virtualenv.",
+            err=True,
+        )
+        raise typer.Exit(2)
+    cmd = ["metacat", "-s", server, "-a", auth, "auth", "login", "-m", method, user]
+    typer.echo("$ " + " ".join(cmd), err=True)
+    rc = subprocess.call(cmd)
+    raise typer.Exit(rc)
 
 
 @app.command("query")

@@ -169,11 +169,18 @@ def list_datasets(
 @app.get("/api/datasets/facets")
 def datasets_facets(
     detector: str = Query(...),
+    tier: str | None = Query(None),
+    file_type: str | None = Query(None),
     official_only: bool = Query(True),
     with_metadata_only: bool = Query(True),
 ) -> dict[str, list[dict[str, Any]]]:
-    """Distinct values + counts for core.data_tier and core.file_type
-    across the detector's datasets, after default filters."""
+    """Distinct values + counts for core.data_tier and core.file_type.
+
+    Cross-filtered: tier counts respect the file_type filter (if set),
+    file_type counts respect the tier filter (if set). The currently-
+    selected value's own filter is ignored when counting that field, so
+    users can still see and switch to other values.
+    """
     from collections import Counter
 
     det = detector_by_id(detector)
@@ -191,15 +198,17 @@ def datasets_facets(
     type_counts: Counter = Counter()
     for ds in items:
         md = ds.get("metadata") or {}
-        tier_counts[md.get("core.data_tier")] += 1
-        type_counts[md.get("core.file_type")] += 1
+        ds_tier = md.get("core.data_tier")
+        ds_type = md.get("core.file_type")
+        type_match = not file_type or value_matches(ds_type, file_type)
+        tier_match = not tier or value_matches(ds_tier, tier)
+        if ds_tier is not None and type_match:
+            tier_counts[ds_tier] += 1
+        if ds_type is not None and tier_match:
+            type_counts[ds_type] += 1
 
     def _format(counter: Counter) -> list[dict[str, Any]]:
-        return [
-            {"value": k, "count": c}
-            for k, c in counter.most_common()
-            if k is not None
-        ]
+        return [{"value": k, "count": c} for k, c in counter.most_common()]
 
     return {
         "tiers": _format(tier_counts),
