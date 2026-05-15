@@ -68,7 +68,17 @@ async function loadByRouteId() {
 }
 
 watch(() => route.query.id, () => loadByRouteId());
-onMounted(loadByRouteId);
+
+function loadPrefill() {
+  if (route.query.prefill && !mql.value) {
+    mql.value = String(route.query.prefill);
+  }
+}
+
+onMounted(async () => {
+  await loadByRouteId();
+  loadPrefill();
+});
 
 // Validation
 const validating = ref(false);

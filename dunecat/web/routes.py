@@ -426,6 +426,62 @@ def _resolve_provenance_fids(
     return [resolved.get(e["fid"], e) for e in entries if "fid" in e]
 
 
+@app.get("/api/run/{run_number}")
+def get_run(run_number: int) -> dict[str, Any]:
+    client = _get_metacat_client()
+    start = time.monotonic()
+    items = list(
+        client.query(
+            f"files where core.runs in ({run_number})",
+            with_metadata=True,
+        )
+    )
+    log.info(
+        "/api/run %d files=%d took=%.2fs",
+        run_number, len(items), time.monotonic() - start,
+    )
+    if not items:
+        raise HTTPException(
+            status_code=404, detail=f"No files found for run {run_number}"
+        )
+
+    by_tier: dict[str, int] = {}
+    raw_starts: list[float] = []
+    raw_ends: list[float] = []
+    sample_raw: list[dict[str, Any]] = []
+    for it in items:
+        md = it.get("metadata") or {}
+        tier = md.get("core.data_tier") or "unknown"
+        by_tier[tier] = by_tier.get(tier, 0) + 1
+        if tier == "raw":
+            s = md.get("core.start_time")
+            e = md.get("core.end_time")
+            if isinstance(s, (int, float)):
+                raw_starts.append(float(s))
+            if isinstance(e, (int, float)):
+                raw_ends.append(float(e))
+            if len(sample_raw) < 10:
+                sample_raw.append({
+                    "did": f"{it['namespace']}:{it['name']}",
+                    "name": it["name"],
+                    "size": it.get("size"),
+                })
+
+    start_time = min(raw_starts) if raw_starts else None
+    end_time = max(raw_ends) if raw_ends else None
+    duration = (end_time - start_time) if (start_time is not None and end_time is not None) else None
+
+    return {
+        "run": run_number,
+        "files_total": len(items),
+        "files_by_tier": dict(sorted(by_tier.items(), key=lambda kv: -kv[1])),
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_seconds": duration,
+        "sample_raw_files": sample_raw,
+    }
+
+
 @app.get("/api/dataset")
 def get_dataset(did: str = Query(...)) -> dict[str, Any]:
     client = _get_metacat_client()

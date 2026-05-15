@@ -539,6 +539,54 @@ def test_get_file_404_when_missing(monkeypatch, client):
     assert response.status_code == 404
 
 
+def test_get_run_aggregates_tiers_and_window(monkeypatch, client):
+    items = [
+        # raw files for the run
+        {"namespace": "ns", "name": "r1.hdf5", "size": 100,
+         "metadata": {"core.data_tier": "raw", "core.start_time": 1000.0, "core.end_time": 1100.0}},
+        {"namespace": "ns", "name": "r2.hdf5", "size": 200,
+         "metadata": {"core.data_tier": "raw", "core.start_time": 1050.0, "core.end_time": 1200.0}},
+        # reco files for the run (should NOT contribute to start/end)
+        {"namespace": "ns", "name": "rc1.root", "size": 300,
+         "metadata": {"core.data_tier": "full-reconstructed", "core.start_time": 999_999_999.0}},
+        {"namespace": "ns", "name": "rc2.root", "size": 400,
+         "metadata": {"core.data_tier": "full-reconstructed"}},
+    ]
+
+    class FakeClient:
+        def query(self, mql, with_metadata=False, **kw):
+            assert with_metadata is True
+            yield from items
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/run/27731")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["run"] == 27731
+    assert body["files_total"] == 4
+    assert body["files_by_tier"] == {"full-reconstructed": 2, "raw": 2}
+    assert body["start_time"] == 1000.0  # min of raw
+    assert body["end_time"] == 1200.0    # max of raw
+    assert body["duration_seconds"] == 200.0
+    # Sample raw files capped, only raw rows included
+    assert len(body["sample_raw_files"]) == 2
+    assert {f["name"] for f in body["sample_raw_files"]} == {"r1.hdf5", "r2.hdf5"}
+
+
+def test_get_run_404_when_no_files(monkeypatch, client):
+    class FakeClient:
+        def query(self, *a, **kw):
+            return iter(())
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/run/99999")
+    assert response.status_code == 404
+
+
 def test_get_dataset_happy_path(monkeypatch, client):
     record = {
         "namespace": "ns",

@@ -22,6 +22,16 @@ const router = createRouter({
       name: 'query',
       component: () => import('./views/QueryView.vue'),
     },
+    {
+      path: '/run',
+      name: 'run-lookup',
+      component: () => import('./views/RunView.vue'),
+    },
+    {
+      path: '/run/:run',
+      name: 'run-detail',
+      component: () => import('./views/RunView.vue'),
+    },
   ],
 });
 

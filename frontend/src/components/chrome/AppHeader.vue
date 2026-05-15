@@ -18,6 +18,9 @@ import { RouterLink } from 'vue-router';
       <RouterLink :to="{ name: 'datasets' }" class="nav-item" active-class="active">
         Datasets
       </RouterLink>
+      <RouterLink :to="{ name: 'run-lookup' }" class="nav-item" active-class="active">
+        Run
+      </RouterLink>
       <RouterLink :to="{ name: 'query' }" class="nav-item" active-class="active">
         Query
       </RouterLink>
