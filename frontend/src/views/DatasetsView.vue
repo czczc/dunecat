@@ -6,6 +6,7 @@ import {
   nav,
   loadDetectors,
   loadCounts,
+  setDetector,
 } from '../composables/useNav.js';
 
 const route = useRoute();
@@ -93,6 +94,11 @@ function openDataset(did) {
   router.push({ name: 'dataset-files', params: { did } });
 }
 
+function selectDetector(id) {
+  setDetector(id);
+  router.push({ name: 'datasets-detector', params: { detectorId: id } });
+}
+
 onMounted(async () => {
   await loadDetectors();
   loadCounts();
@@ -148,11 +154,28 @@ const totalPages = computed(() =>
       </p>
     </div>
 
+    <!-- Detector picker -->
+    <div class="detector-bar">
+      <div v-if="nav.detectors.length === 0" class="detector-loading">Loading detectors…</div>
+      <button
+        v-for="d in nav.detectors"
+        :key="d.id"
+        class="detector-chip"
+        :class="{ active: d.id === detectorId }"
+        @click="selectDetector(d.id)"
+      >
+        <span class="detector-name">{{ d.name }}</span>
+        <span class="detector-count" :class="{ pending: nav.countsLoading && !nav.counts[d.id] }">
+          {{ fmtNum(nav.counts[d.id]?.datasets_count) }}
+        </span>
+      </button>
+    </div>
+
     <template v-if="!detectorId">
       <div class="placeholder">
-        <div class="placeholder-title">No detector selected</div>
+        <div class="placeholder-title">Pick a detector to start</div>
         <div class="placeholder-body">
-          Pick a detector from the sidebar to browse its datasets.
+          Choose a detector above to browse its datasets.
         </div>
       </div>
     </template>
@@ -302,6 +325,49 @@ const totalPages = computed(() =>
   color: var(--ink);
 }
 .subtitle { font-size: 13.5px; color: var(--dim); margin: 0; }
+
+/* Detector chip bar */
+.detector-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.detector-loading {
+  font-size: 12.5px;
+  color: var(--faint);
+  font-style: italic;
+}
+.detector-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  background: var(--page);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.12s, border-color 0.12s;
+}
+.detector-chip:hover { background: var(--surface); }
+.detector-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.detector-chip.active .detector-name { color: var(--accent-ink); font-weight: 600; }
+.detector-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.detector-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+.detector-count.pending { opacity: 0.4; }
 
 /* Detector hero */
 .hero {
