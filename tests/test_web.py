@@ -465,6 +465,89 @@ def test_files_count_fast_path_404_when_dataset_missing(monkeypatch, client):
     assert response.status_code == 404
 
 
+def test_get_file_happy_path(monkeypatch, client):
+    record = {
+        "namespace": "hd-protodune-det-reco",
+        "name": "f.root",
+        "fid": "abc",
+        "size": 1000,
+        "created_timestamp": 1.0,
+        "metadata": {"core.runs": [27731], "dune.output_status": "confirmed"},
+        "datasets": [
+            {"namespace": "dune", "name": "all"},
+            {"namespace": "hd-protodune-det-reco", "name": "ds"},
+        ],
+        "parents": [{"fid": "parent-fid"}],
+    }
+
+    class FakeClient:
+        def get_file(self, did=None, with_metadata=False, with_provenance=False, with_datasets=False):
+            assert with_metadata is True
+            assert with_provenance is True
+            assert with_datasets is True
+            return record
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get(
+        "/api/file", params={"did": "hd-protodune-det-reco:f.root"}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["did"] == "hd-protodune-det-reco:f.root"
+    assert body["metadata"]["core.runs"] == [27731]
+    assert len(body["datasets"]) == 2
+
+
+def test_get_file_404_when_missing(monkeypatch, client):
+    class FakeClient:
+        def get_file(self, **kw):
+            return None
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/file", params={"did": "ns:nope.root"})
+    assert response.status_code == 404
+
+
+def test_get_dataset_happy_path(monkeypatch, client):
+    record = {
+        "namespace": "ns",
+        "name": "ds",
+        "file_count": 10,
+        "metadata": {"core.data_tier": "raw"},
+        "creator": "dunepro",
+        "created_timestamp": 1.0,
+    }
+
+    class FakeClient:
+        def get_dataset(self, did=None, **kw):
+            return record
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/dataset", params={"did": "ns:ds"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["did"] == "ns:ds"
+    assert body["file_count"] == 10
+
+
+def test_get_dataset_404_when_missing(monkeypatch, client):
+    class FakeClient:
+        def get_dataset(self, did=None, **kw):
+            return None
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    response = client.get("/api/dataset", params={"did": "ns:nope"})
+    assert response.status_code == 404
+
+
 def test_files_count_slow_path_when_filters_active(monkeypatch, client):
     items = [_file(f"f{i}.root") for i in range(250)]
     fake = _install_query_client(monkeypatch, items)

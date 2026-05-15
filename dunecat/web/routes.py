@@ -208,6 +208,32 @@ def list_files(
     }
 
 
+@app.get("/api/file")
+def get_file(did: str = Query(...)) -> dict[str, Any]:
+    client = _get_metacat_client()
+    start = time.monotonic()
+    record = client.get_file(
+        did=did, with_metadata=True, with_provenance=True, with_datasets=True
+    )
+    log.info("/api/file did=%s took=%.2fs", did, time.monotonic() - start)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"File not found: {did}")
+    record["did"] = f"{record['namespace']}:{record['name']}"
+    return record
+
+
+@app.get("/api/dataset")
+def get_dataset(did: str = Query(...)) -> dict[str, Any]:
+    client = _get_metacat_client()
+    start = time.monotonic()
+    record = client.get_dataset(did=did)
+    log.info("/api/dataset did=%s took=%.2fs", did, time.monotonic() - start)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Dataset not found: {did}")
+    record["did"] = f"{record['namespace']}:{record['name']}"
+    return record
+
+
 @app.get("/api/files/count")
 def count_files(
     dataset: str = Query(...),

@@ -15,7 +15,7 @@ const router = createRouter({
     {
       path: '/file/:did',
       name: 'file-detail',
-      component: () => import('./views/PlaceholderView.vue'),
+      component: () => import('./views/DetailView.vue'),
     },
   ],
 });

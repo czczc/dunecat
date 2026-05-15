@@ -39,3 +39,6 @@ export const getFiles = (params) =>
 
 export const getFilesCount = (params) =>
   jsonFetch(`/api/files/count?${buildQuery(params)}`);
+
+export const getFile = (did) => jsonFetch(`/api/file?${buildQuery({ did })}`);
+export const getDataset = (did) => jsonFetch(`/api/dataset?${buildQuery({ did })}`);
