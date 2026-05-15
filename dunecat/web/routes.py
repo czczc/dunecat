@@ -547,8 +547,16 @@ def get_run(run_number: int) -> dict[str, Any]:
 @app.get("/api/runs/{detector}/conditions")
 def get_runs_conditions(
     detector: str,
-    run_min: int = Query(..., ge=0),
-    run_max: int = Query(..., ge=0),
+    run_min: int | None = Query(None, ge=0),
+    run_max: int | None = Query(None, ge=0),
+    start: str | None = Query(
+        None,
+        description="Inclusive start date YYYY-MM-DD (UTC).",
+    ),
+    stop: str | None = Query(
+        None,
+        description="Inclusive stop date YYYY-MM-DD (UTC).",
+    ),
     run_type: str = Query(
         "PROD",
         description=(
@@ -557,10 +565,45 @@ def get_runs_conditions(
         ),
     ),
 ) -> dict[str, Any]:
-    if run_max < run_min:
+    # Validate ranges.
+    if run_min is not None and run_max is not None and run_max < run_min:
         raise HTTPException(
             status_code=400, detail="run_max must be >= run_min"
         )
+    if (run_min is None) != (run_max is None):
+        raise HTTPException(
+            status_code=400,
+            detail="Pass both run_min and run_max, or neither.",
+        )
+
+    # Parse dates (YYYY-MM-DD → UTC unix; stop is inclusive day, so add 1 day for exclusive upper bound).
+    start_unix: float | None = None
+    stop_unix: float | None = None
+    try:
+        if start:
+            start_dt = datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=UTC)
+            start_unix = start_dt.timestamp()
+        if stop:
+            stop_dt = datetime.strptime(stop, "%Y-%m-%d").replace(tzinfo=UTC)
+            stop_unix = (stop_dt.timestamp()) + 86400  # +1 day → exclusive
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="start/stop must be in YYYY-MM-DD format.",
+        )
+    if start_unix is not None and stop_unix is not None and stop_unix <= start_unix:
+        raise HTTPException(
+            status_code=400, detail="stop date must be >= start date"
+        )
+
+    have_run_range = run_min is not None and run_max is not None
+    have_date_range = start_unix is not None or stop_unix is not None
+    if not have_run_range and not have_date_range:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one of run range (run_min/run_max) or date range (start/stop) is required.",
+        )
+
     det = detector_by_id(detector)
     if det is None:
         raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
@@ -572,7 +615,14 @@ def get_runs_conditions(
         )
     rt = None if run_type.upper() == "ALL" else run_type
     try:
-        rows = condb.fetch_run_range(folder, run_min, run_max, run_type=rt)
+        rows = condb.fetch_runs(
+            folder,
+            run_min=run_min,
+            run_max=run_max,
+            start_unix=start_unix,
+            stop_unix=stop_unix,
+            run_type=rt,
+        )
     except Exception as e:
         log.warning(
             "/api/runs/%s/conditions: condb fetch failed: %s", detector, e
@@ -582,6 +632,8 @@ def get_runs_conditions(
         "folder": folder,
         "run_min": run_min,
         "run_max": run_max,
+        "start": start,
+        "stop": stop,
         "run_type": rt,
         "rows": rows,
     }

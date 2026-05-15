@@ -33,22 +33,71 @@ def _fetch_json(url: str) -> dict[str, Any]:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def fetch_run_range(
+def fetch_runs(
     folder: str,
-    run_min: int,
-    run_max: int,
+    *,
+    run_min: int | None = None,
+    run_max: int | None = None,
+    start_unix: float | None = None,
+    stop_unix: float | None = None,  # exclusive upper bound
     run_type: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Return normalized condb rows with ``run_min <= tv <= run_max``.
+    """Return normalized condb rows under the given filters.
 
-    Uses the ``/get?t0=&t1=`` range query (``cond=tv...`` is rejected by the
-    server — ``tv`` is a timeline-key column, not a data column). The server
-    falls back to "latest row at or before t1" when no rows are in range, so
-    we always re-filter the response client-side to enforce exact bounds.
+    Server limitations dictate the path we take:
 
-    ``/get`` doesn't accept ``cond=`` either, so additional column filters
-    (here: ``run_type``) are applied client-side after the range fetch.
+    - ``/get?t0&t1`` returns rows in a tv (run number) range but does **not**
+      accept ``cond=`` predicates.
+    - ``/search?cond=...`` accepts column predicates (``start_time``,
+      ``run_type``, etc.) but does **not** accept ``t0/t1``, and rejects
+      ``cond=tv...`` because ``tv`` is a timeline-key column, not a data
+      column.
+
+    So:
+
+    - If any date bound is set, use ``/search?cond=start_time...`` and apply
+      the tv range client-side.
+    - Otherwise (run range only), use ``/get?t0&t1`` and apply the run_type
+      filter client-side.
     """
+    use_search = start_unix is not None or stop_unix is not None
+    if use_search:
+        rows = _search_by_conds(
+            folder,
+            start_unix=start_unix,
+            stop_unix=stop_unix,
+            run_type=run_type,
+        )
+    else:
+        if run_min is None or run_max is None:
+            raise ValueError("Either a date range or a run range is required.")
+        rows = _get_by_tv_range(folder, run_min, run_max)
+
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        tv = r.get("tv")
+        if tv is None:
+            continue
+        tv_int = int(tv)
+        if run_min is not None and tv_int < run_min:
+            continue
+        if run_max is not None and tv_int > run_max:
+            continue
+        if r.get("channel") not in (0, None):
+            continue
+        norm = _normalize(r)
+        # Cache the unfiltered row keyed on (folder, tv) so drilling into a
+        # single run from the results table is free.
+        cache.set_condb_cached(folder, tv_int, norm)
+        if run_type and norm.get("run_type") != run_type:
+            continue
+        out.append(norm)
+    return out
+
+
+def _get_by_tv_range(
+    folder: str, run_min: int, run_max: int
+) -> list[dict[str, Any]]:
     params = urllib.parse.urlencode(
         [
             ("folder", folder),
@@ -59,26 +108,32 @@ def fetch_run_range(
     )
     url = f"{base_url()}/get?{params}"
     payload = _fetch_json(url)
-    rows = payload.get("rows") or []
-    out: list[dict[str, Any]] = []
-    for r in rows:
-        tv = r.get("tv")
-        if tv is None:
-            continue
-        tv_int = int(tv)
-        if tv_int < run_min or tv_int > run_max:
-            continue
-        if r.get("channel") not in (0, None):
-            continue
-        norm = _normalize(r)
-        # Side effect: populate the per-row cache so a later single-run lookup
-        # for any of these doesn't hit the network. We cache the unfiltered
-        # row so different run_type filters can share the cache.
-        cache.set_condb_cached(folder, tv_int, norm)
-        if run_type and norm.get("run_type") != run_type:
-            continue
-        out.append(norm)
-    return out
+    return payload.get("rows") or []
+
+
+def _search_by_conds(
+    folder: str,
+    *,
+    start_unix: float | None,
+    stop_unix: float | None,
+    run_type: str | None,
+) -> list[dict[str, Any]]:
+    conds: list[str] = []
+    if start_unix is not None:
+        conds.append(f"start_time >= {int(start_unix)}")
+    if stop_unix is not None:
+        conds.append(f"start_time < {int(stop_unix)}")
+    if run_type:
+        # String values in cond= require single quotes per the server.
+        conds.append(f"run_type = '{run_type}'")
+    params: list[tuple[str, str]] = [
+        ("folder", folder),
+        ("format", "json"),
+    ]
+    params.extend(("cond", c) for c in conds)
+    url = f"{base_url()}/search?{urllib.parse.urlencode(params)}"
+    payload = _fetch_json(url)
+    return payload.get("rows") or []
 
 
 def fetch_run(folder: str, run: int) -> dict[str, Any] | None:

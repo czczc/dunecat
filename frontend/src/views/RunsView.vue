@@ -10,6 +10,8 @@ const detectors = ref([]);
 const detectorId = ref(route.query.detector || '');
 const runMin = ref(route.query.run_min || '');
 const runMax = ref(route.query.run_max || '');
+const startDate = ref(route.query.start || '');
+const stopDate = ref(route.query.stop || '');
 // PROD is the default — TEST runs are usually noise. 'ALL' means no filter.
 const runType = ref(route.query.run_type || 'PROD');
 
@@ -24,13 +26,20 @@ const condbDetectors = computed(() =>
 const selectedDetector = computed(
   () => detectors.value.find((d) => d.id === detectorId.value) || null,
 );
-const canApply = computed(
-  () =>
-    !!selectedDetector.value?.condb_folder &&
-    runMin.value !== '' &&
-    runMax.value !== '' &&
-    Number(runMin.value) <= Number(runMax.value),
-);
+const hasRunRange = computed(() => runMin.value !== '' && runMax.value !== '');
+const hasDateRange = computed(() => startDate.value !== '' || stopDate.value !== '');
+const canApply = computed(() => {
+  if (!selectedDetector.value?.condb_folder) return false;
+  if (!hasRunRange.value && !hasDateRange.value) return false;
+  if (hasRunRange.value && Number(runMin.value) > Number(runMax.value)) return false;
+  if (
+    startDate.value !== '' &&
+    stopDate.value !== '' &&
+    stopDate.value < startDate.value
+  )
+    return false;
+  return true;
+});
 
 async function fetchRows() {
   if (!canApply.value) return;
@@ -42,6 +51,8 @@ async function fetchRows() {
     const payload = await getRunsConditions(detectorId.value, {
       run_min: runMin.value,
       run_max: runMax.value,
+      start: startDate.value,
+      stop: stopDate.value,
       run_type: runType.value,
     });
     rows.value = payload.rows || [];
@@ -59,6 +70,8 @@ function onApply() {
       detector: detectorId.value,
       run_min: runMin.value,
       run_max: runMax.value,
+      start: startDate.value,
+      stop: stopDate.value,
       run_type: runType.value,
     },
   });
@@ -156,10 +169,32 @@ function beamOf(r) {
           @keyup.enter="canApply && onApply()"
         />
       </label>
+      <label class="field">
+        <span class="field-label">Start date (UTC)</span>
+        <input
+          v-model="startDate"
+          type="date"
+          class="control mono"
+          @keyup.enter="canApply && onApply()"
+        />
+      </label>
+      <label class="field">
+        <span class="field-label">Stop date (UTC)</span>
+        <input
+          v-model="stopDate"
+          type="date"
+          class="control mono"
+          @keyup.enter="canApply && onApply()"
+        />
+      </label>
       <button class="btn btn-primary" :disabled="!canApply" @click="onApply">
         Apply
       </button>
     </div>
+    <p class="hint">
+      Need at least one filter: run range, date range, or both.
+      Dates are interpreted as inclusive UTC days.
+    </p>
 
     <div v-if="loading" class="placeholder">
       <div class="placeholder-body">Loading conditions…</div>
@@ -257,6 +292,13 @@ function beamOf(r) {
 }
 .control.mono { font-family: var(--font-mono); width: 130px; }
 .control:focus { border-color: var(--accent); }
+
+.hint {
+  margin: -8px 0 18px;
+  font-size: 11.5px;
+  color: var(--faint);
+  font-style: italic;
+}
 
 .btn {
   display: inline-flex;
