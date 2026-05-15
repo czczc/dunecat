@@ -32,6 +32,11 @@ const router = createRouter({
       name: 'run-detail',
       component: () => import('./views/RunView.vue'),
     },
+    {
+      path: '/runs',
+      name: 'runs-search',
+      component: () => import('./views/RunsView.vue'),
+    },
   ],
 });
 

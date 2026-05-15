@@ -40,6 +40,9 @@ function onSavedPicked(e) {
       <RouterLink :to="{ name: 'run-lookup' }" class="nav-item" active-class="active">
         Run
       </RouterLink>
+      <RouterLink :to="{ name: 'runs-search' }" class="nav-item" active-class="active">
+        Runs
+      </RouterLink>
       <RouterLink :to="{ name: 'query' }" class="nav-item" active-class="active">
         Query
       </RouterLink>

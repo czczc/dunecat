@@ -544,6 +544,49 @@ def get_run(run_number: int) -> dict[str, Any]:
     }
 
 
+@app.get("/api/runs/{detector}/conditions")
+def get_runs_conditions(
+    detector: str,
+    run_min: int = Query(..., ge=0),
+    run_max: int = Query(..., ge=0),
+    run_type: str = Query(
+        "PROD",
+        description=(
+            "Filter by run_type column. Pass 'ALL' (or omit) for no filter; "
+            "any other value matches that string exactly."
+        ),
+    ),
+) -> dict[str, Any]:
+    if run_max < run_min:
+        raise HTTPException(
+            status_code=400, detail="run_max must be >= run_min"
+        )
+    det = detector_by_id(detector)
+    if det is None:
+        raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
+    folder = det.get("condb_folder")
+    if not folder:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Detector {detector} has no condb_folder configured.",
+        )
+    rt = None if run_type.upper() == "ALL" else run_type
+    try:
+        rows = condb.fetch_run_range(folder, run_min, run_max, run_type=rt)
+    except Exception as e:
+        log.warning(
+            "/api/runs/%s/conditions: condb fetch failed: %s", detector, e
+        )
+        raise HTTPException(status_code=502, detail="condb unreachable")
+    return {
+        "folder": folder,
+        "run_min": run_min,
+        "run_max": run_max,
+        "run_type": rt,
+        "rows": rows,
+    }
+
+
 @app.get("/api/runs/{detector}/{run}/conditions")
 def get_run_conditions(detector: str, run: int) -> dict[str, Any]:
     det = detector_by_id(detector)

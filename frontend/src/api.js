@@ -52,6 +52,11 @@ export const getRunConditions = (detector, run) =>
     `/api/runs/${encodeURIComponent(detector)}/${encodeURIComponent(run)}/conditions`,
   );
 
+export const getRunsConditions = (detector, params) =>
+  jsonFetch(
+    `/api/runs/${encodeURIComponent(detector)}/conditions?${buildQuery(params)}`,
+  );
+
 export const runQuery = (mql, page, pageSize, savedQueryId = null) =>
   jsonFetch('/api/query/run', {
     method: 'POST',

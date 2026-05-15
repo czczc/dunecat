@@ -33,6 +33,54 @@ def _fetch_json(url: str) -> dict[str, Any]:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def fetch_run_range(
+    folder: str,
+    run_min: int,
+    run_max: int,
+    run_type: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return normalized condb rows with ``run_min <= tv <= run_max``.
+
+    Uses the ``/get?t0=&t1=`` range query (``cond=tv...`` is rejected by the
+    server — ``tv`` is a timeline-key column, not a data column). The server
+    falls back to "latest row at or before t1" when no rows are in range, so
+    we always re-filter the response client-side to enforce exact bounds.
+
+    ``/get`` doesn't accept ``cond=`` either, so additional column filters
+    (here: ``run_type``) are applied client-side after the range fetch.
+    """
+    params = urllib.parse.urlencode(
+        [
+            ("folder", folder),
+            ("format", "json"),
+            ("t0", str(run_min)),
+            ("t1", str(run_max)),
+        ]
+    )
+    url = f"{base_url()}/get?{params}"
+    payload = _fetch_json(url)
+    rows = payload.get("rows") or []
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        tv = r.get("tv")
+        if tv is None:
+            continue
+        tv_int = int(tv)
+        if tv_int < run_min or tv_int > run_max:
+            continue
+        if r.get("channel") not in (0, None):
+            continue
+        norm = _normalize(r)
+        # Side effect: populate the per-row cache so a later single-run lookup
+        # for any of these doesn't hit the network. We cache the unfiltered
+        # row so different run_type filters can share the cache.
+        cache.set_condb_cached(folder, tv_int, norm)
+        if run_type and norm.get("run_type") != run_type:
+            continue
+        out.append(norm)
+    return out
+
+
 def fetch_run(folder: str, run: int) -> dict[str, Any] | None:
     """Return one normalized condb row for ``(folder, run)``, or ``None``.
 
