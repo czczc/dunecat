@@ -36,3 +36,6 @@ export const refreshDatasets = (detectorId) =>
 
 export const getFiles = (params) =>
   jsonFetch(`/api/files?${buildQuery(params)}`);
+
+export const getFilesCount = (params) =>
+  jsonFetch(`/api/files/count?${buildQuery(params)}`);

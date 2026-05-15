@@ -2,7 +2,6 @@ import fnmatch
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -157,6 +156,23 @@ def list_datasets(
     }
 
 
+def _build_file_filters(
+    runs: str | None,
+    run_range: str | None,
+    namespace: str | None,
+    meta: list[str],
+) -> FileFilters:
+    try:
+        return FileFilters(
+            runs=parse_runs(runs),
+            run_range=parse_run_range(run_range),
+            namespace=namespace,
+            meta=tuple(_parse_meta(meta)),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 @app.get("/api/files")
 def list_files(
     dataset: str = Query(...),
@@ -168,61 +184,52 @@ def list_files(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
 ) -> dict[str, Any]:
-    try:
-        filters = FileFilters(
-            runs=parse_runs(runs),
-            run_range=parse_run_range(run_range),
-            namespace=namespace,
-            meta=tuple(_parse_meta(meta)),
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+    filters = _build_file_filters(runs, run_range, namespace, meta)
     base_mql = build_mql(dataset, filters)
     offset = (page - 1) * page_size
     paged_mql = f"({base_mql}) ordered skip {offset} limit {page_size}"
     client = _get_metacat_client()
 
-    def fetch_total() -> int:
-        start = time.monotonic()
-        try:
-            for summary in client.query(base_mql, summary="count"):
-                return summary.get("count", 0) if isinstance(summary, dict) else 0
-            return 0
-        finally:
-            log.info("count query took %.2fs", time.monotonic() - start)
-
-    def fetch_rows() -> list[dict[str, Any]]:
-        start = time.monotonic()
-        try:
-            return [
-                _file_row(item)
-                for item in client.query(paged_mql, with_metadata=with_metadata)
-            ]
-        finally:
-            log.info(
-                "page query took %.2fs (with_metadata=%s)",
-                time.monotonic() - start,
-                with_metadata,
-            )
-
-    request_start = time.monotonic()
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        total_future = ex.submit(fetch_total)
-        rows_future = ex.submit(fetch_rows)
-        total = total_future.result()
-        rows = rows_future.result()
+    start = time.monotonic()
+    rows = [
+        _file_row(item)
+        for item in client.query(paged_mql, with_metadata=with_metadata)
+    ]
     log.info(
-        "/api/files dataset=%s page=%d total=%d wall=%.2fs",
-        dataset, page, total, time.monotonic() - request_start,
+        "/api/files page=%d rows=%d with_metadata=%s took=%.2fs",
+        page, len(rows), with_metadata, time.monotonic() - start,
     )
 
     return {
-        "total": total,
         "page": page,
         "page_size": page_size,
         "rows": rows,
+        "has_more": len(rows) == page_size,
     }
+
+
+@app.get("/api/files/count")
+def count_files(
+    dataset: str = Query(...),
+    runs: str | None = Query(None),
+    run_range: str | None = Query(None),
+    namespace: str | None = Query(None),
+    meta: list[str] = Query(default_factory=list),
+) -> dict[str, Any]:
+    filters = _build_file_filters(runs, run_range, namespace, meta)
+    base_mql = build_mql(dataset, filters)
+    client = _get_metacat_client()
+
+    start = time.monotonic()
+    total = 0
+    for summary in client.query(base_mql, summary="count"):
+        total = summary.get("count", 0) if isinstance(summary, dict) else 0
+        break
+    log.info(
+        "/api/files/count dataset=%s total=%d took=%.2fs",
+        dataset, total, time.monotonic() - start,
+    )
+    return {"total": total}
 
 
 def _file_row(item: dict[str, Any]) -> dict[str, Any]:

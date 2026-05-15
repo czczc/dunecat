@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getFiles } from '../api.js';
+import { getFiles, getFilesCount } from '../api.js';
 import { loadDetectors, nav } from '../composables/useNav.js';
 
 const route = useRoute();
@@ -38,25 +38,41 @@ const PAGE_SIZES = [100, 200, 500];
 const loading = ref(false);
 const error = ref(null);
 const data = ref(null);
+const total = ref(null);            // null = unknown / loading / failed
+const totalLoading = ref(false);
 
-const totalPages = computed(() =>
-  data.value ? Math.max(1, Math.ceil(data.value.total / data.value.page_size)) : 1,
-);
+const totalPages = computed(() => {
+  if (total.value == null || !data.value) return null;
+  return Math.max(1, Math.ceil(total.value / data.value.page_size));
+});
+
+const canNext = computed(() => {
+  if (loading.value) return false;
+  if (totalPages.value != null) return page.value < totalPages.value;
+  // total unknown: rely on has_more from the page response
+  return data.value?.has_more === true;
+});
+
+function currentFilterParams() {
+  const meta = applied.metaRows
+    .filter((r) => r.key && r.value)
+    .map((r) => `${r.key}=${r.value}`);
+  return {
+    dataset: did.value,
+    runs: applied.runs || null,
+    run_range: applied.runRange || null,
+    namespace: applied.namespaceOverride || null,
+    meta: meta.length ? meta : null,
+  };
+}
 
 async function fetchPage() {
   if (!did.value) return;
   loading.value = true;
   error.value = null;
   try {
-    const meta = applied.metaRows
-      .filter((r) => r.key && r.value)
-      .map((r) => `${r.key}=${r.value}`);
     data.value = await getFiles({
-      dataset: did.value,
-      runs: applied.runs || null,
-      run_range: applied.runRange || null,
-      namespace: applied.namespaceOverride || null,
-      meta: meta.length ? meta : null,
+      ...currentFilterParams(),
       with_metadata: applied.withMetadata,
       page: page.value,
       page_size: pageSize.value,
@@ -69,6 +85,25 @@ async function fetchPage() {
   }
 }
 
+async function fetchTotal() {
+  if (!did.value) return;
+  total.value = null;
+  totalLoading.value = true;
+  try {
+    const r = await getFilesCount(currentFilterParams());
+    total.value = r.total;
+  } catch (_e) {
+    total.value = null;  // surfaces as "—" in the UI; not a hard error
+  } finally {
+    totalLoading.value = false;
+  }
+}
+
+function refreshAll() {
+  fetchPage();
+  fetchTotal();
+}
+
 function applyFilters() {
   Object.assign(applied, {
     runs: draft.runs,
@@ -78,7 +113,7 @@ function applyFilters() {
     metaRows: draft.metaRows.map((r) => ({ ...r })),
   });
   page.value = 1;
-  fetchPage();
+  refreshAll();
 }
 
 function clearFilters() {
@@ -97,11 +132,15 @@ function removeMetaRow(i) {
   draft.metaRows.splice(i, 1);
 }
 
-watch([page, pageSize], () => fetchPage());
+watch(page, () => fetchPage());
+watch(pageSize, () => {
+  page.value = 1;
+  refreshAll();
+});
 
 onMounted(async () => {
   await loadDetectors();
-  fetchPage();
+  refreshAll();
 });
 
 function openFile(fileDid) {
@@ -160,7 +199,10 @@ function pickEvents(row) {
       </div>
       <h1 class="title">{{ did }}</h1>
       <p class="subtitle" v-if="data">
-        <strong>{{ fmtNum(data.total) }}</strong> files
+        <strong v-if="total != null">{{ fmtNum(total) }}</strong>
+        <strong v-else-if="totalLoading" class="loading-hint">counting…</strong>
+        <strong v-else class="loading-hint">—</strong>
+        files
       </p>
     </div>
 
@@ -250,7 +292,7 @@ function pickEvents(row) {
           <div class="placeholder-body">Loading…</div>
         </div>
 
-        <div v-else-if="data && data.total === 0" class="placeholder">
+        <div v-else-if="data && data.rows.length === 0" class="placeholder">
           <div class="placeholder-body">No files match these filters.</div>
         </div>
 
@@ -283,8 +325,10 @@ function pickEvents(row) {
           <div class="pager">
             <div class="pager-info">
               Showing <strong>{{ (page - 1) * pageSize + 1 }}</strong>–<strong>{{
-                Math.min(page * pageSize, data.total)
-              }}</strong> of <strong>{{ fmtNum(data.total) }}</strong>
+                (page - 1) * pageSize + data.rows.length
+              }}</strong><template v-if="total != null">
+                of <strong>{{ fmtNum(total) }}</strong>
+              </template>
             </div>
             <div class="pager-controls">
               <select v-model="pageSize" class="page-size-select">
@@ -295,10 +339,12 @@ function pickEvents(row) {
               <button class="btn" :disabled="page <= 1 || loading" @click="page -= 1">
                 ← Prev
               </button>
-              <span class="pager-pos">Page {{ page }} / {{ totalPages }}</span>
+              <span class="pager-pos">
+                Page {{ page }}<template v-if="totalPages != null"> / {{ totalPages }}</template>
+              </span>
               <button
                 class="btn"
-                :disabled="page >= totalPages || loading"
+                :disabled="!canNext"
                 @click="page += 1"
               >
                 Next →
@@ -542,4 +588,6 @@ function pickEvents(row) {
 }
 .error-title { font-weight: 600; color: var(--bad); margin-bottom: 4px; }
 .error-detail { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
+
+.loading-hint { color: var(--faint); font-weight: 400; font-style: italic; }
 </style>

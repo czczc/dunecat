@@ -390,7 +390,7 @@ def _file(name, run=None, size=1000):
     return item
 
 
-def test_files_pagination_returns_total_and_page_rows(monkeypatch, client):
+def test_files_pagination_returns_page_rows(monkeypatch, client):
     items = [_file(f"f{i}.root", run=27731 + i) for i in range(250)]
     fake = _install_query_client(monkeypatch, items)
 
@@ -404,14 +404,44 @@ def test_files_pagination_returns_total_and_page_rows(monkeypatch, client):
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["total"] == 250
     assert body["page"] == 2
     assert body["page_size"] == 100
+    assert body["has_more"] is True  # 100 rows on page 2, more remain
     assert len(body["rows"]) == 100
     assert body["rows"][0]["name"] == "f100.root"
-    # First call must be summary=count, second the paged fetch
+    # No count call now — /api/files just pages
+    assert all(q["summary"] is None for q in fake.queries)
+    assert "skip 100 limit 100" in fake.queries[0]["mql"]
+
+
+def test_files_has_more_false_on_last_page(monkeypatch, client):
+    items = [_file(f"f{i}.root") for i in range(120)]
+    _install_query_client(monkeypatch, items)
+    response = client.get(
+        "/api/files",
+        params={"dataset": "ns:ds", "page": 2, "page_size": 100},
+    )
+    body = response.json()
+    assert body["has_more"] is False
+    assert len(body["rows"]) == 20
+
+
+def test_files_count_endpoint(monkeypatch, client):
+    items = [_file(f"f{i}.root") for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+    response = client.get("/api/files/count", params={"dataset": "ns:ds"})
+    assert response.status_code == 200
+    assert response.json() == {"total": 250}
     assert fake.queries[0]["summary"] == "count"
-    assert "skip 100 limit 100" in fake.queries[1]["mql"]
+
+
+def test_files_count_endpoint_bad_filter_400(monkeypatch, client):
+    _install_query_client(monkeypatch, [])
+    response = client.get(
+        "/api/files/count",
+        params={"dataset": "ns:ds", "run_range": "bogus"},
+    )
+    assert response.status_code == 400
 
 
 def test_files_runs_filter_composes_into_mql(monkeypatch, client):
@@ -456,8 +486,9 @@ def test_files_with_metadata_flag_passes_through(monkeypatch, client):
     )
     body = response.json()
     assert body["rows"][0]["metadata"] == {"core.runs": [27731]}
-    # Second query was the paged fetch with with_metadata=True
-    assert fake.queries[1]["with_metadata"] is True
+    # /api/files now issues only the paged fetch (no count).
+    assert len(fake.queries) == 1
+    assert fake.queries[0]["with_metadata"] is True
 
 
 def test_files_bad_run_range_400(monkeypatch, client):
