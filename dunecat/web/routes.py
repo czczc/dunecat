@@ -564,6 +564,23 @@ def get_runs_conditions(
             "any other value matches that string exactly."
         ),
     ),
+    beam_setp_min: float | None = Query(
+        None, ge=0,
+        description="Beam setpoint magnitude lower bound (>=0). Sign comes from polarity.",
+    ),
+    beam_setp_max: float | None = Query(
+        None, ge=0,
+        description="Beam setpoint magnitude upper bound (>=0). Sign comes from polarity.",
+    ),
+    polarity: str = Query(
+        "any",
+        description=(
+            "Beam polarity filter: 'positive', 'negative', or 'any' "
+            "(default). Case-insensitive; backend translates to each "
+            "folder's literal casing and, when 'any' is combined with "
+            "beam bounds, unions positive-side and negative-side queries."
+        ),
+    ),
 ) -> dict[str, Any]:
     # Validate ranges.
     if run_min is not None and run_max is not None and run_max < run_min:
@@ -574,6 +591,20 @@ def get_runs_conditions(
         raise HTTPException(
             status_code=400,
             detail="Pass both run_min and run_max, or neither.",
+        )
+    if (
+        beam_setp_min is not None
+        and beam_setp_max is not None
+        and beam_setp_max < beam_setp_min
+    ):
+        raise HTTPException(
+            status_code=400, detail="beam_setp_max must be >= beam_setp_min"
+        )
+    polarity_norm = polarity.lower() if polarity else "any"
+    if polarity_norm not in ("any", "positive", "negative"):
+        raise HTTPException(
+            status_code=400,
+            detail="polarity must be 'positive', 'negative', or 'any'.",
         )
 
     # Parse dates (YYYY-MM-DD → UTC unix; stop is inclusive day, so add 1 day for exclusive upper bound).
@@ -598,10 +629,18 @@ def get_runs_conditions(
 
     have_run_range = run_min is not None and run_max is not None
     have_date_range = start_unix is not None or stop_unix is not None
-    if not have_run_range and not have_date_range:
+    have_beam_filter = (
+        beam_setp_min is not None
+        or beam_setp_max is not None
+        or polarity_norm != "any"
+    )
+    if not have_run_range and not have_date_range and not have_beam_filter:
         raise HTTPException(
             status_code=400,
-            detail="At least one of run range (run_min/run_max) or date range (start/stop) is required.",
+            detail=(
+                "At least one filter is required: run range, date range, "
+                "or beam (momentum / polarity)."
+            ),
         )
 
     det = detector_by_id(detector)
@@ -614,6 +653,7 @@ def get_runs_conditions(
             detail=f"Detector {detector} has no condb_folder configured.",
         )
     rt = None if run_type.upper() == "ALL" else run_type
+    pol = None if polarity_norm == "any" else polarity_norm
     try:
         rows = condb.fetch_runs(
             folder,
@@ -622,7 +662,13 @@ def get_runs_conditions(
             start_unix=start_unix,
             stop_unix=stop_unix,
             run_type=rt,
+            beam_setp_min=beam_setp_min,
+            beam_setp_max=beam_setp_max,
+            polarity=pol,
         )
+    except ValueError as e:
+        # Unsupported folder for beam filter, unknown polarity, etc.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         log.warning(
             "/api/runs/%s/conditions: condb fetch failed: %s", detector, e
@@ -635,6 +681,9 @@ def get_runs_conditions(
         "start": start,
         "stop": stop,
         "run_type": rt,
+        "beam_setp_min": beam_setp_min,
+        "beam_setp_max": beam_setp_max,
+        "polarity": pol,
         "rows": rows,
     }
 

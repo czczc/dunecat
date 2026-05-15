@@ -12,6 +12,10 @@ const runMin = ref(route.query.run_min || '');
 const runMax = ref(route.query.run_max || '');
 const startDate = ref(route.query.start || '');
 const stopDate = ref(route.query.stop || '');
+const beamMin = ref(route.query.beam_setp_min || '');
+const beamMax = ref(route.query.beam_setp_max || '');
+// 'any' = no polarity filter. Server-side translation: 'positive' or 'Negative'.
+const polarity = ref(route.query.polarity || 'any');
 // PROD is the default — TEST runs are usually noise. 'ALL' means no filter.
 const runType = ref(route.query.run_type || 'PROD');
 
@@ -28,14 +32,27 @@ const selectedDetector = computed(
 );
 const hasRunRange = computed(() => runMin.value !== '' && runMax.value !== '');
 const hasDateRange = computed(() => startDate.value !== '' || stopDate.value !== '');
+const hasBeamFilter = computed(
+  () =>
+    beamMin.value !== '' ||
+    beamMax.value !== '' ||
+    (polarity.value && polarity.value !== 'any'),
+);
 const canApply = computed(() => {
   if (!selectedDetector.value?.condb_folder) return false;
-  if (!hasRunRange.value && !hasDateRange.value) return false;
+  if (!hasRunRange.value && !hasDateRange.value && !hasBeamFilter.value)
+    return false;
   if (hasRunRange.value && Number(runMin.value) > Number(runMax.value)) return false;
   if (
     startDate.value !== '' &&
     stopDate.value !== '' &&
     stopDate.value < startDate.value
+  )
+    return false;
+  if (
+    beamMin.value !== '' &&
+    beamMax.value !== '' &&
+    Number(beamMin.value) > Number(beamMax.value)
   )
     return false;
   return true;
@@ -54,6 +71,9 @@ async function fetchRows() {
       start: startDate.value,
       stop: stopDate.value,
       run_type: runType.value,
+      beam_setp_min: beamMin.value,
+      beam_setp_max: beamMax.value,
+      polarity: polarity.value,
     });
     rows.value = payload.rows || [];
   } catch (e) {
@@ -73,6 +93,9 @@ function onApply() {
       start: startDate.value,
       stop: stopDate.value,
       run_type: runType.value,
+      beam_setp_min: beamMin.value,
+      beam_setp_max: beamMax.value,
+      polarity: polarity.value,
     },
   });
   fetchRows();
@@ -114,8 +137,20 @@ function fmtMom(v) {
   if (v == null) return '—';
   return v.toFixed(3);
 }
+function fmtNum1(v) {
+  if (v == null) return '—';
+  return Number(v).toFixed(1);
+}
+function fmtInt(v) {
+  if (v == null) return '—';
+  return String(Math.trunc(Number(v)));
+}
 function beamOf(r) {
   return r.beam_momentum ?? r.beam_momentum_mean ?? null;
+}
+function beamSetOf(r) {
+  // HD: beam_setmomentum. VD: beam_momentum_set.
+  return r.beam_setmomentum ?? r.beam_momentum_set ?? null;
 }
 </script>
 
@@ -187,13 +222,46 @@ function beamOf(r) {
           @keyup.enter="canApply && onApply()"
         />
       </label>
+      <label class="field">
+        <span class="field-label">|Beam setp| min</span>
+        <input
+          v-model="beamMin"
+          type="number"
+          step="any"
+          min="0"
+          class="control mono"
+          placeholder="GeV/c"
+        />
+      </label>
+      <label class="field">
+        <span class="field-label">|Beam setp| max</span>
+        <input
+          v-model="beamMax"
+          type="number"
+          step="any"
+          min="0"
+          class="control mono"
+          placeholder="GeV/c"
+          @keyup.enter="canApply && onApply()"
+        />
+      </label>
+      <label class="field">
+        <span class="field-label">Polarity</span>
+        <select v-model="polarity" class="control">
+          <option value="any">Any</option>
+          <option value="positive">Positive</option>
+          <option value="negative">Negative</option>
+        </select>
+      </label>
       <button class="btn btn-primary" :disabled="!canApply" @click="onApply">
         Apply
       </button>
     </div>
     <p class="hint">
-      Need at least one filter: run range, date range, or both.
-      Dates are interpreted as inclusive UTC days.
+      Need at least one filter: run range, date range, or beam.
+      Dates are inclusive UTC days. Beam bounds are magnitudes (|setp|);
+      polarity selects the sign — "Any" with bounds unions positive and
+      negative sides.
     </p>
 
     <div v-if="loading" class="placeholder">
@@ -221,13 +289,17 @@ function beamOf(r) {
       <table class="results-table">
         <thead>
           <tr>
-            <th>tv</th>
+            <th>run</th>
             <th>start (UTC)</th>
             <th>type</th>
             <th>stream</th>
-            <th>beam</th>
+            <th title="Beam setpoint (filter value)">beam (set)</th>
+            <th title="Beam measured (mean); can diverge from setpoint">beam (meas)</th>
             <th>polarity</th>
-            <th>software</th>
+            <th title="gain (mV/fC)">gain</th>
+            <th title="peak_time (µs)">peak</th>
+            <th title="leak current (HD only)">leak</th>
+            <th title="baseline (ADC code)">base</th>
           </tr>
         </thead>
         <tbody>
@@ -241,9 +313,13 @@ function beamOf(r) {
             <td class="mono dim">{{ fmtUtc(r.start_time) }}</td>
             <td>{{ r.run_type || '—' }}</td>
             <td>{{ r.data_stream || '—' }}</td>
-            <td class="mono">{{ fmtMom(beamOf(r)) }}</td>
+            <td class="mono">{{ fmtMom(beamSetOf(r)) }}</td>
+            <td class="mono dim">{{ fmtMom(beamOf(r)) }}</td>
             <td>{{ r.beam_polarity || '—' }}</td>
-            <td class="mono dim">{{ r.software_version || '—' }}</td>
+            <td class="mono">{{ fmtNum1(r.gain) }}</td>
+            <td class="mono">{{ fmtNum1(r.peak_time) }}</td>
+            <td class="mono">{{ fmtNum1(r.leak) }}</td>
+            <td class="mono">{{ fmtInt(r.baseline) }}</td>
           </tr>
         </tbody>
       </table>
