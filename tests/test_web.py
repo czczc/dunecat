@@ -478,6 +478,14 @@ def test_get_file_happy_path(monkeypatch, client):
             {"namespace": "hd-protodune-det-reco", "name": "ds"},
         ],
         "parents": [{"fid": "parent-fid"}],
+        "children": [],
+    }
+    parent_record = {
+        "fid": "parent-fid",
+        "namespace": "hd-protodune",
+        "name": "raw_input.hdf5",
+        "size": 5000,
+        "created_timestamp": 0.5,
     }
 
     class FakeClient:
@@ -486,6 +494,10 @@ def test_get_file_happy_path(monkeypatch, client):
             assert with_provenance is True
             assert with_datasets is True
             return record
+
+        def get_files(self, lookup_list, **kw):
+            assert lookup_list == [{"fid": "parent-fid"}]
+            return [parent_record]
 
     monkeypatch.setattr(
         "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
@@ -498,12 +510,27 @@ def test_get_file_happy_path(monkeypatch, client):
     assert body["did"] == "hd-protodune-det-reco:f.root"
     assert body["metadata"]["core.runs"] == [27731]
     assert len(body["datasets"]) == 2
+    # Provenance enriched with namespace/name/did
+    assert body["parents"] == [
+        {
+            "fid": "parent-fid",
+            "namespace": "hd-protodune",
+            "name": "raw_input.hdf5",
+            "did": "hd-protodune:raw_input.hdf5",
+            "size": 5000,
+            "created_timestamp": 0.5,
+        }
+    ]
+    assert body["children"] == []
 
 
 def test_get_file_404_when_missing(monkeypatch, client):
     class FakeClient:
         def get_file(self, **kw):
             return None
+
+        def get_files(self, *a, **kw):
+            return []
 
     monkeypatch.setattr(
         "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False

@@ -398,7 +398,32 @@ def get_file(did: str = Query(...)) -> dict[str, Any]:
     if record is None:
         raise HTTPException(status_code=404, detail=f"File not found: {did}")
     record["did"] = f"{record['namespace']}:{record['name']}"
+    record["parents"] = _resolve_provenance_fids(client, record.get("parents") or [])
+    record["children"] = _resolve_provenance_fids(client, record.get("children") or [])
     return record
+
+
+def _resolve_provenance_fids(
+    client, entries: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Enrich [{fid: ...}, ...] entries with namespace+name+did via get_files."""
+    if not entries:
+        return []
+    fids = [e["fid"] for e in entries if "fid" in e]
+    if not fids:
+        return entries
+    lookup = [{"fid": f} for f in fids]
+    resolved = {}
+    for item in client.get_files(lookup, with_metadata=False, with_provenance=False):
+        resolved[item["fid"]] = {
+            "fid": item["fid"],
+            "namespace": item["namespace"],
+            "name": item["name"],
+            "did": f"{item['namespace']}:{item['name']}",
+            "size": item.get("size"),
+            "created_timestamp": item.get("created_timestamp"),
+        }
+    return [resolved.get(e["fid"], e) for e in entries if "fid" in e]
 
 
 @app.get("/api/dataset")

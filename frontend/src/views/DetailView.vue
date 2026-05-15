@@ -96,6 +96,15 @@ function fmtValue(v) {
 function datasetDid(d) {
   return `${d.namespace}:${d.name}`;
 }
+
+function fmtBytesShort(n) {
+  if (n == null) return '';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0; let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; }
+  return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`;
+}
+
 </script>
 
 <template>
@@ -175,6 +184,58 @@ function datasetDid(d) {
         </section>
 
         <section class="card">
+          <div class="card-head">
+            Parent files · {{ (file.parents || []).length }}
+          </div>
+          <ul class="ds-list">
+            <li
+              v-for="p in file.parents || []"
+              :key="p.fid"
+              class="ds-row"
+              :class="{ disabled: !p.did }"
+              @click="p.did && router.push({ name: 'file-detail', params: { did: p.did } })"
+            >
+              <template v-if="p.did">
+                <span class="ds-ns">{{ p.namespace }}:</span><span class="ds-name">{{ p.name }}</span>
+                <span class="ds-meta" v-if="p.size != null">{{ fmtBytesShort(p.size) }}</span>
+              </template>
+              <template v-else>
+                <span class="ds-name">fid {{ p.fid }} (unresolved)</span>
+              </template>
+            </li>
+          </ul>
+          <div v-if="(file.parents || []).length === 0" class="card-empty">
+            No parent files — this is a source/raw file in the lineage.
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            Child files · {{ (file.children || []).length }}
+          </div>
+          <ul class="ds-list">
+            <li
+              v-for="ch in file.children || []"
+              :key="ch.fid"
+              class="ds-row"
+              :class="{ disabled: !ch.did }"
+              @click="ch.did && router.push({ name: 'file-detail', params: { did: ch.did } })"
+            >
+              <template v-if="ch.did">
+                <span class="ds-ns">{{ ch.namespace }}:</span><span class="ds-name">{{ ch.name }}</span>
+                <span class="ds-meta" v-if="ch.size != null">{{ fmtBytesShort(ch.size) }}</span>
+              </template>
+              <template v-else>
+                <span class="ds-name">fid {{ ch.fid }} (unresolved)</span>
+              </template>
+            </li>
+          </ul>
+          <div v-if="(file.children || []).length === 0" class="card-empty">
+            No child files — nothing has been derived from this file yet.
+          </div>
+        </section>
+
+        <section class="card">
           <div class="card-head">File info</div>
           <div class="kv-grid">
             <div class="kv-key">fid</div>
@@ -208,7 +269,7 @@ function datasetDid(d) {
         </section>
 
         <section class="card card-deferred">
-          <div class="card-head">Lineage · Replicas · Schema peek</div>
+          <div class="card-head">Replicas · Schema peek</div>
           <p class="card-body-text">
             Deferred — these need data sources beyond metacat (Rucio for
             replicas, file content inspection for schema peeks).
@@ -355,8 +416,16 @@ function datasetDid(d) {
   line-height: 1.4;
 }
 .ds-row:hover { background: var(--surface); }
+.ds-row.disabled { cursor: default; color: var(--faint); }
+.ds-row.disabled:hover { background: transparent; }
 .ds-ns { font-family: var(--font-mono); color: var(--faint); font-size: 10.5px; }
 .ds-name { font-family: var(--font-mono); color: var(--ink); }
+.ds-meta {
+  font-family: var(--font-mono);
+  color: var(--faint);
+  font-size: 10.5px;
+  margin-left: 8px;
+}
 
 /* Key-value grid */
 .kv-grid {
