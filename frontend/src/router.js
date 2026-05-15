@@ -7,6 +7,11 @@ const router = createRouter({
     { path: '/', redirect: '/datasets' },
     { path: '/datasets', name: 'datasets', component: DatasetsView },
     { path: '/datasets/:detectorId', name: 'datasets-detector', component: DatasetsView },
+    {
+      path: '/dataset/:did/files',
+      name: 'dataset-files',
+      component: () => import('./views/PlaceholderView.vue'),
+    },
   ],
 });
 
