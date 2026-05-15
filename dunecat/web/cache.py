@@ -23,6 +23,22 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS saved_queries (
+                id          INTEGER PRIMARY KEY,
+                name        TEXT NOT NULL UNIQUE,
+                mql         TEXT NOT NULL,
+                created_at  TEXT NOT NULL,
+                last_run_at TEXT
+            )
+            """
+        )
+
+
+def connect() -> sqlite3.Connection:
+    """Public alias for callers outside this module."""
+    return _connect()
 
 
 def _key(namespace: str) -> str:

@@ -632,6 +632,90 @@ def test_query_validate_empty_mql_returns_ok_false(client):
     assert "empty" in body["error"].lower()
 
 
+# --- saved queries CRUD ----------------------------------------------------
+
+
+def test_saved_queries_crud_roundtrip(client):
+    # Empty initially
+    assert client.get("/api/queries").json() == []
+
+    # Create
+    r = client.post("/api/queries", json={"name": "Run 27731", "mql": "files where core.runs in (27731)"})
+    assert r.status_code == 201, r.text
+    created = r.json()
+    assert created["name"] == "Run 27731"
+    assert created["mql"] == "files where core.runs in (27731)"
+    assert created["created_at"] is not None
+    assert created["last_run_at"] is None
+    qid = created["id"]
+
+    # List shows it
+    listed = client.get("/api/queries").json()
+    assert len(listed) == 1
+    assert listed[0]["id"] == qid
+
+    # Update
+    r2 = client.put(f"/api/queries/{qid}", json={"name": "Run 27731 (renamed)"})
+    assert r2.status_code == 200
+    assert r2.json()["name"] == "Run 27731 (renamed)"
+    assert r2.json()["mql"] == "files where core.runs in (27731)"  # unchanged
+
+    # Delete
+    r3 = client.delete(f"/api/queries/{qid}")
+    assert r3.status_code == 204
+    assert client.get("/api/queries").json() == []
+
+
+def test_saved_queries_duplicate_name_409(client):
+    client.post("/api/queries", json={"name": "X", "mql": "files where ..."})
+    r = client.post("/api/queries", json={"name": "X", "mql": "files where other"})
+    assert r.status_code == 409
+    assert "already exists" in r.json()["detail"]
+
+
+def test_saved_queries_empty_fields_400(client):
+    assert client.post("/api/queries", json={"name": "", "mql": "x"}).status_code == 400
+    assert client.post("/api/queries", json={"name": "x", "mql": ""}).status_code == 400
+
+
+def test_saved_queries_update_missing_id_404(client):
+    r = client.put("/api/queries/9999", json={"name": "foo"})
+    assert r.status_code == 404
+
+
+def test_saved_queries_delete_missing_id_404(client):
+    r = client.delete("/api/queries/9999")
+    assert r.status_code == 404
+
+
+def test_saved_queries_update_to_duplicate_name_409(client):
+    a = client.post("/api/queries", json={"name": "A", "mql": "files where a"}).json()
+    client.post("/api/queries", json={"name": "B", "mql": "files where b"})
+    # rename A → B should conflict
+    r = client.put(f"/api/queries/{a['id']}", json={"name": "B"})
+    assert r.status_code == 409
+
+
+def test_query_run_with_saved_query_id_bumps_last_run_at(monkeypatch, client):
+    saved = client.post(
+        "/api/queries", json={"name": "rt", "mql": "files where core.runs in (1)"}
+    ).json()
+    assert saved["last_run_at"] is None
+
+    _install_query_client(monkeypatch, [_file("a.root")])
+    r = client.post(
+        "/api/query/run",
+        json={
+            "mql": "files where core.runs in (1)",
+            "saved_query_id": saved["id"],
+        },
+    )
+    assert r.status_code == 200, r.text
+
+    updated = client.get("/api/queries").json()[0]
+    assert updated["last_run_at"] is not None
+
+
 def test_query_run_mql_error_returns_400(monkeypatch, client):
     from unittest.mock import Mock
     from metacat.webapi import MCWebAPIError as MCErr

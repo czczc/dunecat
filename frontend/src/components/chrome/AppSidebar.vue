@@ -1,7 +1,13 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { nav, setDetector, loadDetectors, loadCounts } from '../../composables/useNav.js';
+import {
+  nav,
+  setDetector,
+  loadDetectors,
+  loadCounts,
+  loadSavedQueries,
+} from '../../composables/useNav.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -10,9 +16,16 @@ const activeDetectorId = computed(
   () => route.params.detectorId || nav.detectorId,
 );
 
+const activeSavedQueryId = computed(() => {
+  if (route.name !== 'query') return null;
+  const raw = route.query.id;
+  return raw ? Number(raw) : null;
+});
+
 onMounted(async () => {
   await loadDetectors();   // instant (YAML-only)
   loadCounts();            // slow on cold cache; runs in the background
+  loadSavedQueries();      // small table; fires in the background
 });
 
 function selectDetector(id) {
@@ -20,9 +33,27 @@ function selectDetector(id) {
   router.push({ name: 'datasets-detector', params: { detectorId: id } });
 }
 
+function openSavedQuery(q) {
+  router.push({ name: 'query', query: { id: q.id } });
+}
+
+function newQuery() {
+  router.push({ name: 'query' });
+}
+
 function fmt(n) {
   if (n == null) return '—';
   return new Intl.NumberFormat().format(n);
+}
+
+function fmtRelative(iso) {
+  if (!iso) return '—';
+  const t = new Date(iso).getTime();
+  const sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (sec < 60) return `${sec}s ago`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  return `${Math.floor(sec / 86400)}d ago`;
 }
 </script>
 
@@ -55,6 +86,28 @@ function fmt(n) {
       <div class="error-title">Counts unavailable</div>
       <div class="error-detail">{{ nav.countsError }}</div>
     </div>
+
+    <div class="divider" />
+
+    <div class="section-label">
+      Saved queries
+      <span class="badge">{{ nav.savedQueries.length || '' }}</span>
+    </div>
+    <ul class="list" v-if="nav.savedQueries.length > 0">
+      <li
+        v-for="q in nav.savedQueries"
+        :key="q.id"
+        class="row saved-row"
+        :class="{ active: q.id === activeSavedQueryId }"
+        @click="openSavedQuery(q)"
+      >
+        <span class="star">★</span>
+        <span class="name">{{ q.name }}</span>
+        <span class="count">{{ fmtRelative(q.last_run_at) }}</span>
+      </li>
+    </ul>
+    <div v-else class="hint">No saved queries yet.</div>
+    <a class="new-query-link" @click="newQuery">+ New query…</a>
   </aside>
 </template>
 
@@ -128,6 +181,40 @@ function fmt(n) {
   color: var(--faint);
 }
 .count.pending { opacity: 0.4; }
+
+.divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 14px 4px;
+}
+
+.saved-row .star {
+  width: auto;
+  height: auto;
+  background: transparent;
+  border-radius: 0;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.new-query-link {
+  display: block;
+  padding: 6px 10px;
+  margin-top: 6px;
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.new-query-link:hover { background: var(--surface); }
+
+.hint {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--faint);
+  font-style: italic;
+}
 
 .status, .error {
   padding: 8px 10px;

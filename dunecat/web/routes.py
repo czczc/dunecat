@@ -1,8 +1,10 @@
 import fnmatch
 import logging
 import os
+import sqlite3
 import time
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any
 
 log = logging.getLogger("uvicorn.error")
@@ -217,6 +219,31 @@ class _QueryRunRequest(BaseModel):
     mql: str
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=100, ge=1, le=500)
+    saved_query_id: int | None = None
+
+
+class _SavedQueryCreate(BaseModel):
+    name: str
+    mql: str
+
+
+class _SavedQueryUpdate(BaseModel):
+    name: str | None = None
+    mql: str | None = None
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _saved_query_row(row: tuple) -> dict[str, Any]:
+    return {
+        "id": row[0],
+        "name": row[1],
+        "mql": row[2],
+        "created_at": row[3],
+        "last_run_at": row[4],
+    }
 
 
 @app.post("/api/query/run")
@@ -232,12 +259,97 @@ def query_run(req: _QueryRunRequest) -> dict[str, Any]:
         "/api/query/run page=%d rows=%d took=%.2fs",
         req.page, len(rows), time.monotonic() - start,
     )
+    if req.saved_query_id is not None:
+        with cache.connect() as conn:
+            conn.execute(
+                "UPDATE saved_queries SET last_run_at = ? WHERE id = ?",
+                (_now_iso(), req.saved_query_id),
+            )
     return {
         "page": req.page,
         "page_size": req.page_size,
         "rows": rows,
         "has_more": len(rows) == req.page_size,
     }
+
+
+# --- saved queries ---------------------------------------------------------
+
+
+@app.get("/api/queries")
+def list_saved_queries() -> list[dict[str, Any]]:
+    with cache.connect() as conn:
+        rows = conn.execute(
+            "SELECT id, name, mql, created_at, last_run_at "
+            "FROM saved_queries ORDER BY LOWER(name)"
+        ).fetchall()
+    return [_saved_query_row(r) for r in rows]
+
+
+@app.post("/api/queries", status_code=201)
+def create_saved_query(req: _SavedQueryCreate) -> dict[str, Any]:
+    name = req.name.strip()
+    mql = req.mql.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+    if not mql:
+        raise HTTPException(status_code=400, detail="mql is required")
+    try:
+        with cache.connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO saved_queries (name, mql, created_at) VALUES (?, ?, ?)",
+                (name, mql, _now_iso()),
+            )
+            new_id = cur.lastrowid
+            row = conn.execute(
+                "SELECT id, name, mql, created_at, last_run_at FROM saved_queries WHERE id = ?",
+                (new_id,),
+            ).fetchone()
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409, detail=f"A query named {name!r} already exists"
+        )
+    return _saved_query_row(row)
+
+
+@app.put("/api/queries/{query_id}")
+def update_saved_query(query_id: int, req: _SavedQueryUpdate) -> dict[str, Any]:
+    with cache.connect() as conn:
+        existing = conn.execute(
+            "SELECT id, name, mql, created_at, last_run_at FROM saved_queries WHERE id = ?",
+            (query_id,),
+        ).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail=f"Saved query {query_id} not found")
+        new_name = (req.name.strip() if req.name is not None else existing[1])
+        new_mql = (req.mql.strip() if req.mql is not None else existing[2])
+        if not new_name:
+            raise HTTPException(status_code=400, detail="name cannot be empty")
+        if not new_mql:
+            raise HTTPException(status_code=400, detail="mql cannot be empty")
+        try:
+            conn.execute(
+                "UPDATE saved_queries SET name = ?, mql = ? WHERE id = ?",
+                (new_name, new_mql, query_id),
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409, detail=f"A query named {new_name!r} already exists"
+            )
+        row = conn.execute(
+            "SELECT id, name, mql, created_at, last_run_at FROM saved_queries WHERE id = ?",
+            (query_id,),
+        ).fetchone()
+    return _saved_query_row(row)
+
+
+@app.delete("/api/queries/{query_id}", status_code=204)
+def delete_saved_query(query_id: int) -> Response:
+    with cache.connect() as conn:
+        cur = conn.execute("DELETE FROM saved_queries WHERE id = ?", (query_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail=f"Saved query {query_id} not found")
+    return Response(status_code=204)
 
 
 @app.post("/api/query/count")

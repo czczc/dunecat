@@ -1,5 +1,9 @@
 import { reactive, watch } from 'vue';
-import { getDetectorCounts, getDetectors } from '../api.js';
+import {
+  getDetectorCounts,
+  getDetectors,
+  listSavedQueries,
+} from '../api.js';
 
 const STORAGE_KEY = 'dunecat.nav.v1';
 
@@ -19,6 +23,7 @@ export const nav = reactive({
   counts: {},             // {detectorId: {datasets_count, files_count}}
   countsLoading: false,
   countsError: null,
+  savedQueries: [],       // [{id, name, mql, created_at, last_run_at}]
 });
 
 watch(
@@ -56,4 +61,13 @@ export async function loadCounts({ force = false } = {}) {
 
 export function detectorById(id) {
   return nav.detectors.find((d) => d.id === id) || null;
+}
+
+export async function loadSavedQueries() {
+  try {
+    nav.savedQueries = await listSavedQueries();
+  } catch (_e) {
+    nav.savedQueries = [];
+  }
+  return nav.savedQueries;
 }

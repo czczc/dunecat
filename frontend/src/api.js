@@ -43,11 +43,16 @@ export const getFilesCount = (params) =>
 export const getFile = (did) => jsonFetch(`/api/file?${buildQuery({ did })}`);
 export const getDataset = (did) => jsonFetch(`/api/dataset?${buildQuery({ did })}`);
 
-export const runQuery = (mql, page, pageSize) =>
+export const runQuery = (mql, page, pageSize, savedQueryId = null) =>
   jsonFetch('/api/query/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mql, page, page_size: pageSize }),
+    body: JSON.stringify({
+      mql,
+      page,
+      page_size: pageSize,
+      saved_query_id: savedQueryId,
+    }),
   });
 
 export const countQuery = (mql) =>
@@ -63,3 +68,22 @@ export const validateQuery = (mql) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mql }),
   });
+
+export const listSavedQueries = () => jsonFetch('/api/queries');
+
+export const createSavedQuery = (name, mql) =>
+  jsonFetch('/api/queries', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mql }),
+  });
+
+export const updateSavedQuery = (id, patch) =>
+  jsonFetch(`/api/queries/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+
+export const deleteSavedQuery = (id) =>
+  jsonFetch(`/api/queries/${id}`, { method: 'DELETE' });

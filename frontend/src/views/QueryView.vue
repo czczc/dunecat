@@ -1,12 +1,74 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { countQuery, runQuery, validateQuery } from '../api.js';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  countQuery,
+  createSavedQuery,
+  deleteSavedQuery,
+  runQuery,
+  updateSavedQuery,
+  validateQuery,
+} from '../api.js';
+import { loadSavedQueries, nav } from '../composables/useNav.js';
 
+const route = useRoute();
 const router = useRouter();
 
 const mql = ref('');
+const queryName = ref('');
 const editorRef = ref(null);
+
+// Saved-query state
+const currentSavedId = ref(null);              // null = unsaved draft
+const savedName = ref('');                     // last persisted name
+const savedMql = ref('');                      // last persisted mql
+const saveError = ref(null);
+const saving = ref(false);
+
+const isDraft = computed(() => {
+  if (currentSavedId.value == null) return true;
+  return mql.value !== savedMql.value || queryName.value !== savedName.value;
+});
+
+function loadFromSaved(q) {
+  currentSavedId.value = q.id;
+  queryName.value = q.name;
+  savedName.value = q.name;
+  mql.value = q.mql;
+  savedMql.value = q.mql;
+  saveError.value = null;
+  validateResult.value = null;
+}
+
+function resetToBlank() {
+  currentSavedId.value = null;
+  queryName.value = '';
+  savedName.value = '';
+  mql.value = '';
+  savedMql.value = '';
+  saveError.value = null;
+  validateResult.value = null;
+}
+
+async function loadByRouteId() {
+  const raw = route.query.id;
+  if (!raw) {
+    resetToBlank();
+    return;
+  }
+  const id = Number(raw);
+  // Try the cached list first; fall back to a fresh fetch.
+  let q = nav.savedQueries.find((x) => x.id === id);
+  if (!q) {
+    await loadSavedQueries();
+    q = nav.savedQueries.find((x) => x.id === id);
+  }
+  if (q) loadFromSaved(q);
+  else resetToBlank();
+}
+
+watch(() => route.query.id, () => loadByRouteId());
+onMounted(loadByRouteId);
 
 // Validation
 const validating = ref(false);
@@ -73,13 +135,67 @@ async function onRun() {
   await doFetch(token);
 }
 
+async function onSave() {
+  saveError.value = null;
+  saving.value = true;
+  try {
+    if (currentSavedId.value == null) {
+      // Create a new saved query — prompt for a name if empty
+      let name = queryName.value.trim();
+      if (!name) {
+        name = window.prompt('Save this query as:')?.trim() || '';
+        if (!name) {
+          saving.value = false;
+          return;
+        }
+        queryName.value = name;
+      }
+      const created = await createSavedQuery(name, mql.value);
+      await loadSavedQueries();
+      loadFromSaved(created);
+      router.replace({ name: 'query', query: { id: created.id } });
+    } else {
+      // Update in place
+      const updated = await updateSavedQuery(currentSavedId.value, {
+        name: queryName.value.trim(),
+        mql: mql.value,
+      });
+      await loadSavedQueries();
+      loadFromSaved(updated);
+    }
+  } catch (e) {
+    saveError.value = e.message;
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function onDelete() {
+  if (currentSavedId.value == null) return;
+  if (!window.confirm(`Delete saved query "${savedName.value}"?`)) return;
+  try {
+    await deleteSavedQuery(currentSavedId.value);
+    await loadSavedQueries();
+    router.replace({ name: 'datasets' });
+  } catch (e) {
+    saveError.value = e.message;
+  }
+}
+
 async function doFetch(token) {
   running.value = true;
   runError.value = null;
   try {
-    const r = await runQuery(mql.value, page.value, pageSize.value);
+    const r = await runQuery(
+      mql.value,
+      page.value,
+      pageSize.value,
+      currentSavedId.value,
+    );
     if (token !== runToken) return;
     pageData.value = r;
+    // Reflect the new last_run_at in the sidebar without a full reload.
+    if (currentSavedId.value != null) loadSavedQueries();
   } catch (e) {
     if (token !== runToken) return;
     runError.value = e.message;
@@ -148,7 +264,16 @@ function fmtTimestamp(ts) {
   <div class="page">
     <div class="header">
       <div class="eyebrow">Query</div>
-      <h1 class="title">MQL query builder</h1>
+      <div class="title-row">
+        <h1 class="title">MQL query builder</h1>
+        <span
+          v-if="currentSavedId != null || queryName"
+          class="save-status"
+          :class="{ saved: !isDraft, draft: isDraft }"
+        >
+          {{ isDraft ? 'draft' : '✓ saved' }}
+        </span>
+      </div>
       <p class="subtitle">
         Run raw MQL queries against the catalog. See the cheatsheet on the right or
         click a snippet to start.
@@ -160,7 +285,11 @@ function fmtTimestamp(ts) {
         <!-- Editor -->
         <div class="card">
           <div class="card-head">
-            <span>Query</span>
+            <input
+              v-model="queryName"
+              class="name-input"
+              placeholder="Untitled query"
+            />
             <span class="head-right">
               <span
                 v-if="validateResult"
@@ -183,9 +312,24 @@ function fmtTimestamp(ts) {
             v-if="validateResult && !validateResult.ok"
             class="validate-error"
           >{{ validateResult.error }}</div>
+          <div v-if="saveError" class="validate-error">{{ saveError }}</div>
           <div class="editor-actions">
             <button class="btn" :disabled="validating || !mql.trim()" @click="onValidate">
               {{ validating ? 'Validating…' : 'Validate' }}
+            </button>
+            <button
+              class="btn"
+              :disabled="saving || !mql.trim() || (!isDraft && currentSavedId != null)"
+              @click="onSave"
+            >
+              {{ saving ? 'Saving…' : (currentSavedId == null ? 'Save as…' : 'Save') }}
+            </button>
+            <button
+              v-if="currentSavedId != null"
+              class="btn btn-danger"
+              @click="onDelete"
+            >
+              Delete
             </button>
             <button
               class="btn btn-primary"
@@ -439,6 +583,37 @@ function fmtTimestamp(ts) {
   color: white;
 }
 .btn-primary:hover:not(:disabled) { background: var(--ink); }
+.btn-danger {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.btn-danger:hover:not(:disabled) { background: var(--bad-bg); }
+
+.title-row { display: flex; align-items: baseline; gap: 12px; }
+.save-status {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.save-status.draft { background: var(--surface); color: var(--dim); }
+.save-status.saved { background: var(--good-bg); color: var(--good); }
+
+.name-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.0px;
+  text-transform: uppercase;
+  color: var(--faint);
+  flex: 1;
+  min-width: 0;
+}
+.name-input:focus { color: var(--ink); text-transform: none; letter-spacing: 0; }
 
 /* Snippets */
 .snippet-list { list-style: none; padding: 4px 0; margin: 0; }
