@@ -36,10 +36,13 @@ const pageSize = ref(100);
 const PAGE_SIZES = [100, 200, 500];
 
 const loading = ref(false);
+const metadataLoading = ref(false);
 const error = ref(null);
 const data = ref(null);
 const total = ref(null);            // null = unknown / loading / failed
 const totalLoading = ref(false);
+
+let fetchToken = 0;                 // generation guard for in-flight fetches
 
 const totalPages = computed(() => {
   if (total.value == null || !data.value) return null;
@@ -68,20 +71,45 @@ function currentFilterParams() {
 
 async function fetchPage() {
   if (!did.value) return;
+  const token = ++fetchToken;
   loading.value = true;
   error.value = null;
+
+  // Fast pass: no metadata — table renders ASAP.
   try {
-    data.value = await getFiles({
+    const fast = await getFiles({
       ...currentFilterParams(),
-      with_metadata: applied.withMetadata,
+      with_metadata: false,
       page: page.value,
       page_size: pageSize.value,
     });
+    if (token !== fetchToken) return;
+    data.value = fast;
   } catch (e) {
+    if (token !== fetchToken) return;
     error.value = e.message;
     data.value = null;
+    return;
   } finally {
-    loading.value = false;
+    if (token === fetchToken) loading.value = false;
+  }
+
+  // Background pass: with metadata. Fills in Run/Events columns.
+  if (!applied.withMetadata) return;
+  metadataLoading.value = true;
+  try {
+    const full = await getFiles({
+      ...currentFilterParams(),
+      with_metadata: true,
+      page: page.value,
+      page_size: pageSize.value,
+    });
+    if (token !== fetchToken) return;
+    data.value = full;
+  } catch (_e) {
+    // Background fetch failed; keep the fast result. Run/Events stay '—'.
+  } finally {
+    if (token === fetchToken) metadataLoading.value = false;
   }
 }
 
@@ -173,11 +201,13 @@ function fmtTimestamp(ts) {
   return d.toISOString().slice(0, 16).replace('T', ' ');
 }
 function pickRun(row) {
+  if (applied.withMetadata && metadataLoading.value && !row.metadata) return '…';
   const runs = row.metadata?.['core.runs'];
   if (Array.isArray(runs) && runs.length) return runs[0];
   return '—';
 }
 function pickEvents(row) {
+  if (applied.withMetadata && metadataLoading.value && !row.metadata) return '…';
   const events = row.metadata?.['core.events'];
   if (Array.isArray(events)) return events.length;
   return '—';
