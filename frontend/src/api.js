@@ -47,6 +47,11 @@ export const getFile = (did) => jsonFetch(`/api/file?${buildQuery({ did })}`);
 export const getDataset = (did) => jsonFetch(`/api/dataset?${buildQuery({ did })}`);
 export const getRun = (run) => jsonFetch(`/api/run/${encodeURIComponent(run)}`);
 
+export const getRunConditions = (detector, run) =>
+  jsonFetch(
+    `/api/runs/${encodeURIComponent(detector)}/${encodeURIComponent(run)}/conditions`,
+  );
+
 export const runQuery = (mql, page, pageSize, savedQueryId = null) =>
   jsonFetch('/api/query/run', {
     method: 'POST',

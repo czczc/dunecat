@@ -23,7 +23,7 @@ from dunecat.filters import (
     value_matches,
 )
 
-from . import cache
+from . import cache, condb
 from .detectors import (
     apply_default_filters,
     datasets_for_detector,
@@ -78,7 +78,12 @@ async def _metacat_error(_: Request, exc: MCWebAPIError) -> JSONResponse:
 def list_detectors() -> list[dict[str, Any]]:
     """Detector names + namespaces only. Instant (YAML-only)."""
     return [
-        {"id": d["id"], "name": d["name"], "namespaces": d["namespaces"]}
+        {
+            "id": d["id"],
+            "name": d["name"],
+            "namespaces": d["namespaces"],
+            "condb_folder": d.get("condb_folder"),
+        }
         for d in load_detectors()
     ]
 
@@ -537,6 +542,31 @@ def get_run(run_number: int) -> dict[str, Any]:
         "duration_seconds": duration,
         "sample_raw_files": sample_raw,
     }
+
+
+@app.get("/api/runs/{detector}/{run}/conditions")
+def get_run_conditions(detector: str, run: int) -> dict[str, Any]:
+    det = detector_by_id(detector)
+    if det is None:
+        raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
+    folder = det.get("condb_folder")
+    if not folder:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Detector {detector} has no condb_folder configured.",
+        )
+    try:
+        row = condb.fetch_run(folder, run)
+    except Exception as e:
+        log.warning("/api/runs/%s/%d/conditions: condb fetch failed: %s",
+                    detector, run, e)
+        raise HTTPException(status_code=502, detail="condb unreachable")
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No conditions on file for run {run} in {folder}.",
+        )
+    return {"folder": folder, "run": run, "row": row}
 
 
 @app.get("/api/dataset")

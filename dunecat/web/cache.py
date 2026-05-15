@@ -34,6 +34,49 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS condb_cache (
+                folder     TEXT NOT NULL,
+                tv         INTEGER NOT NULL,
+                body       TEXT,
+                fetched_at TEXT NOT NULL,
+                PRIMARY KEY (folder, tv)
+            )
+            """
+        )
+
+
+def get_condb_cached(folder: str, tv: int) -> dict[str, Any] | None | str:
+    """Return a cached condb row, ``None`` if the cache stored a negative
+    result (run was checked but had no row), or the sentinel ``"MISS"`` if
+    the cache has no entry at all. ``"MISS"`` distinguishes "we've never
+    asked" from "we asked and got nothing."
+    """
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT body FROM condb_cache WHERE folder = ? AND tv = ?",
+            (folder, tv),
+        ).fetchone()
+    if row is None:
+        return "MISS"
+    if row[0] is None:
+        return None
+    return json.loads(row[0])
+
+
+def set_condb_cached(folder: str, tv: int, body: dict[str, Any] | None) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO condb_cache (folder, tv, body, fetched_at) "
+            "VALUES (?, ?, ?, ?)",
+            (
+                folder,
+                tv,
+                json.dumps(body, default=str) if body is not None else None,
+                datetime.now(UTC).isoformat(),
+            ),
+        )
 
 
 def connect() -> sqlite3.Connection:

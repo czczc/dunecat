@@ -3,11 +3,13 @@
   namespaces:
     - hd-protodune
     - hd-protodune-det-reco
+  condb_folder: pdunesp.run_conditionstest
 - id: protodune-vd
   name: ProtoDUNE-VD
   namespaces:
     - vd-protodune
     - vd-protodune-det-reco
+  condb_folder: pdunesp.run_conditions_vd
 - id: fardet-hd
   name: DUNE FD-HD
   namespaces:

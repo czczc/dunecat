@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getRun } from '../api.js';
+import { getRun, getRunConditions, getDetectors } from '../api.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -12,6 +12,19 @@ const lookupInput = ref('');
 const loading = ref(false);
 const error = ref(null);
 const data = ref(null);
+
+const detectors = ref([]);
+const detectorId = ref(route.query.detector || '');
+const conditions = ref(null);
+const conditionsLoading = ref(false);
+const conditionsError = ref(null);
+
+const selectedDetector = computed(
+  () => detectors.value.find((d) => d.id === detectorId.value) || null,
+);
+const conditionsActive = computed(
+  () => !!detectorId.value && !!selectedDetector.value?.condb_folder,
+);
 
 async function fetchRun() {
   if (!runParam.value) {
@@ -30,10 +43,37 @@ async function fetchRun() {
   }
 }
 
+async function fetchConditions() {
+  conditions.value = null;
+  conditionsError.value = null;
+  if (!runParam.value || !conditionsActive.value) return;
+  conditionsLoading.value = true;
+  try {
+    conditions.value = await getRunConditions(detectorId.value, runParam.value);
+  } catch (e) {
+    if (e.status !== 404) conditionsError.value = e;
+  } finally {
+    conditionsLoading.value = false;
+  }
+}
+
+function onDetectorChange() {
+  router.replace({
+    name: 'run-detail',
+    params: { run: runParam.value },
+    query: detectorId.value ? { detector: detectorId.value } : {},
+  });
+  fetchConditions();
+}
+
 function onLookup() {
   const trimmed = lookupInput.value.trim();
   if (!trimmed) return;
-  router.push({ name: 'run-detail', params: { run: trimmed } });
+  router.push({
+    name: 'run-detail',
+    params: { run: trimmed },
+    query: detectorId.value ? { detector: detectorId.value } : {},
+  });
 }
 
 function openFile(did) {
@@ -49,8 +89,21 @@ function goToFilesQuery(tier) {
   router.push({ name: 'query', query: { prefill: mql } });
 }
 
-watch(runParam, fetchRun);
-onMounted(fetchRun);
+watch(runParam, () => {
+  // Fire both lookups in parallel. The conditions call typically returns
+  // before metacat's file query.
+  fetchRun();
+  fetchConditions();
+});
+onMounted(async () => {
+  try {
+    detectors.value = await getDetectors();
+  } catch {
+    detectors.value = [];
+  }
+  fetchRun();
+  fetchConditions();
+});
 
 function fmtNum(n) {
   if (n == null) return '—';
@@ -77,6 +130,56 @@ function fmtDuration(sec) {
 }
 function tierBarWidth(count, total) {
   return Math.max(2, (count / total) * 100) + '%';
+}
+
+function fmtMom(v) {
+  if (v == null) return '—';
+  return `${v.toFixed(3)} GeV/c`;
+}
+function fmtHv(v) {
+  if (v == null) return '—';
+  return `${v.toLocaleString(undefined, { maximumFractionDigits: 0 })} V`;
+}
+
+const condRow = computed(() => conditions.value?.row || null);
+const condBeam = computed(() => {
+  const r = condRow.value;
+  if (!r) return null;
+  return r.beam_momentum ?? r.beam_momentum_mean ?? null;
+});
+const condHv = computed(() => {
+  const r = condRow.value;
+  if (!r) return null;
+  return r.detector_hv ?? r.detector_hv_mean ?? null;
+});
+const condDuration = computed(() => {
+  const r = condRow.value;
+  if (!r || r.start_time == null || r.stop_time == null) return null;
+  return r.stop_time - r.start_time;
+});
+
+// Fields rendered in the curated kv-grid above — exclude from "show all".
+const CURATED = new Set([
+  'start_time', 'stop_time', 'run_type', 'data_stream',
+  'beam_momentum', 'beam_momentum_mean', 'beam_polarity',
+  'detector_hv', 'detector_hv_mean', 'software_version',
+  'config_files',
+]);
+const condExtras = computed(() => {
+  const r = condRow.value;
+  if (!r) return [];
+  return Object.entries(r)
+    .filter(([k, v]) => !CURATED.has(k) && v !== null && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b));
+});
+function fmtCellValue(v) {
+  if (v === null || v === undefined) return '—';
+  if (typeof v === 'number') {
+    // Keep integers integer, floats to ≤ 6 sig figs
+    return Number.isInteger(v) ? String(v) : Number(v.toPrecision(6)).toString();
+  }
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  return String(v);
 }
 </script>
 
@@ -112,7 +215,86 @@ function tierBarWidth(count, total) {
       <button class="btn btn-primary" :disabled="!lookupInput.trim()" @click="onLookup">
         Look up
       </button>
+      <select
+        v-model="detectorId"
+        class="detector-picker"
+        @change="onDetectorChange"
+        :title="'Detector — picks which condb folder to query'"
+      >
+        <option value="">Unknown detector</option>
+        <option v-for="d in detectors" :key="d.id" :value="d.id">
+          {{ d.name }}{{ d.condb_folder ? '' : ' (no condb)' }}
+        </option>
+      </select>
     </div>
+
+    <!-- Conditions card: independent of metacat — renders as soon as condb answers. -->
+    <section
+      v-if="runParam && (conditionsActive || conditionsLoading)"
+      class="card cond-card"
+    >
+      <div class="card-head">
+        Run conditions (condb)
+        <span v-if="conditionsLoading" class="card-head-action">loading…</span>
+      </div>
+      <div v-if="conditionsError" class="card-empty">
+        Couldn't load conditions: {{ conditionsError.message }}
+      </div>
+      <div v-else-if="conditions === null && !conditionsLoading" class="card-empty">
+        No conditions on file for run {{ runParam }} in this detector's condb folder.
+      </div>
+      <div v-else-if="condRow" class="kv-grid kv-grid-cond">
+        <div class="kv-key">Start</div>
+        <div class="kv-val mono">{{ fmtUtc(condRow.start_time) }}</div>
+        <div class="kv-key">Stop</div>
+        <div class="kv-val mono">{{ fmtUtc(condRow.stop_time) }}</div>
+        <div class="kv-key">Duration</div>
+        <div class="kv-val mono">{{ fmtDuration(condDuration) }}</div>
+        <div class="kv-key">Run type</div>
+        <div class="kv-val">{{ condRow.run_type || '—' }}</div>
+        <div class="kv-key">Stream</div>
+        <div class="kv-val">{{ condRow.data_stream || '—' }}</div>
+        <div class="kv-key">Beam</div>
+        <div class="kv-val mono">
+          {{ fmtMom(condBeam) }}
+          <span v-if="condRow.beam_polarity" class="dim">
+            ({{ condRow.beam_polarity }})
+          </span>
+        </div>
+        <div class="kv-key">Detector HV</div>
+        <div class="kv-val mono">{{ fmtHv(condHv) }}</div>
+        <div class="kv-key">Software</div>
+        <div class="kv-val mono">{{ condRow.software_version || '—' }}</div>
+      </div>
+      <details v-if="condRow?.config_files" class="cond-config">
+        <summary>Config files ({{ Object.keys(condRow.config_files).length }})</summary>
+        <ul class="config-list">
+          <li v-for="(uri, key) in condRow.config_files" :key="key">
+            <span class="config-key">{{ key }}</span>
+            <span class="config-uri mono">{{ uri }}</span>
+          </li>
+        </ul>
+      </details>
+      <details v-if="condExtras.length" class="cond-config">
+        <summary>All fields ({{ condExtras.length }})</summary>
+        <ul class="config-list">
+          <li v-for="[k, v] in condExtras" :key="k">
+            <span class="config-key">{{ k }}</span>
+            <span class="config-uri mono">{{ fmtCellValue(v) }}</span>
+          </li>
+        </ul>
+      </details>
+    </section>
+    <section
+      v-else-if="runParam && detectorId && !selectedDetector?.condb_folder"
+      class="card cond-card"
+    >
+      <div class="card-head">Run conditions (condb)</div>
+      <div class="card-empty">
+        No condb integration configured for
+        {{ selectedDetector?.name || detectorId }}.
+      </div>
+    </section>
 
     <div v-if="!runParam" class="empty">
       <div class="empty-body">
@@ -235,8 +417,22 @@ function tierBarWidth(count, total) {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  max-width: 320px;
+  max-width: 520px;
+  align-items: center;
 }
+.detector-picker {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
+  background: var(--page);
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--body);
+  outline: none;
+  cursor: pointer;
+}
+.detector-picker:focus { border-color: var(--accent); }
 .lookup-input {
   flex: 1;
   height: 32px;
@@ -437,4 +633,44 @@ function tierBarWidth(count, total) {
 }
 .error-title { font-weight: 600; color: var(--bad); margin-bottom: 4px; }
 .error-detail { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
+
+/* Conditions card */
+.cond-card { margin-bottom: 16px; }
+.kv-grid-cond { grid-template-columns: 110px 1fr; }
+.dim { color: var(--faint); }
+
+.cond-config { padding: 6px 14px 14px; }
+.cond-config summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-family: var(--font-sans);
+  padding: 4px 0;
+}
+.cond-config summary:hover { color: var(--ink); }
+.config-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+.config-list li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  align-items: baseline;
+}
+.config-key {
+  font-family: var(--font-mono);
+  color: var(--dim);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.config-uri {
+  font-size: 11px;
+  color: var(--ink);
+  word-break: break-all;
+}
 </style>
