@@ -40,12 +40,13 @@ function openFile(did) {
   router.push({ name: 'file-detail', params: { did } });
 }
 
-function goToFilesQuery() {
+function goToFilesQuery(tier) {
   // Cross-page link: jump into QueryView pre-populated.
-  router.push({
-    name: 'query',
-    query: { prefill: `files where core.runs in (${runParam.value})` },
-  });
+  const base = `files where core.runs in (${runParam.value})`;
+  const mql = tier
+    ? `${base} and core.data_tier = '${tier.replace(/'/g, "\\'")}'`
+    : base;
+  router.push({ name: 'query', query: { prefill: mql } });
 }
 
 watch(runParam, fetchRun);
@@ -165,12 +166,15 @@ function tierBarWidth(count, total) {
             v-for="(count, tier) in data.files_by_tier"
             :key="tier"
             class="tier-row"
+            @click="goToFilesQuery(tier)"
+            :title="`Open in Query: files where core.runs in (${runParam}) and core.data_tier = '${tier}'`"
           >
             <span class="tier-name">{{ tier }}</span>
             <span class="tier-count">{{ fmtNum(count) }}</span>
             <span class="tier-bar">
               <span class="tier-bar-fill" :style="{ width: tierBarWidth(count, data.files_total) }" />
             </span>
+            <span class="tier-arrow">→</span>
           </li>
         </ul>
       </section>
@@ -179,7 +183,7 @@ function tierBarWidth(count, total) {
       <section class="card card-wide">
         <div class="card-head">
           Sample raw files
-          <span class="card-head-action" @click="goToFilesQuery">
+          <span class="card-head-action" @click="goToFilesQuery(null)">
             Open in Query →
           </span>
         </div>
@@ -338,10 +342,22 @@ function tierBarWidth(count, total) {
 .tier-list { list-style: none; margin: 0; padding: 8px 14px 12px; }
 .tier-row {
   display: grid;
-  grid-template-columns: 160px 60px 1fr;
+  grid-template-columns: 160px 60px 1fr 16px;
   gap: 12px;
   align-items: center;
-  padding: 4px 0;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tier-row:hover { background: var(--surface); }
+.tier-row:hover .tier-arrow { color: var(--accent-ink); opacity: 1; }
+.tier-arrow {
+  color: var(--faint);
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.12s;
 }
 .tier-name {
   font-family: var(--font-mono);
