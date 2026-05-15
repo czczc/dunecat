@@ -1,34 +1,19 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { nav, setDetector } from '../../composables/useNav.js';
+import { nav, setDetector, loadDetectors, loadCounts } from '../../composables/useNav.js';
 
 const router = useRouter();
 const route = useRoute();
-const detectors = ref([]);
-const loadError = ref(null);
-const loading = ref(true);
 
 const activeDetectorId = computed(
   () => route.params.detectorId || nav.detectorId,
 );
 
-async function fetchDetectors() {
-  loading.value = true;
-  loadError.value = null;
-  try {
-    const resp = await fetch('/api/detectors');
-    if (!resp.ok) {
-      const body = await resp.json().catch(() => ({}));
-      throw new Error(body.detail || `HTTP ${resp.status}`);
-    }
-    detectors.value = await resp.json();
-  } catch (e) {
-    loadError.value = e.message;
-  } finally {
-    loading.value = false;
-  }
-}
+onMounted(async () => {
+  await loadDetectors();   // instant (YAML-only)
+  loadCounts();            // slow on cold cache; runs in the background
+});
 
 function selectDetector(id) {
   setDetector(id);
@@ -39,26 +24,20 @@ function fmt(n) {
   if (n == null) return '—';
   return new Intl.NumberFormat().format(n);
 }
-
-onMounted(fetchDetectors);
 </script>
 
 <template>
   <aside class="sidebar">
     <div class="section-label">
       Detectors
-      <span class="badge">{{ detectors.length || '' }}</span>
+      <span class="badge">{{ nav.detectors.length || '' }}</span>
     </div>
 
-    <div v-if="loading" class="status">Loading…</div>
-    <div v-else-if="loadError" class="error">
-      <div class="error-title">Couldn't load detectors</div>
-      <div class="error-detail">{{ loadError }}</div>
-    </div>
+    <div v-if="nav.detectors.length === 0" class="status">Loading…</div>
 
     <ul v-else class="list">
       <li
-        v-for="d in detectors"
+        v-for="d in nav.detectors"
         :key="d.id"
         class="row"
         :class="{ active: d.id === activeDetectorId }"
@@ -66,9 +45,16 @@ onMounted(fetchDetectors);
       >
         <span class="dot" />
         <span class="name">{{ d.name }}</span>
-        <span class="count">{{ fmt(d.datasets_count) }}</span>
+        <span class="count" :class="{ pending: nav.countsLoading && !nav.counts[d.id] }">
+          {{ fmt(nav.counts[d.id]?.datasets_count) }}
+        </span>
       </li>
     </ul>
+
+    <div v-if="nav.countsError" class="error">
+      <div class="error-title">Counts unavailable</div>
+      <div class="error-detail">{{ nav.countsError }}</div>
+    </div>
   </aside>
 </template>
 
@@ -141,6 +127,7 @@ onMounted(fetchDetectors);
   font-size: 11px;
   color: var(--faint);
 }
+.count.pending { opacity: 0.4; }
 
 .status, .error {
   padding: 8px 10px;

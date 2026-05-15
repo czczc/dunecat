@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -38,11 +39,13 @@ def _fetch_from_metacat(namespace: str) -> list[dict[str, Any]]:
 def datasets_for_detector(
     namespaces: list[str],
 ) -> tuple[list[dict[str, Any]], datetime]:
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(datasets_for_namespace, namespaces))
+
     seen: set[tuple[str, str]] = set()
     out: list[dict[str, Any]] = []
     oldest: datetime | None = None
-    for ns in namespaces:
-        items, fetched_at = datasets_for_namespace(ns)
+    for items, fetched_at in results:
         if oldest is None or fetched_at < oldest:
             oldest = fetched_at
         for ds in items:
@@ -53,3 +56,16 @@ def datasets_for_detector(
             out.append(ds)
     assert oldest is not None  # namespaces is always non-empty per YAML schema
     return out, oldest
+
+
+def apply_default_filters(
+    items: list[dict[str, Any]], official_only: bool = True
+) -> list[dict[str, Any]]:
+    out = []
+    for ds in items:
+        if (ds.get("file_count") or 0) == 0:
+            continue
+        if official_only and ds.get("creator") != "dunepro":
+            continue
+        out.append(ds)
+    return out

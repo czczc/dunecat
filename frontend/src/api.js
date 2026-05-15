@@ -24,6 +24,7 @@ function buildQuery(params) {
 }
 
 export const getDetectors = () => jsonFetch('/api/detectors');
+export const getDetectorCounts = () => jsonFetch('/api/detectors/counts');
 
 export const getDatasets = (params) =>
   jsonFetch(`/api/datasets?${buildQuery(params)}`);

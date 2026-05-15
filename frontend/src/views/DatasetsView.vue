@@ -1,19 +1,25 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getDatasets, getDetectors, refreshDatasets } from '../api.js';
+import { getDatasets, refreshDatasets } from '../api.js';
+import {
+  nav,
+  loadDetectors,
+  loadCounts,
+} from '../composables/useNav.js';
 
 const route = useRoute();
 const router = useRouter();
 
 const detectorId = computed(() => route.params.detectorId);
-const detectors = ref([]);
 const activeDetector = computed(
-  () => detectors.value.find((d) => d.id === detectorId.value) || null,
+  () => nav.detectors.find((d) => d.id === detectorId.value) || null,
 );
+const activeCounts = computed(() => nav.counts[detectorId.value] || null);
 
 const pattern = ref('');
 const tier = ref('all');
+const officialOnly = ref(true);
 const page = ref(1);
 const PAGE_SIZE = 100;
 
@@ -31,14 +37,6 @@ const TIERS = [
 
 let debounceTimer = null;
 
-async function loadDetectors() {
-  try {
-    detectors.value = await getDetectors();
-  } catch (e) {
-    error.value = e.message;
-  }
-}
-
 async function fetchPage() {
   if (!detectorId.value) {
     data.value = null;
@@ -52,6 +50,7 @@ async function fetchPage() {
       detector: detectorId.value,
       pattern: pattern.value || null,
       tier: tierValue,
+      official_only: officialOnly.value,
       page: page.value,
       page_size: PAGE_SIZE,
     });
@@ -63,7 +62,7 @@ async function fetchPage() {
   }
 }
 
-watch([detectorId, tier], () => {
+watch([detectorId, tier, officialOnly], () => {
   page.value = 1;
   fetchPage();
 });
@@ -84,7 +83,7 @@ async function onRefresh() {
   try {
     await refreshDatasets(detectorId.value);
     await fetchPage();
-    await loadDetectors();
+    await loadCounts({ force: true });
   } finally {
     loading.value = false;
   }
@@ -96,6 +95,7 @@ function openDataset(did) {
 
 onMounted(async () => {
   await loadDetectors();
+  loadCounts();
   fetchPage();
 });
 
@@ -164,11 +164,15 @@ const totalPages = computed(() =>
         <div class="hero-stats">
           <div class="stat">
             <div class="stat-label">Datasets</div>
-            <div class="stat-value">{{ fmtNum(activeDetector.datasets_count) }}</div>
+            <div class="stat-value">
+              {{ activeCounts ? fmtNum(activeCounts.datasets_count) : '…' }}
+            </div>
           </div>
           <div class="stat">
             <div class="stat-label">Files</div>
-            <div class="stat-value">{{ fmtNum(activeDetector.files_count) }}</div>
+            <div class="stat-value">
+              {{ activeCounts ? fmtNum(activeCounts.files_count) : '…' }}
+            </div>
           </div>
         </div>
       </div>
@@ -184,6 +188,15 @@ const totalPages = computed(() =>
             @click="tier = t.id"
           >
             {{ t.label }}
+          </button>
+          <span class="chip-divider" />
+          <button
+            class="chip"
+            :class="{ active: officialOnly }"
+            @click="officialOnly = !officialOnly"
+            :title="officialOnly ? 'Showing only datasets created by dunepro' : 'Showing datasets from all creators'"
+          >
+            Official only
           </button>
         </div>
         <input
@@ -320,7 +333,13 @@ const totalPages = computed(() =>
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
-.chips { display: flex; gap: 6px; }
+.chips { display: flex; align-items: center; gap: 6px; }
+.chip-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--rule);
+  margin: 0 4px;
+}
 .chip {
   padding: 5px 10px;
   border-radius: 999px;

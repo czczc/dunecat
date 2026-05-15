@@ -26,18 +26,46 @@ def _fake_list(items_by_ns):
     return _impl
 
 
-def test_detectors_returns_yaml_with_live_counts(monkeypatch, client):
+def test_detectors_endpoint_returns_yaml_only(client):
+    response = client.get("/api/detectors")
+    assert response.status_code == 200
+    payload = response.json()
+    assert {d["id"] for d in payload} == {
+        "protodune-hd",
+        "protodune-vd",
+        "fardet-hd",
+        "fardet-vd",
+    }
+    # Counts must NOT be on this endpoint (it's now YAML-only / instant)
+    for d in payload:
+        assert "datasets_count" not in d
+        assert "files_count" not in d
+        assert "namespaces" in d
+
+
+def test_detector_counts_endpoint_applies_default_filters(monkeypatch, client):
     items = {
         "hd-protodune": [
-            {"namespace": "hd-protodune", "name": "a", "file_count": 10},
-            {"namespace": "hd-protodune", "name": "b", "file_count": 5},
+            {  # official, non-empty
+                "namespace": "hd-protodune", "name": "a",
+                "file_count": 10, "creator": "dunepro",
+            },
+            {  # non-official → excluded by default
+                "namespace": "hd-protodune", "name": "b",
+                "file_count": 5, "creator": "someone",
+            },
+            {  # empty → always excluded
+                "namespace": "hd-protodune", "name": "c",
+                "file_count": 0, "creator": "dunepro",
+            },
         ],
         "hd-protodune-det-reco": [
-            {"namespace": "hd-protodune-det-reco", "name": "c", "file_count": 3},
+            {
+                "namespace": "hd-protodune-det-reco", "name": "d",
+                "file_count": 3, "creator": "dunepro",
+            },
         ],
-        "vd-protodune": [
-            {"namespace": "vd-protodune", "name": "d", "file_count": 1},
-        ],
+        "vd-protodune": [],
         "fardet-hd": [],
         "fardet-vd": [],
         "fd_vd_mc_reco": [],
@@ -49,28 +77,13 @@ def test_detectors_returns_yaml_with_live_counts(monkeypatch, client):
     monkeypatch.setattr(
         "dunecat.web.detectors.get_client", lambda: FakeClient(), raising=False
     )
-    # detectors.py imports get_client lazily inside the function so we
-    # also need to patch the actual source module attribute that the
-    # closure resolves through. The monkeypatch above handles the
-    # `dunecat.web.detectors.get_client` reference once it's been
-    # bound via the lazy import.
 
-    response = client.get("/api/detectors")
-
+    response = client.get("/api/detectors/counts")
     assert response.status_code == 200
-    payload = response.json()
-    assert {d["id"] for d in payload} == {
-        "protodune-hd",
-        "protodune-vd",
-        "fardet-hd",
-        "fardet-vd",
-    }
-    by_id = {d["id"]: d for d in payload}
-    assert by_id["protodune-hd"]["datasets_count"] == 3
-    assert by_id["protodune-hd"]["files_count"] == 18
-    assert by_id["protodune-vd"]["datasets_count"] == 1
-    assert by_id["protodune-vd"]["files_count"] == 1
-    assert by_id["fardet-hd"]["datasets_count"] == 0
+    by_id = {d["id"]: d for d in response.json()}
+    # protodune-hd: only a (10) + d (3) survive; b non-official, c empty
+    assert by_id["protodune-hd"]["datasets_count"] == 2
+    assert by_id["protodune-hd"]["files_count"] == 13
 
 
 def test_authentication_error_surfaces_as_401(monkeypatch, client):
@@ -87,7 +100,7 @@ def test_authentication_error_surfaces_as_401(monkeypatch, client):
     monkeypatch.setenv("METACAT_SERVER_URL", "https://m.example/app")
     monkeypatch.setenv("METACAT_AUTH_SERVER_URL", "https://m.example/auth")
 
-    response = client.get("/api/detectors")
+    response = client.get("/api/detectors/counts")
 
     assert response.status_code == 401
     body = response.json()
@@ -104,12 +117,14 @@ _DS_FIXTURES = {
             "namespace": "hd-protodune",
             "name": "alpha_cosmic",
             "file_count": 10,
+            "creator": "dunepro",
             "metadata": {"core.data_tier": "raw"},
         },
         {
             "namespace": "hd-protodune",
             "name": "beta_beam",
             "file_count": 5,
+            "creator": "dunepro",
             "metadata": {"core.data_tier": "raw"},
         },
     ],
@@ -118,10 +133,25 @@ _DS_FIXTURES = {
             "namespace": "hd-protodune-det-reco",
             "name": "gamma_cosmic_reco",
             "file_count": 3,
+            "creator": "dunepro",
             "metadata": {
                 "core.data_tier": "full-reconstructed",
                 "dune.output_status": "confirmed",
             },
+        },
+        {
+            "namespace": "hd-protodune-det-reco",
+            "name": "delta_user_test",
+            "file_count": 2,
+            "creator": "chaoz",
+            "metadata": {"core.data_tier": "full-reconstructed"},
+        },
+        {
+            "namespace": "hd-protodune-det-reco",
+            "name": "epsilon_empty",
+            "file_count": 0,
+            "creator": "dunepro",
+            "metadata": {"core.data_tier": "full-reconstructed"},
         },
     ],
     "vd-protodune": [],
@@ -263,3 +293,41 @@ def test_datasets_response_includes_fetched_at(monkeypatch, client):
     assert "fetched_at" in body
     # ISO 8601 with timezone
     assert "T" in body["fetched_at"]
+
+
+def test_datasets_drops_empty_datasets_always(monkeypatch, client):
+    _install_fake_client(monkeypatch)
+    response = client.get(
+        "/api/datasets",
+        params={"detector": "protodune-hd", "official_only": "false"},
+    )
+    body = response.json()
+    # All non-empty datasets returned (alpha, beta, gamma, delta); epsilon (0 files) dropped.
+    assert body["total"] == 4
+    assert "epsilon_empty" not in [r["name"] for r in body["rows"]]
+
+
+def test_datasets_official_only_default_drops_non_dunepro(monkeypatch, client):
+    _install_fake_client(monkeypatch)
+    response = client.get(
+        "/api/datasets", params={"detector": "protodune-hd"}
+    )
+    # default official_only=true: alpha, beta, gamma. delta (chaoz) dropped, epsilon (0 files) dropped.
+    body = response.json()
+    assert body["total"] == 3
+    names = {r["name"] for r in body["rows"]}
+    assert "delta_user_test" not in names
+    assert "epsilon_empty" not in names
+
+
+def test_datasets_official_only_false_keeps_non_dunepro(monkeypatch, client):
+    _install_fake_client(monkeypatch)
+    response = client.get(
+        "/api/datasets",
+        params={"detector": "protodune-hd", "official_only": "false"},
+    )
+    body = response.json()
+    names = {r["name"] for r in body["rows"]}
+    assert "delta_user_test" in names
+    # Empty still dropped
+    assert "epsilon_empty" not in names

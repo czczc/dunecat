@@ -11,7 +11,13 @@ from metacat.webapi import AuthenticationError, MCWebAPIError
 from dunecat.filters import value_matches
 
 from . import cache
-from .detectors import datasets_for_detector, detector_by_id, load_detectors
+from .detectors import (
+    apply_default_filters,
+    datasets_for_detector,
+    datasets_for_namespace,
+    detector_by_id,
+    load_detectors,
+)
 
 
 @asynccontextmanager
@@ -57,16 +63,51 @@ async def _metacat_error(_: Request, exc: MCWebAPIError) -> JSONResponse:
 
 @app.get("/api/detectors")
 def list_detectors() -> list[dict[str, Any]]:
+    """Detector names + namespaces only. Instant (YAML-only)."""
+    return [
+        {"id": d["id"], "name": d["name"], "namespaces": d["namespaces"]}
+        for d in load_detectors()
+    ]
+
+
+@app.get("/api/detectors/counts")
+def detector_counts() -> list[dict[str, Any]]:
+    """Live datasets/files counts per detector (official-only, non-empty).
+
+    Pulls every unique namespace in parallel and shares results across
+    detectors that overlap, so cold-cache wall time is roughly max(per-ns)
+    rather than sum(per-ns).
+    """
+    entries = load_detectors()
+    all_namespaces: list[str] = sorted(
+        {ns for e in entries for ns in e["namespaces"]}
+    )
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        ns_results = dict(
+            zip(all_namespaces, ex.map(datasets_for_namespace, all_namespaces))
+        )
+
     out: list[dict[str, Any]] = []
-    for entry in load_detectors():
-        datasets, _ = datasets_for_detector(entry["namespaces"])
+    for e in entries:
+        seen: set[tuple[str, str]] = set()
+        merged: list[dict[str, Any]] = []
+        for ns in e["namespaces"]:
+            items, _ = ns_results[ns]
+            for ds in items:
+                key = (ds["namespace"], ds["name"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(ds)
+        filtered = apply_default_filters(merged, official_only=True)
         out.append(
             {
-                "id": entry["id"],
-                "name": entry["name"],
-                "namespaces": entry["namespaces"],
-                "datasets_count": len(datasets),
-                "files_count": sum(ds.get("file_count") or 0 for ds in datasets),
+                "id": e["id"],
+                "datasets_count": len(filtered),
+                "files_count": sum(ds.get("file_count") or 0 for ds in filtered),
             }
         )
     return out
@@ -78,6 +119,7 @@ def list_datasets(
     pattern: str | None = Query(None),
     tier: str | None = Query(None),
     meta: list[str] = Query(default_factory=list),
+    official_only: bool = Query(True),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
 ) -> dict[str, Any]:
@@ -86,6 +128,7 @@ def list_datasets(
         raise HTTPException(status_code=404, detail=f"Unknown detector: {detector}")
 
     items, fetched_at = datasets_for_detector(det["namespaces"])
+    items = apply_default_filters(items, official_only=official_only)
     filtered = _apply_filters(items, pattern=pattern, tier=tier, meta=meta)
 
     total = len(filtered)
