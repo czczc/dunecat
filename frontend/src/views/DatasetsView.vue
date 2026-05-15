@@ -230,14 +230,31 @@ const totalPages = computed(() =>
         />
       </div>
 
-      <!-- Refresh row -->
-      <div class="refresh-row" v-if="data">
-        <span class="fetched">
-          Fetched {{ fmtRelative(data.fetched_at) }}
-        </span>
-        <button class="btn" :disabled="loading" @click="onRefresh">
-          {{ loading ? 'Refreshing…' : 'Refresh' }}
-        </button>
+      <!-- Toolbar: pager + refresh, above the table -->
+      <div class="toolbar" v-if="data && data.total > 0">
+        <div class="pager-info">
+          Showing
+          <strong>{{ (page - 1) * PAGE_SIZE + 1 }}</strong>
+          –<strong>{{ Math.min(page * PAGE_SIZE, data.total) }}</strong>
+          of <strong>{{ fmtNum(data.total) }}</strong>
+          · Fetched {{ fmtRelative(data.fetched_at) }}
+        </div>
+        <div class="pager-controls">
+          <button class="btn" :disabled="page <= 1 || loading" @click="page -= 1">
+            ← Prev
+          </button>
+          <span class="pager-pos">Page {{ page }} / {{ totalPages }}</span>
+          <button
+            class="btn"
+            :disabled="page >= totalPages || loading"
+            @click="page += 1"
+          >
+            Next →
+          </button>
+          <button class="btn" :disabled="loading" @click="onRefresh">
+            {{ loading ? 'Refreshing…' : 'Refresh' }}
+          </button>
+        </div>
       </div>
 
       <!-- Error -->
@@ -277,28 +294,6 @@ const totalPages = computed(() =>
             <div class="td col-files">{{ fmtNum(row.file_count) }}</div>
             <div class="td col-tier">{{ row.metadata['core.data_tier'] || '—' }}</div>
             <div class="td col-updated">{{ fmtTimestamp(row.updated_timestamp || row.created_timestamp) }}</div>
-          </div>
-        </div>
-
-        <div class="pager">
-          <div class="pager-info">
-            Showing
-            <strong>{{ (page - 1) * PAGE_SIZE + 1 }}</strong>
-            –<strong>{{ Math.min(page * PAGE_SIZE, data.total) }}</strong>
-            of <strong>{{ fmtNum(data.total) }}</strong> datasets
-          </div>
-          <div class="pager-controls">
-            <button class="btn" :disabled="page <= 1 || loading" @click="page -= 1">
-              ← Prev
-            </button>
-            <span class="pager-pos">Page {{ page }} / {{ totalPages }}</span>
-            <button
-              class="btn"
-              :disabled="page >= totalPages || loading"
-              @click="page += 1"
-            >
-              Next →
-            </button>
           </div>
         </div>
       </template>
@@ -440,15 +435,16 @@ const totalPages = computed(() =>
 }
 .search:focus { border-color: var(--accent); }
 
-/* Refresh row */
-.refresh-row {
+/* Toolbar above table: pager + refresh */
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
   font-size: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-.fetched { color: var(--faint); font-family: var(--font-mono); }
 
 /* Generic btn */
 .btn {
@@ -516,14 +512,7 @@ const totalPages = computed(() =>
   color: var(--dim);
 }
 
-/* Pager */
-.pager {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  padding: 0 4px;
-}
+/* Pager (inside toolbar) */
 .pager-info { font-size: 12px; color: var(--dim); }
 .pager-controls { display: flex; align-items: center; gap: 10px; }
 .pager-pos {
