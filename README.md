@@ -1,4 +1,6 @@
-# dunecat
+<p align="center">
+  <img src="frontend/public/logo/dunecat-logo.png" alt="dunecat" width="420">
+</p>
 
 A local web app for browsing the DUNE metacat file catalog: pick a detector,
 narrow datasets by tier / file type, look up runs, and run raw MQL queries —
