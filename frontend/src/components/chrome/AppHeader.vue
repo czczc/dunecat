@@ -23,14 +23,12 @@ function onSavedPicked(e) {
 
 <template>
   <header class="header">
-    <RouterLink :to="{ name: 'datasets' }" class="brand">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-        <rect x="2" y="4" width="18" height="3" rx="1" fill="none" stroke="var(--ink)" stroke-width="1.5" />
-        <rect x="2" y="9.5" width="18" height="3" rx="1" fill="var(--ink)" fill-opacity="0.08" stroke="var(--ink)" stroke-width="1.5" />
-        <rect x="2" y="15" width="18" height="3" rx="1" fill="none" stroke="var(--ink)" stroke-width="1.5" />
-      </svg>
-      <span class="brand-name">dunecat</span>
-      <span class="brand-sub">· DUNE file catalog</span>
+    <RouterLink
+      :to="{ name: 'datasets' }"
+      class="brand"
+      aria-label="dunecat — home"
+    >
+      <img src="/logo/dunecat-logo.png" alt="dunecat" />
     </RouterLink>
 
     <nav class="nav">
@@ -75,16 +73,16 @@ function onSavedPicked(e) {
 }
 
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  flex: 0 0 auto;
   text-decoration: none;
-  color: var(--ink);
-  flex-shrink: 0;
-  white-space: nowrap;
 }
-.brand-name { font-size: 16px; font-weight: 600; }
-.brand-sub { font-size: 12px; color: var(--faint); }
+.brand img {
+  height: 36px;       /* ~64% of the 56px navbar */
+  width: auto;
+  display: block;
+}
 
 .nav { display: flex; gap: 22px; flex-shrink: 0; }
 .nav-item {
