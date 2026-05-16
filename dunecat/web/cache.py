@@ -1,8 +1,10 @@
 import json
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+RUCIO_TTL = timedelta(hours=1)
 
 DB_PATH = Path.home() / ".dunecat" / "dunecat.db"
 
@@ -45,6 +47,17 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rucio_cache (
+                scope      TEXT NOT NULL,
+                name       TEXT NOT NULL,
+                body       TEXT,
+                fetched_at TEXT NOT NULL,
+                PRIMARY KEY (scope, name)
+            )
+            """
+        )
 
 
 def get_condb_cached(folder: str, tv: int) -> dict[str, Any] | None | str:
@@ -76,6 +89,30 @@ def set_condb_cached(folder: str, tv: int, body: dict[str, Any] | None) -> None:
                 json.dumps(body, default=str) if body is not None else None,
                 datetime.now(UTC).isoformat(),
             ),
+        )
+
+
+def get_rucio_cached(scope: str, name: str) -> dict[str, Any] | None:
+    """Return cached replica list if present and fresh (<1h), else ``None``."""
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT body, fetched_at FROM rucio_cache WHERE scope = ? AND name = ?",
+            (scope, name),
+        ).fetchone()
+    if row is None or row[0] is None:
+        return None
+    fetched_at = datetime.fromisoformat(row[1])
+    if datetime.now(UTC) - fetched_at > RUCIO_TTL:
+        return None
+    return json.loads(row[0])
+
+
+def set_rucio_cached(scope: str, name: str, body: dict[str, Any]) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO rucio_cache (scope, name, body, fetched_at) "
+            "VALUES (?, ?, ?, ?)",
+            (scope, name, json.dumps(body, default=str), datetime.now(UTC).isoformat()),
         )
 
 

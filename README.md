@@ -49,6 +49,55 @@ This wraps the upstream `metacat auth login` command using the URLs and
 defaults from `.env`. Tokens expire after one week. When the app returns
 `Token missing or expired`, re-run `uv run dunecat login`.
 
+## Rucio (file replicas) — optional
+
+The file detail page can look up Rucio replicas (RSE + PFN per file) on
+demand. This needs a DUNE-scoped OIDC bearer token. Both `rucio-clients`
+and `htgettoken` are project dependencies, so once `uv sync` has run
+they're available at `.venv/bin/htgettoken` — nothing else to install.
+
+Set the relevant variables in `.env`:
+
+```
+RUCIO_ACCOUNT=<your FNAL Rucio account, e.g. your username>
+BEARER_TOKEN_FILE=/tmp/bt_u<your-uid>      # default htgettoken path on Linux/macOS
+```
+
+Mint a token (browser device-code flow the first time per ~10 days):
+
+```bash
+uv run htgettoken --vaulttokenttl=10d --vaultserver=htvaultprod.fnal.gov --issuer=dune
+```
+
+This produces:
+
+- A bearer token at `/tmp/bt_u<uid>` — good ~3 hours. dunecat reads this
+  fresh on each Rucio call.
+- A vault refresh token at `/tmp/vt_u<uid>` — good 10 days. Lets future
+  `htgettoken` invocations re-mint the bearer **without** another browser
+  dance.
+
+To keep the bearer fresh during a long uvicorn session, run htgettoken
+every ~2 hours. Two convenient options on macOS:
+
+```bash
+# Quick: from another terminal whenever you see a 401 from /api/replicas
+uv run htgettoken --vaultserver=htvaultprod.fnal.gov --issuer=dune
+
+# Hands-off: a launchd / cron job
+# In `crontab -e`, every 2 hours:
+0 */2 * * * cd ~/Code/metacat && .venv/bin/htgettoken \
+  --vaultserver=htvaultprod.fnal.gov --issuer=dune >/dev/null 2>&1
+```
+
+When the bearer is missing or expired, `/api/replicas` returns 401 with
+the literal command above — the UI surfaces it verbatim so you know
+exactly what to run.
+
+The Rucio config (`~/.dunecat/rucio/etc/rucio.cfg`) is generated from
+your `.env` values on first use. You don't need to maintain it
+separately.
+
 ## Run the web app
 
 Two terminals — `uvicorn` is **not** run with `--reload` (the macOS file-watcher
@@ -91,4 +140,8 @@ in CI; live verification is running the app against the production server.
 - `dunecat/web/detectors.yaml` — detector → namespace map. Add a detector by
   appending an entry; restart uvicorn for changes to take effect.
 - `~/.dunecat/dunecat.db` — local SQLite cache (per-namespace dataset list and
-  saved queries). Safe to delete; the app will rebuild on next use.
+  saved queries, condb run conditions, Rucio replicas with 1 h TTL). Safe to
+  delete; the app will rebuild on next use.
+- `~/.dunecat/rucio/etc/rucio.cfg` — auto-generated from your `.env` values
+  the first time the server makes a Rucio call. Delete to regenerate from
+  current `.env`.

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getFile } from '../api.js';
+import { getFile, getReplicas } from '../api.js';
 import { loadDetectors, nav } from '../composables/useNav.js';
 
 const route = useRoute();
@@ -19,6 +19,11 @@ const loading = ref(false);
 const error = ref(null);
 const file = ref(null);
 const copyState = ref('idle');  // 'idle' | 'copied'
+
+const replicas = ref(null);          // { replicas: [...], cached, bytes, ... }
+const replicasLoading = ref(false);
+const replicasError = ref(null);
+const replicasOpen = ref(false);
 
 const sortedMetadata = computed(() => {
   if (!file.value?.metadata) return [];
@@ -45,7 +50,30 @@ async function fetchFile() {
   }
 }
 
-watch(did, fetchFile);
+watch(did, () => {
+  fetchFile();
+  replicas.value = null;
+  replicasError.value = null;
+  replicasOpen.value = false;
+});
+
+async function toggleReplicas() {
+  if (replicasOpen.value) {
+    replicasOpen.value = false;
+    return;
+  }
+  replicasOpen.value = true;
+  if (replicas.value || replicasLoading.value) return;
+  replicasLoading.value = true;
+  replicasError.value = null;
+  try {
+    replicas.value = await getReplicas(did.value);
+  } catch (e) {
+    replicasError.value = e;
+  } finally {
+    replicasLoading.value = false;
+  }
+}
 
 onMounted(async () => {
   await loadDetectors();
@@ -268,11 +296,39 @@ function fmtBytesShort(n) {
           </div>
         </section>
 
-        <section class="card card-deferred">
-          <div class="card-head">Replicas · Schema peek</div>
-          <p class="card-body-text">
-            Deferred — these need data sources beyond metacat (Rucio for
-            replicas, file content inspection for schema peeks).
+        <section class="card">
+          <div class="card-head card-head-row">
+            <span>
+              Replicas
+              <span v-if="replicas?.replicas" class="head-meta">
+                · {{ replicas.replicas.length }}{{ replicas.cached ? ' · cached' : '' }}
+              </span>
+            </span>
+            <button class="btn btn-small" @click="toggleReplicas">
+              {{ replicasOpen ? 'Hide' : (replicas ? 'Show' : 'Look up') }}
+            </button>
+          </div>
+          <div v-if="replicasOpen">
+            <div v-if="replicasLoading" class="card-empty">Looking up replicas…</div>
+            <div v-else-if="replicasError" class="replicas-error">
+              <div class="replicas-error-title">
+                {{ replicasError.status === 401 ? 'Rucio auth' :
+                   replicasError.status === 404 ? 'No replicas' : 'Rucio error' }}
+              </div>
+              <div class="replicas-error-detail">{{ replicasError.message }}</div>
+            </div>
+            <div v-else-if="replicas?.replicas?.length" class="replicas-list">
+              <div v-for="r in replicas.replicas" :key="`${r.rse}|${r.pfn}`" class="replica-row">
+                <div class="replica-rse">{{ r.rse }}</div>
+                <div class="replica-pfn">{{ r.pfn }}</div>
+              </div>
+            </div>
+            <div v-else-if="replicas" class="card-empty">
+              No replicas found for this file.
+            </div>
+          </div>
+          <p v-else class="card-body-text">
+            Query Rucio for RSE + PFN replicas (cached 1h).
           </p>
         </section>
       </aside>
@@ -335,6 +391,57 @@ function fmtBytesShort(n) {
 .btn:hover { background: var(--surface); }
 
 .btn-copy { min-width: 80px; justify-content: center; }
+.btn-small { height: 22px; padding: 0 8px; font-size: 11px; }
+
+.card-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.head-meta {
+  font-weight: 400;
+  color: var(--dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.replicas-list { padding: 6px 0; }
+.replica-row {
+  padding: 8px 14px;
+  border-top: 1px solid var(--rule);
+}
+.replica-row:first-child { border-top: none; }
+.replica-rse {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.replica-pfn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--dim);
+  word-break: break-all;
+  user-select: all;
+}
+.replicas-error {
+  padding: 12px 14px;
+  background: var(--bad-bg);
+  border-top: 1px solid var(--bad);
+}
+.replicas-error-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bad);
+  margin-bottom: 4px;
+}
+.replicas-error-detail {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  word-break: break-word;
+}
 
 /* Grid */
 .grid {

@@ -44,6 +44,7 @@ export const getFilesCount = (params) =>
   jsonFetch(`/api/files/count?${buildQuery(params)}`);
 
 export const getFile = (did) => jsonFetch(`/api/file?${buildQuery({ did })}`);
+export const getReplicas = (did) => jsonFetch(`/api/replicas?${buildQuery({ did })}`);
 export const getDataset = (did) => jsonFetch(`/api/dataset?${buildQuery({ did })}`);
 export const getRun = (run) => jsonFetch(`/api/run/${encodeURIComponent(run)}`);
 

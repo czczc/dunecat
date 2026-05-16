@@ -23,7 +23,7 @@ from dunecat.filters import (
     value_matches,
 )
 
-from . import cache, condb
+from . import cache, condb, rucio as rucio_mod
 from .detectors import (
     apply_default_filters,
     datasets_for_detector,
@@ -768,6 +768,41 @@ def get_run_conditions(detector: str, run: int) -> dict[str, Any]:
             detail=f"No conditions on file for run {run} in {folder}.",
         )
     return {"folder": folder, "run": run, "row": row}
+
+
+@app.get("/api/replicas")
+def get_replicas(did: str = Query(..., description="scope:name DID")) -> dict[str, Any]:
+    """Rucio replica lookup for one file DID. Cached for 1h.
+
+    On 401/auth failures, returns 401 with the literal htgettoken command
+    the user needs to run — the UI surfaces this verbatim.
+    """
+    if ":" not in did:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+    scope, name = did.split(":", 1)
+    if not scope or not name:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+
+    cached = cache.get_rucio_cached(scope, name)
+    if cached is not None:
+        return {"cached": True, **cached}
+
+    start = time.monotonic()
+    try:
+        body = rucio_mod.list_replicas(scope, name)
+    except rucio_mod.RucioAuthError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except rucio_mod.RucioError as e:
+        log.warning("/api/replicas did=%s: rucio error: %s", did, e)
+        raise HTTPException(status_code=502, detail=f"Rucio error: {e}")
+    log.info(
+        "/api/replicas did=%s replicas=%d took=%.2fs",
+        did, len(body["replicas"]) if body else 0, time.monotonic() - start,
+    )
+    if body is None:
+        raise HTTPException(status_code=404, detail=f"No replicas for {did}")
+    cache.set_rucio_cached(scope, name, body)
+    return {"cached": False, **body}
 
 
 @app.get("/api/dataset")
