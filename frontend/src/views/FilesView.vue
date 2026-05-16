@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getDataset, getFiles, getFilesCount } from '../api.js';
 import { loadDetectors, nav } from '../composables/useNav.js';
@@ -14,22 +14,6 @@ const name = computed(() => did.value?.split(':').slice(1).join(':') || '');
 const detector = computed(() =>
   nav.detectors.find((d) => d.namespaces.includes(namespace.value)) || null,
 );
-
-// Filter form state — only applied on "Apply"
-const draft = reactive({
-  runs: '',
-  runRange: '',
-  namespaceOverride: '',
-  withMetadata: true,
-  metaRows: [],
-});
-const applied = reactive({
-  runs: '',
-  runRange: '',
-  namespaceOverride: '',
-  withMetadata: true,
-  metaRows: [],
-});
 
 const page = ref(1);
 const pageSize = ref(100);
@@ -55,21 +39,11 @@ const totalPages = computed(() => {
 const canNext = computed(() => {
   if (loading.value) return false;
   if (totalPages.value != null) return page.value < totalPages.value;
-  // total unknown: rely on has_more from the page response
   return data.value?.has_more === true;
 });
 
-function currentFilterParams() {
-  const meta = applied.metaRows
-    .filter((r) => r.key && r.value)
-    .map((r) => `${r.key}=${r.value}`);
-  return {
-    dataset: did.value,
-    runs: applied.runs || null,
-    run_range: applied.runRange || null,
-    namespace: applied.namespaceOverride || null,
-    meta: meta.length ? meta : null,
-  };
+function fetchParams() {
+  return { dataset: did.value };
 }
 
 async function fetchPage() {
@@ -81,7 +55,7 @@ async function fetchPage() {
   // Fast pass: no metadata — table renders ASAP.
   try {
     const fast = await getFiles({
-      ...currentFilterParams(),
+      ...fetchParams(),
       with_metadata: false,
       page: page.value,
       page_size: pageSize.value,
@@ -98,11 +72,10 @@ async function fetchPage() {
   }
 
   // Background pass: with metadata. Fills in Run/Events columns.
-  if (!applied.withMetadata) return;
   metadataLoading.value = true;
   try {
     const full = await getFiles({
-      ...currentFilterParams(),
+      ...fetchParams(),
       with_metadata: true,
       page: page.value,
       page_size: pageSize.value,
@@ -121,10 +94,10 @@ async function fetchTotal() {
   total.value = null;
   totalLoading.value = true;
   try {
-    const r = await getFilesCount(currentFilterParams());
+    const r = await getFilesCount(fetchParams());
     total.value = r.total;
   } catch (_e) {
-    total.value = null;  // surfaces as "—" in the UI; not a hard error
+    total.value = null;
   } finally {
     totalLoading.value = false;
   }
@@ -133,34 +106,6 @@ async function fetchTotal() {
 function refreshAll() {
   fetchPage();
   fetchTotal();
-}
-
-function applyFilters() {
-  Object.assign(applied, {
-    runs: draft.runs,
-    runRange: draft.runRange,
-    namespaceOverride: draft.namespaceOverride,
-    withMetadata: draft.withMetadata,
-    metaRows: draft.metaRows.map((r) => ({ ...r })),
-  });
-  page.value = 1;
-  refreshAll();
-}
-
-function clearFilters() {
-  draft.runs = '';
-  draft.runRange = '';
-  draft.namespaceOverride = '';
-  draft.withMetadata = false;
-  draft.metaRows = [];
-  applyFilters();
-}
-
-function addMetaRow() {
-  draft.metaRows.push({ key: '', value: '' });
-}
-function removeMetaRow(i) {
-  draft.metaRows.splice(i, 1);
 }
 
 watch(page, () => fetchPage());
@@ -222,13 +167,13 @@ function fmtTimestamp(ts) {
   return d.toISOString().slice(0, 16).replace('T', ' ');
 }
 function pickRun(row) {
-  if (applied.withMetadata && metadataLoading.value && !row.metadata) return '…';
+  if (metadataLoading.value && !row.metadata) return '…';
   const runs = row.metadata?.['core.runs'];
   if (Array.isArray(runs) && runs.length) return runs[0];
   return '—';
 }
 function pickEvents(row) {
-  if (applied.withMetadata && metadataLoading.value && !row.metadata) return '…';
+  if (metadataLoading.value && !row.metadata) return '…';
   const events = row.metadata?.['core.events'];
   if (Array.isArray(events)) return events.length;
   return '—';
@@ -277,103 +222,38 @@ function fmtMetaValue(v) {
       </p>
     </div>
 
-    <details v-if="dataset" class="ds-info">
-      <summary class="ds-info-summary">
-        <span class="ds-info-label">Dataset metadata</span>
-        <span class="ds-info-stats">
-          {{ dataset.creator || '—' }} · created {{ fmtTimestampLong(dataset.created_timestamp) }}
-          · {{ fmtBool(dataset.frozen) }}-frozen
-          <template v-if="sortedDatasetMeta.length">· {{ sortedDatasetMeta.length }} fields</template>
-        </span>
-      </summary>
-      <div class="ds-info-body">
-        <div v-if="dataset.description" class="ds-description">
-          <div class="ds-description-label">Filter definition</div>
-          <code class="ds-description-text">{{ dataset.description }}</code>
-        </div>
-        <div v-if="sortedDatasetMeta.length" class="ds-meta-grid">
-          <template v-for="[k, v] in sortedDatasetMeta" :key="k">
-            <div class="ds-meta-key">{{ k }}</div>
-            <div class="ds-meta-val">{{ fmtMetaValue(v) }}</div>
-          </template>
-        </div>
-        <div v-else class="ds-meta-empty">No metadata fields set on this dataset.</div>
-      </div>
-    </details>
-
     <div class="grid">
-      <!-- Filter rail -->
+      <!-- Left: dataset metadata -->
       <aside class="rail">
-        <div class="rail-section">
-          <div class="rail-label">Filters</div>
-          <label class="field">
-            <span class="field-label">Runs</span>
-            <input
-              v-model="draft.runs"
-              class="field-input"
-              placeholder="27731,27732"
-            />
-          </label>
-          <label class="field">
-            <span class="field-label">Run range</span>
-            <input
-              v-model="draft.runRange"
-              class="field-input"
-              placeholder="27000-28000"
-            />
-          </label>
-          <label class="field">
-            <span class="field-label">Namespace</span>
-            <input
-              v-model="draft.namespaceOverride"
-              class="field-input"
-              placeholder="hd-protodune-det-reco"
-            />
-          </label>
-        </div>
+        <div v-if="datasetLoading && !dataset" class="rail-empty">Loading dataset…</div>
+        <template v-else-if="dataset">
+          <div class="rail-section">
+            <div class="rail-label">Dataset</div>
+            <div class="rail-kv">
+              <div class="rail-k">Creator</div>
+              <div class="rail-v">{{ dataset.creator || '—' }}</div>
+              <div class="rail-k">Created</div>
+              <div class="rail-v">{{ fmtTimestampLong(dataset.created_timestamp) }}</div>
+              <div class="rail-k">Frozen</div>
+              <div class="rail-v">{{ fmtBool(dataset.frozen) }}</div>
+            </div>
+          </div>
 
-        <div class="rail-section">
-          <div class="rail-label">
-            Metadata
-            <button class="link" @click="addMetaRow">+ add</button>
+          <div class="rail-section">
+            <div class="rail-label">
+              Metadata
+              <span v-if="sortedDatasetMeta.length" class="rail-count">{{ sortedDatasetMeta.length }}</span>
+            </div>
+            <div v-if="sortedDatasetMeta.length" class="rail-kv">
+              <template v-for="[k, v] in sortedDatasetMeta" :key="k">
+                <div class="rail-k">{{ k }}</div>
+                <div class="rail-v">{{ fmtMetaValue(v) }}</div>
+              </template>
+            </div>
+            <div v-else class="rail-empty">No metadata fields set.</div>
           </div>
-          <div v-for="(row, i) in draft.metaRows" :key="i" class="meta-row">
-            <input
-              v-model="row.key"
-              class="field-input meta-key"
-              placeholder="core.data_tier"
-            />
-            <span class="meta-eq">=</span>
-            <input
-              v-model="row.value"
-              class="field-input meta-val"
-              placeholder="full-reconstructed"
-            />
-            <button class="link link-x" @click="removeMetaRow(i)">×</button>
-          </div>
-          <div v-if="draft.metaRows.length === 0" class="rail-hint">
-            None — click "+ add" for KEY=VALUE filters.
-          </div>
-        </div>
-
-        <div class="rail-section">
-          <label class="field-inline">
-            <input type="checkbox" v-model="draft.withMetadata" />
-            <span class="field-label-inline">Include metadata</span>
-          </label>
-          <div class="rail-hint">
-            Adds run, events, and full metadata to each row. Slower for huge results.
-          </div>
-        </div>
-
-        <div class="rail-actions">
-          <button class="btn btn-primary" :disabled="loading" @click="applyFilters">
-            Apply
-          </button>
-          <button class="btn" :disabled="loading" @click="clearFilters">
-            Clear
-          </button>
-        </div>
+        </template>
+        <div v-else class="rail-empty">Dataset info unavailable.</div>
       </aside>
 
       <!-- Main: file table -->
@@ -388,7 +268,7 @@ function fmtMetaValue(v) {
         </div>
 
         <div v-else-if="data && data.rows.length === 0" class="placeholder">
-          <div class="placeholder-body">No files match these filters.</div>
+          <div class="placeholder-body">This dataset has no files.</div>
         </div>
 
         <template v-else-if="data">
@@ -423,25 +303,24 @@ function fmtMetaValue(v) {
           </div>
 
           <div class="table-card">
-            <div class="table-head" :class="{ 'with-meta': applied.withMetadata }">
+            <div class="table-head with-meta">
               <div class="th col-name">File</div>
-              <div class="th col-run" v-if="applied.withMetadata">Run</div>
-              <div class="th col-events" v-if="applied.withMetadata">Events</div>
+              <div class="th col-run">Run</div>
+              <div class="th col-events">Events</div>
               <div class="th col-size">Size</div>
               <div class="th col-created">Created</div>
             </div>
             <div
               v-for="row in data.rows"
               :key="row.did"
-              class="tr"
-              :class="{ 'with-meta': applied.withMetadata }"
+              class="tr with-meta"
               @click="openFile(row.did)"
             >
-              <div class="td col-name">
+              <div class="td col-name" :title="`${row.namespace}:${row.name}`">
                 <span class="ns">{{ row.namespace }}:</span><span class="nm">{{ row.name }}</span>
               </div>
-              <div class="td col-run" v-if="applied.withMetadata">{{ pickRun(row) }}</div>
-              <div class="td col-events" v-if="applied.withMetadata">{{ fmtNum(pickEvents(row)) }}</div>
+              <div class="td col-run">{{ pickRun(row) }}</div>
+              <div class="td col-events">{{ fmtNum(pickEvents(row)) }}</div>
               <div class="td col-size">{{ fmtBytes(row.size) }}</div>
               <div class="td col-created">{{ fmtTimestamp(row.created_timestamp) }}</div>
             </div>
@@ -487,20 +366,21 @@ function fmtMetaValue(v) {
 
 .grid {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 24px;
 }
 
-/* Rail */
+/* Left rail: dataset metadata */
 .rail {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  font-size: 12px;
 }
 .rail-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .rail-label {
   font-size: 11px;
@@ -512,56 +392,46 @@ function fmtMetaValue(v) {
   justify-content: space-between;
   align-items: center;
 }
-.rail-hint {
+.rail-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.rail-kv {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 3px 10px;
+}
+.rail-k {
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.rail-v {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  word-break: break-word;
+}
+.rail-desc {
+  display: block;
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  word-break: break-word;
+  line-height: 1.5;
+}
+.rail-empty {
   font-size: 11.5px;
   color: var(--faint);
   font-style: italic;
 }
-
-.field { display: flex; flex-direction: column; gap: 3px; }
-.field-label { font-size: 11px; color: var(--dim); }
-.field-input {
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--rule);
-  background: var(--page);
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--body);
-  outline: none;
-}
-.field-input:focus { border-color: var(--accent); }
-
-.meta-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.meta-key { flex: 1; min-width: 0; }
-.meta-val { flex: 1; min-width: 0; }
-.meta-eq { color: var(--faint); font-family: var(--font-mono); font-size: 12px; }
-.link {
-  background: none;
-  border: none;
-  color: var(--accent-ink);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-.link-x {
-  font-size: 16px;
-  color: var(--faint);
-  padding: 0 4px;
-  line-height: 1;
-}
-.link-x:hover { color: var(--bad); }
-
-.field-inline { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.field-label-inline { font-size: 12.5px; color: var(--body); }
-
-.rail-actions { display: flex; gap: 6px; }
 
 /* Buttons */
 .btn {
@@ -624,9 +494,9 @@ function fmtMetaValue(v) {
 .td { font-size: 12px; color: var(--ink); }
 .col-name {
   font-family: var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all;
+  min-width: 0;
+  line-height: 1.4;
 }
 .col-name .ns { color: var(--faint); font-size: 10.5px; }
 .col-name .nm { color: var(--ink); }
@@ -685,92 +555,4 @@ function fmtMetaValue(v) {
 .error-detail { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
 
 .loading-hint { color: var(--faint); font-weight: 400; font-style: italic; }
-
-/* Dataset metadata panel */
-.ds-info {
-  background: var(--page);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-.ds-info-summary {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-size: 12.5px;
-  list-style: none;
-}
-.ds-info-summary::-webkit-details-marker { display: none; }
-.ds-info-summary::before {
-  content: '▸';
-  color: var(--faint);
-  font-size: 10px;
-  margin-right: 2px;
-  transition: transform 0.15s;
-}
-.ds-info[open] .ds-info-summary::before { transform: rotate(90deg); }
-.ds-info-label {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-.ds-info-stats {
-  color: var(--dim);
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-}
-
-.ds-info-body {
-  padding: 4px 14px 14px;
-  border-top: 1px solid var(--rule-soft);
-}
-.ds-description {
-  margin-top: 10px;
-  margin-bottom: 12px;
-}
-.ds-description-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  color: var(--faint);
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.ds-description-text {
-  display: block;
-  background: var(--surface);
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--ink);
-  word-break: break-word;
-  line-height: 1.5;
-}
-.ds-meta-grid {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 4px 16px;
-}
-.ds-meta-key {
-  font-size: 11px;
-  color: var(--dim);
-}
-.ds-meta-val {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--ink);
-  word-break: break-word;
-}
-.ds-meta-empty {
-  font-size: 12px;
-  color: var(--faint);
-  font-style: italic;
-  margin-top: 8px;
-}
 </style>
