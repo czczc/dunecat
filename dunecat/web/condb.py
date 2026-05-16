@@ -10,6 +10,7 @@ import ast
 import json
 import logging
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -21,6 +22,82 @@ log = logging.getLogger("uvicorn.error")
 
 DEFAULT_BASE_URL = "https://dbdata0vm.fnal.gov:9443/dune_runcon_prod"
 _TIMEOUT = 15.0
+
+# Curated per-folder list of columns exposed to the "Custom conditions"
+# UI. Excludes columns covered by dedicated filters (run_type, data_stream,
+# polarity, beam_*, start_time, stop_time) and admin columns (channel, tv,
+# tr, upload_time, data_type, detector_id). Type hint is informational only;
+# the server parses values on its own.
+CUSTOM_COLUMNS: dict[str, list[dict[str, str]]] = {
+    "pdunesp.run_conditionstest": [
+        {"name": "software_version", "type": "string"},
+        {"name": "data_quality", "type": "string"},
+        {"name": "detector_type", "type": "string"},
+        {"name": "ac_couple", "type": "string"},
+        {"name": "gain", "type": "number"},
+        {"name": "peak_time", "type": "number"},
+        {"name": "baseline", "type": "number"},
+        {"name": "leak", "type": "number"},
+        {"name": "detector_hv", "type": "number"},
+        {"name": "detector_hvset", "type": "number"},
+        {"name": "lar_purity", "type": "number"},
+        {"name": "lar_top_temp_mean", "type": "number"},
+        {"name": "lar_bottom_temp_mean", "type": "number"},
+        {"name": "pulser", "type": "bool"},
+        {"name": "cold", "type": "bool"},
+    ],
+    "pdunesp.run_conditions_vd": [
+        {"name": "software_version", "type": "string"},
+        {"name": "data_quality", "type": "string"},
+        {"name": "ac_couple", "type": "string"},
+        {"name": "gain", "type": "number"},
+        {"name": "peak_time", "type": "number"},
+        {"name": "baseline", "type": "number"},
+        {"name": "detector_hv_mean", "type": "number"},
+        {"name": "detector_hv_std", "type": "number"},
+        {"name": "detector_set", "type": "number"},
+        {"name": "apas", "type": "string"},
+        {"name": "hv_induction_plane", "type": "number"},
+        {"name": "hv_collection_plane", "type": "number"},
+        {"name": "lar_top_temp_mean", "type": "number"},
+        {"name": "lar_bottom_temp_mean", "type": "number"},
+        {"name": "pulser", "type": "bool"},
+        {"name": "test_cap", "type": "bool"},
+    ],
+}
+
+_CUSTOM_OPS = frozenset({"<", "<=", "=", "!=", ">=", ">"})
+
+
+class CondBError(Exception):
+    """Server-side error from condb, with a user-presentable message."""
+
+
+def validate_custom_cond(folder: str, cond: str) -> str:
+    """Validate a user-submitted ``cond=`` predicate string.
+
+    The format mirrors what condb's server-side parser expects:
+    ``<column> <op> <value>``, three whitespace-separated tokens.
+
+    Returns the cleaned string ready to forward to condb. Raises
+    ``ValueError`` on any rejection (unknown column, bad op, etc.).
+    """
+    parts = cond.strip().split(None, 2)
+    if len(parts) != 3:
+        raise ValueError(
+            f"Custom condition must be 'COL OP VALUE' (got: {cond!r})"
+        )
+    col, op, value = parts
+    if op not in _CUSTOM_OPS:
+        raise ValueError(
+            f"Operator must be one of <, <=, =, !=, >=, > (got: {op!r})"
+        )
+    allowed = {c["name"] for c in CUSTOM_COLUMNS.get(folder, ())}
+    if col not in allowed:
+        raise ValueError(
+            f"Column {col!r} not exposed for custom conditions in {folder!r}"
+        )
+    return f"{col} {op} {value}"
 
 # Per-folder column naming. HD uses `beam_setmomentum` (the live folder); VD
 # uses `beam_momentum_set` (a different schema). Filtering against the wrong
@@ -44,8 +121,37 @@ def base_url() -> str:
 
 def _fetch_json(url: str) -> dict[str, Any]:
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # 400 / 500 from condb usually carry a useful message we want to
+        # bubble up — either a plain "Invalid value for X" or an HTML body
+        # with the underlying exception's text in an <h3> tag.
+        body = b""
+        try:
+            body = e.read() or b""
+        except Exception:
+            pass
+        msg = _extract_condb_error(body.decode("utf-8", errors="replace")) \
+            or f"HTTP {e.code}"
+        raise CondBError(msg) from None
+
+
+_ERROR_PATTERNS = [
+    re.compile(r"<h3>(.*?)</h3>", re.S),
+    re.compile(r"Invalid value for [^\n<]+"),
+    re.compile(r"Can not parse value: [^\n<]+"),
+    re.compile(r"Unrecognized data column: [^\n<]+"),
+]
+
+
+def _extract_condb_error(body: str) -> str | None:
+    for pat in _ERROR_PATTERNS:
+        m = pat.search(body)
+        if m:
+            return (m.group(1) if m.lastindex else m.group(0)).strip()
+    return None
 
 
 def fetch_runs(
@@ -60,6 +166,7 @@ def fetch_runs(
     beam_setp_min: float | None = None,
     beam_setp_max: float | None = None,
     polarity: str | None = None,  # "positive" or "negative" (case-insensitive); None = any
+    extra_conds: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Return normalized condb rows under the given filters.
 
@@ -85,6 +192,7 @@ def fetch_runs(
         or beam_setp_min is not None
         or beam_setp_max is not None
         or polarity is not None
+        or bool(extra_conds)
     )
     if has_column_filter:
         rows = _search_with_bounds(
@@ -96,6 +204,7 @@ def fetch_runs(
             beam_setp_min=beam_setp_min,
             beam_setp_max=beam_setp_max,
             polarity=polarity,
+            extra_conds=extra_conds,
         )
     else:
         if run_min is None or run_max is None:
@@ -150,6 +259,7 @@ def _search_with_bounds(
     beam_setp_min: float | None,
     beam_setp_max: float | None,
     polarity: str | None,
+    extra_conds: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Build server-side ``cond=`` predicates, with magnitude-based beam
     bounds.
@@ -174,6 +284,8 @@ def _search_with_bounds(
         common.append(f"run_type = '{run_type}'")
     if data_stream:
         common.append(f"data_stream = '{data_stream}'")
+    if extra_conds:
+        common.extend(extra_conds)
 
     have_beam_bounds = beam_setp_min is not None or beam_setp_max is not None
     pol_map = _POLARITY_BY_FOLDER.get(folder, {})

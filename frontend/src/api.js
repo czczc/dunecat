@@ -57,6 +57,9 @@ export const getRunsConditions = (detector, params) =>
     `/api/runs/${encodeURIComponent(detector)}/conditions?${buildQuery(params)}`,
   );
 
+export const getCondbColumns = (detector) =>
+  jsonFetch(`/api/detectors/${encodeURIComponent(detector)}/condb-columns`);
+
 export const runQuery = (mql, page, pageSize, savedQueryId = null) =>
   jsonFetch('/api/query/run', {
     method: 'POST',

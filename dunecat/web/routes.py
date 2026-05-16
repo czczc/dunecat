@@ -588,6 +588,15 @@ def get_runs_conditions(
             "beam bounds, unions positive-side and negative-side queries."
         ),
     ),
+    cond: list[str] | None = Query(
+        None,
+        description=(
+            "Custom condb cond predicates as 'COL OP VALUE' strings. "
+            "Repeatable; all are ANDed with the built-in filters. "
+            "Columns are restricted to the curated per-folder set; "
+            "see /api/detectors/{id}/condb-columns."
+        ),
+    ),
 ) -> dict[str, Any]:
     # Validate ranges.
     if run_min is not None and run_max is not None and run_max < run_min:
@@ -648,17 +657,19 @@ def get_runs_conditions(
         or polarity_norm != "any"
     )
     have_stream_filter = ds_norm != "any"
+    have_custom = bool(cond)
     if (
         not have_run_range
         and not have_date_range
         and not have_beam_filter
         and not have_stream_filter
+        and not have_custom
     ):
         raise HTTPException(
             status_code=400,
             detail=(
                 "At least one filter is required: run range, date range, "
-                "beam (momentum / polarity), or data stream."
+                "beam (momentum / polarity), data stream, or custom condition."
             ),
         )
 
@@ -674,6 +685,14 @@ def get_runs_conditions(
     rt = None if run_type.upper() == "ALL" else run_type
     pol = None if polarity_norm == "any" else polarity_norm
     ds = None if ds_norm == "any" else ds_norm
+    validated_extra: list[str] = []
+    if cond:
+        try:
+            validated_extra = [
+                condb.validate_custom_cond(folder, c) for c in cond
+            ]
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     try:
         rows = condb.fetch_runs(
             folder,
@@ -686,10 +705,14 @@ def get_runs_conditions(
             beam_setp_min=beam_setp_min,
             beam_setp_max=beam_setp_max,
             polarity=pol,
+            extra_conds=validated_extra or None,
         )
     except ValueError as e:
         # Unsupported folder for beam filter, unknown polarity, etc.
         raise HTTPException(status_code=400, detail=str(e))
+    except condb.CondBError as e:
+        # Server-side rejection — bubble the message verbatim.
+        raise HTTPException(status_code=400, detail=f"condb rejected: {e}")
     except Exception as e:
         log.warning(
             "/api/runs/%s/conditions: condb fetch failed: %s", detector, e
@@ -706,8 +729,20 @@ def get_runs_conditions(
         "beam_setp_min": beam_setp_min,
         "beam_setp_max": beam_setp_max,
         "polarity": pol,
+        "custom_conds": validated_extra,
         "rows": rows,
     }
+
+
+@app.get("/api/detectors/{detector_id}/condb-columns")
+def get_condb_columns(detector_id: str) -> list[dict[str, str]]:
+    det = detector_by_id(detector_id)
+    if det is None:
+        raise HTTPException(status_code=404, detail=f"Unknown detector: {detector_id}")
+    folder = det.get("condb_folder")
+    if not folder:
+        return []
+    return condb.CUSTOM_COLUMNS.get(folder, [])
 
 
 @app.get("/api/runs/{detector}/{run}/conditions")

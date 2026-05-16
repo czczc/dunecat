@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getDetectors, getRunsConditions } from '../api.js';
+import { getCondbColumns, getDetectors, getRunsConditions } from '../api.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,6 +20,56 @@ const polarity = ref(route.query.polarity || 'any');
 const dataStream = ref(route.query.data_stream || 'any');
 // PROD is the default — TEST runs are usually noise. 'ALL' means no filter.
 const runType = ref(route.query.run_type || 'PROD');
+
+// Custom conditions — per-row {column, op, value} objects. URL persists
+// each row as a `cond=COL OP VAL` string, parsed back on load.
+const OPS = ['=', '!=', '<', '<=', '>', '>='];
+const columns = ref([]);  // {name, type}[] for the current detector
+
+function parseCondString(s) {
+  const m = s.match(/^(\S+)\s+(\S+)\s+(.*)$/);
+  if (!m) return null;
+  return { column: m[1], op: m[2], value: m[3] };
+}
+function initialCustomConds() {
+  const raw = route.query.cond;
+  if (!raw) return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list.map(parseCondString).filter(Boolean);
+}
+const customConds = ref(initialCustomConds());
+
+function colTypeOf(name) {
+  return columns.value.find((c) => c.name === name)?.type || null;
+}
+function placeholderFor(type) {
+  if (type === 'string') return "'value'  or  null";
+  if (type === 'number') return '14.0';
+  if (type === 'bool') return 'true / false';
+  return 'value';
+}
+function buildCondString(row) {
+  const col = row.column;
+  const op = row.op;
+  let val = (row.value ?? '').toString().trim();
+  if (!col || !op || !val) return null;
+  // Auto-quote string columns (most common gotcha) unless the user already
+  // quoted or is filtering against null.
+  const t = colTypeOf(col);
+  if (t === 'string' && val !== 'null' && !/^['"]/.test(val)) {
+    val = `'${val.replace(/'/g, '')}'`;
+  }
+  return `${col} ${op} ${val}`;
+}
+const builtCustomConds = computed(() =>
+  customConds.value.map(buildCondString).filter(Boolean),
+);
+function addCondRow() {
+  customConds.value.push({ column: '', op: '=', value: '' });
+}
+function removeCondRow(idx) {
+  customConds.value.splice(idx, 1);
+}
 
 const rows = ref([]);
 const loading = ref(false);
@@ -43,13 +93,15 @@ const hasBeamFilter = computed(
 const hasStreamFilter = computed(
   () => dataStream.value && dataStream.value !== 'any',
 );
+const hasCustomFilter = computed(() => builtCustomConds.value.length > 0);
 const canApply = computed(() => {
   if (!selectedDetector.value?.condb_folder) return false;
   if (
     !hasRunRange.value &&
     !hasDateRange.value &&
     !hasBeamFilter.value &&
-    !hasStreamFilter.value
+    !hasStreamFilter.value &&
+    !hasCustomFilter.value
   )
     return false;
   if (hasRunRange.value && Number(runMin.value) > Number(runMax.value)) return false;
@@ -85,6 +137,7 @@ async function fetchRows() {
       beam_setp_min: beamMin.value,
       beam_setp_max: beamMax.value,
       polarity: polarity.value,
+      cond: builtCustomConds.value,
     });
     rows.value = payload.rows || [];
   } catch (e) {
@@ -108,6 +161,7 @@ function onApply() {
       beam_setp_min: beamMin.value,
       beam_setp_max: beamMax.value,
       polarity: polarity.value,
+      cond: builtCustomConds.value,
     },
   });
   fetchRows();
@@ -121,6 +175,18 @@ function openRun(tv) {
   });
 }
 
+async function loadColumns() {
+  if (!detectorId.value) {
+    columns.value = [];
+    return;
+  }
+  try {
+    columns.value = await getCondbColumns(detectorId.value);
+  } catch {
+    columns.value = [];
+  }
+}
+
 onMounted(async () => {
   try {
     detectors.value = await getDetectors();
@@ -131,14 +197,17 @@ onMounted(async () => {
   if (!detectorId.value && condbDetectors.value.length) {
     detectorId.value = condbDetectors.value[0].id;
   }
+  await loadColumns();
   // Auto-fetch if the URL has a full query.
   if (canApply.value) fetchRows();
 });
 
-watch(detectorId, () => {
-  // Switching detector invalidates results until Apply is pressed again.
+watch(detectorId, async () => {
+  // Switching detector invalidates results and reloads the column list
+  // (each folder exposes a different curated column set).
   rows.value = [];
   submitted.value = false;
+  await loadColumns();
 });
 
 function fmtUtc(ts) {
@@ -279,11 +348,43 @@ function beamSetOf(r) {
       </button>
     </div>
     <p class="hint">
-      Need at least one filter: run range, date range, or beam.
-      Dates are inclusive UTC days. Beam bounds are magnitudes (|setp|);
-      polarity selects the sign — "Any" with bounds unions positive and
-      negative sides.
+      Need at least one filter: run range, date range, beam, stream,
+      or a custom condition below. Dates are inclusive UTC days. Beam
+      bounds are magnitudes (|setp|); polarity selects the sign — "Any"
+      with bounds unions positive and negative sides.
     </p>
+
+    <section class="custom-card" v-if="columns.length">
+      <div class="custom-head">
+        <span class="custom-title">Custom conditions</span>
+        <button class="btn btn-small" @click="addCondRow">+ Add condition</button>
+      </div>
+      <div v-if="!customConds.length" class="custom-empty">
+        ANDed with the filters above. Click + to add a column predicate
+        (e.g. <code>gain &gt;= 14</code>, <code>software_version = 'fddaq-v4.4.6-a9-1'</code>).
+      </div>
+      <ul v-else class="cond-list">
+        <li v-for="(row, i) in customConds" :key="i" class="cond-row">
+          <select v-model="row.column" class="control cond-col">
+            <option value="" disabled>— column —</option>
+            <option v-for="c in columns" :key="c.name" :value="c.name">
+              {{ c.name }} <span>({{ c.type }})</span>
+            </option>
+          </select>
+          <select v-model="row.op" class="control cond-op">
+            <option v-for="op in OPS" :key="op" :value="op">{{ op }}</option>
+          </select>
+          <input
+            v-model="row.value"
+            type="text"
+            class="control mono cond-val"
+            :placeholder="placeholderFor(colTypeOf(row.column))"
+            @keyup.enter="canApply && onApply()"
+          />
+          <button class="btn btn-small btn-remove" @click="removeCondRow(i)">×</button>
+        </li>
+      </ul>
+    </section>
 
     <div v-if="loading" class="placeholder">
       <div class="placeholder-body">Loading conditions…</div>
@@ -396,6 +497,70 @@ function beamSetOf(r) {
   color: var(--faint);
   font-style: italic;
 }
+
+.custom-card {
+  margin-bottom: 18px;
+  padding: 12px 14px 14px;
+  background: var(--page);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.custom-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.custom-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.custom-empty {
+  font-size: 12px;
+  color: var(--dim);
+  font-style: italic;
+}
+.custom-empty code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--surface);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-style: normal;
+}
+.cond-list { list-style: none; margin: 0; padding: 0; }
+.cond-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 70px minmax(140px, 1.2fr) 28px;
+  gap: 8px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+.cond-row .control { height: 28px; padding: 0 8px; font-size: 12px; }
+.cond-col { font-size: 12px; }
+.cond-op { text-align: center; font-family: var(--font-mono); }
+.cond-val { font-size: 12px; }
+.btn-small {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--rule);
+  background: var(--page);
+  color: var(--body);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-small:hover { background: var(--surface); }
+.btn-remove {
+  padding: 0;
+  width: 28px;
+  font-family: var(--font-mono);
+  color: var(--faint);
+}
+.btn-remove:hover { color: var(--bad); }
 
 .btn {
   display: inline-flex;
