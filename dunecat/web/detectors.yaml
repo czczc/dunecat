@@ -4,12 +4,14 @@
     - hd-protodune
     - hd-protodune-det-reco
   condb_folder: pdunesp.run_conditionstest
+  wiki: https://wiki.dunescience.org/wiki/ProtoDUNE-HD_Data_Catalogue
 - id: protodune-vd
   name: ProtoDUNE-VD
   namespaces:
     - vd-protodune
     - vd-protodune-det-reco
   condb_folder: pdunesp.run_conditions_vd
+  wiki: https://wiki.dunescience.org/wiki/ProtoDUNE_Vertical_Drift_operation_status
 - id: fardet-hd
   name: DUNE FD-HD
   namespaces:

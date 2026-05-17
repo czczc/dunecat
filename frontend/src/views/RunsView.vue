@@ -244,11 +244,17 @@ function beamSetOf(r) {
 <template>
   <div class="page">
     <div class="header">
-      <div class="eyebrow">Runs</div>
       <h1 class="title">Run search</h1>
       <p class="subtitle">
-        Browse condb run-condition rows. Pick a detector, narrow by run-number
-        range, click a row for full details.
+        Browse condb
+        <a
+          href="https://wiki.dunescience.org/wiki/Run_Conditions_Table"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ref-link"
+        >run-condition ↗</a>
+        rows. Pick a detector, narrow by run-number range, click a row for
+        full details.
       </p>
     </div>
 
@@ -466,6 +472,11 @@ function beamSetOf(r) {
 .eyebrow { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); margin-bottom: 4px; }
 .title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; margin: 0 0 4px; color: var(--ink); }
 .subtitle { font-size: 13.5px; color: var(--dim); margin: 0; max-width: 680px; }
+.subtitle .ref-link {
+  color: var(--accent-ink, var(--ink));
+  text-decoration: none;
+}
+.subtitle .ref-link:hover { text-decoration: underline; }
 
 .filters {
   display: flex;

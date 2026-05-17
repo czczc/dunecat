@@ -309,7 +309,6 @@ function fmtBytes(n) {
 <template>
   <div class="page">
     <div class="header">
-      <div class="eyebrow">Query</div>
       <div class="title-row">
         <h1 class="title">MQL query builder</h1>
         <span

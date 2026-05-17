@@ -92,6 +92,7 @@ def list_detectors() -> list[dict[str, Any]]:
             "name": d["name"],
             "namespaces": d["namespaces"],
             "condb_folder": d.get("condb_folder"),
+            "wiki": d.get("wiki"),
         }
         for d in load_detectors()
     ]

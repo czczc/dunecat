@@ -203,7 +203,6 @@ const totalPages = computed(() =>
 <template>
   <div class="page">
     <div class="header">
-      <div class="eyebrow">Datasets</div>
       <h1 class="title">Browse datasets</h1>
       <p class="subtitle">
         Pick a sub-detector, then open a dataset to see its files.
@@ -240,7 +239,17 @@ const totalPages = computed(() =>
       <!-- Detector hero card -->
       <div class="hero" v-if="activeDetector">
         <div class="hero-main">
-          <div class="hero-name">{{ activeDetector.name }}</div>
+          <div class="hero-name">
+            {{ activeDetector.name }}
+            <a
+              v-if="activeDetector.wiki"
+              class="hero-wiki"
+              :href="activeDetector.wiki"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open detector wiki page in a new tab"
+            >wiki ↗</a>
+          </div>
           <div class="hero-namespaces">
             <span class="ns-label">namespaces</span>
             <code
@@ -462,7 +471,22 @@ const totalPages = computed(() =>
   margin-bottom: 16px;
 }
 .hero-main { flex: 1; min-width: 0; }
-.hero-name { font-size: 17px; font-weight: 600; color: var(--ink); }
+.hero-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.hero-wiki {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent-ink, var(--dim));
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hero-wiki:hover { text-decoration: underline; }
 .hero-namespaces {
   display: flex;
   flex-wrap: wrap;
