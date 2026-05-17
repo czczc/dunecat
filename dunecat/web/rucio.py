@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import textwrap
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,26 @@ def _ensure_config() -> None:
     )
     os.environ["RUCIO_HOME"] = str(cfg_dir)
     os.environ.setdefault("RUCIO_ACCOUNT", account)
+    _link_venv_config(cfg_file)
+
+
+def _link_venv_config(target: Path) -> None:
+    """Symlink ``<venv>/etc/rucio.cfg`` to the canonical config so that the
+    ``rucio`` CLI run inside the venv finds it without needing RUCIO_HOME."""
+    if sys.prefix == sys.base_prefix:
+        return  # not running inside a venv
+    venv_cfg = Path(sys.prefix) / "etc" / "rucio.cfg"
+    try:
+        venv_cfg.parent.mkdir(parents=True, exist_ok=True)
+        if venv_cfg.is_symlink():
+            if venv_cfg.resolve() == target.resolve():
+                return
+            venv_cfg.unlink()
+        elif venv_cfg.exists():
+            return  # operator wrote a real file here; leave it alone
+        venv_cfg.symlink_to(target)
+    except OSError as e:
+        log.warning("Could not link %s -> %s: %s", venv_cfg, target, e)
 
 
 def _token_path() -> Path:
