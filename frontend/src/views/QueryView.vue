@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   countQuery,
@@ -96,6 +96,22 @@ const validateResult = ref(null);  // null | {ok, error?}
 // Run
 const running = ref(false);
 const runError = ref(null);
+
+// Live-ticking elapsed time so a cold metacat call (10s+) doesn't feel
+// like a hang. Starts when running flips true, freezes on completion.
+const runElapsed = ref(0);
+let runTimer = null;
+watch(running, (isRunning) => {
+  if (runTimer) { clearInterval(runTimer); runTimer = null; }
+  if (isRunning) {
+    const t0 = performance.now();
+    runElapsed.value = 0;
+    runTimer = setInterval(() => {
+      runElapsed.value = (performance.now() - t0) / 1000;
+    }, 200);
+  }
+});
+onBeforeUnmount(() => { if (runTimer) clearInterval(runTimer); });
 const pageData = ref(null);  // {page, page_size, rows, has_more}
 const page = ref(1);
 const pageSize = ref(100);
@@ -204,6 +220,19 @@ async function onDelete() {
 async function doFetch(token) {
   running.value = true;
   runError.value = null;
+
+  // On page 1, fire the count concurrently with the page fetch — they're
+  // independent calls against metacat. Deeper pages skip the count since
+  // it doesn't change with pagination.
+  const wantsCount = page.value === 1;
+  if (wantsCount) {
+    totalLoading.value = true;
+    totalResult.value = null;
+  }
+  const countPromise = wantsCount
+    ? countQuery(mql.value).catch(() => null)  // silent on failure
+    : null;
+
   try {
     const r = await runQuery(
       mql.value,
@@ -214,7 +243,6 @@ async function doFetch(token) {
     if (token !== runToken) return;
     pageData.value = r;
     executedMql.value = mql.value;
-    // Reflect the new last_run_at in the sidebar without a full reload.
     if (currentSavedId.value != null) loadSavedQueries();
   } catch (e) {
     if (token !== runToken) return;
@@ -224,19 +252,11 @@ async function doFetch(token) {
     if (token === runToken) running.value = false;
   }
 
-  // Background count
-  if (page.value === 1) {
-    totalLoading.value = true;
-    totalResult.value = null;
-    try {
-      const c = await countQuery(mql.value);
-      if (token !== runToken) return;
-      totalResult.value = c;
-    } catch {
-      // silent — total stays null
-    } finally {
-      if (token === runToken) totalLoading.value = false;
-    }
+  if (countPromise) {
+    const c = await countPromise;
+    if (token !== runToken) return;
+    if (c != null) totalResult.value = c;
+    totalLoading.value = false;
   }
 }
 
@@ -381,7 +401,8 @@ function fmtBytes(n) {
               :disabled="running || !mql.trim()"
               @click="onRun"
             >
-              {{ running ? 'Running…' : '▶ Run query' }}
+              <template v-if="running">Running… {{ runElapsed.toFixed(1) }}s</template>
+              <template v-else>▶ Run query</template>
             </button>
           </div>
         </div>
