@@ -143,6 +143,72 @@ function openFile(fileDid) {
   router.push({ name: 'file-detail', params: { did: fileDid } });
 }
 
+const copyState = ref('idle');  // 'idle' | 'copied' | 'failed'
+
+// DIDs the user has explicitly ticked. Persisted in sessionStorage keyed
+// by (dataset, page, pageSize) so the selection survives a remount when
+// the user clicks a row by accident and hits the browser back button.
+// Changing page or page size moves to a fresh key (those rows aren't on
+// screen anymore), but returning to the same page restores the picks.
+const selected = ref(new Set());
+const selectionKey = computed(
+  () => `files-selection:${did.value}:p${page.value}:s${pageSize.value}`,
+);
+
+watch(selectionKey, (key) => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    selected.value = raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch (_e) {
+    selected.value = new Set();
+  }
+}, { immediate: true });
+
+watch(selected, (s) => {
+  try {
+    if (s.size === 0) sessionStorage.removeItem(selectionKey.value);
+    else sessionStorage.setItem(selectionKey.value, JSON.stringify([...s]));
+  } catch (_e) { /* sessionStorage full or unavailable — fine, lose the persistence */ }
+}, { deep: true });
+
+const selectableDids = computed(
+  () => (data.value?.rows || []).map((r) => `${r.namespace}:${r.name}`),
+);
+const allSelected = computed(
+  () =>
+    selectableDids.value.length > 0 &&
+    selectableDids.value.every((d) => selected.value.has(d)),
+);
+const copyCount = computed(
+  () => selected.value.size || selectableDids.value.length,
+);
+
+function toggleRow(did) {
+  const next = new Set(selected.value);
+  if (next.has(did)) next.delete(did);
+  else next.add(did);
+  selected.value = next;
+}
+
+function toggleAll() {
+  if (allSelected.value) selected.value = new Set();
+  else selected.value = new Set(selectableDids.value);
+}
+
+async function copyDids() {
+  const dids = selected.value.size > 0
+    ? [...selected.value]
+    : selectableDids.value;
+  if (!dids.length) return;
+  try {
+    await navigator.clipboard.writeText(dids.join('\n'));
+    copyState.value = 'copied';
+  } catch (_e) {
+    copyState.value = 'failed';
+  }
+  setTimeout(() => { copyState.value = 'idle'; }, 1500);
+}
+
 function gotoDetector() {
   if (detector.value) {
     router.push({
@@ -283,6 +349,20 @@ function fmtMetaValue(v) {
               </template>
             </div>
             <div class="pager-controls">
+              <button
+                class="btn"
+                :disabled="!copyCount"
+                :title="
+                  selected.size > 0
+                    ? `Copy the ${selected.size} selected file IDs (namespace:name, one per line). Paste into 'rucio list-file-replicas', 'metacat file show', etc.`
+                    : `Copy all ${selectableDids.length} file IDs on this page (namespace:name, one per line). Paste into 'rucio list-file-replicas', 'metacat file show', etc.`
+                "
+                @click="copyDids"
+              >
+                <template v-if="copyState === 'copied'">Copied ✓</template>
+                <template v-else-if="copyState === 'failed'">Copy failed</template>
+                <template v-else>Copy {{ copyCount }} file IDs</template>
+              </button>
               <select v-model="pageSize" class="page-size-select">
                 <option v-for="s in PAGE_SIZES" :key="s" :value="s">
                   {{ s }} / page
@@ -306,6 +386,14 @@ function fmtMetaValue(v) {
 
           <div class="table-card">
             <div class="table-head with-meta">
+              <div class="th col-check">
+                <input
+                  type="checkbox"
+                  :checked="allSelected"
+                  :title="allSelected ? 'Deselect all on this page' : 'Select all on this page'"
+                  @change="toggleAll"
+                />
+              </div>
               <div class="th col-name">File</div>
               <div class="th col-run">Run</div>
               <div class="th col-events">Events</div>
@@ -318,6 +406,13 @@ function fmtMetaValue(v) {
               class="tr with-meta"
               @click="openFile(row.did)"
             >
+              <div class="td col-check" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="selected.has(`${row.namespace}:${row.name}`)"
+                  @change="toggleRow(`${row.namespace}:${row.name}`)"
+                />
+              </div>
               <div class="td col-name" :title="`${row.namespace}:${row.name}`">
                 <span class="ns">{{ row.namespace }}:</span><span class="nm">{{ row.name }}</span>
               </div>
@@ -465,14 +560,23 @@ function fmtMetaValue(v) {
 }
 .table-head, .tr {
   display: grid;
-  grid-template-columns: 1fr 90px 110px;
+  grid-template-columns: 28px 1fr 90px 110px;
   gap: 12px;
   padding: 8px 16px;
   align-items: center;
-  min-width: 720px;
+  min-width: 748px;
 }
 .table-head.with-meta, .tr.with-meta {
-  grid-template-columns: 1fr 70px 80px 90px 110px;
+  grid-template-columns: 28px 1fr 70px 80px 90px 110px;
+}
+.col-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.col-check input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
 }
 .table-head {
   background: var(--page);
