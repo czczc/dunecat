@@ -416,7 +416,7 @@ function beamSetOf(r) {
           v-model="runSpec"
           type="text"
           class="control mono"
-          placeholder="e.g. 27298:27310, or 27305, or 1:10:2"
+          placeholder="e.g. 100:200, or 150, or 1:10:2"
           spellcheck="false"
           :title="RUN_SPEC_HELP"
           @keyup.enter="canApply && onApply()"
@@ -612,7 +612,7 @@ function beamSetOf(r) {
   color: var(--dim);
 }
 .field-hint.err { color: var(--bad); }
-.field-runs { flex: 0 0 320px; }
+.field-runs { flex: 0 0 240px; }
 .field-runs .control.mono { width: 100%; box-sizing: border-box; }
 .field-beam { flex: 0 0 220px; }
 .field-beam .control.mono { width: 100%; box-sizing: border-box; }

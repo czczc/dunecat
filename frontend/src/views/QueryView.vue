@@ -125,14 +125,14 @@ const totalResult = ref(null);  // null | {total, total_size}
 let runToken = 0;
 
 const SNIPPETS = [
-  { label: 'Files in a dataset', mql: 'files from <namespace>:<dataset-name>' },
-  { label: 'Filter by one run', mql: 'files from <namespace>:<dataset-name> where core.runs in (27731)' },
-  { label: 'Filter by multiple runs', mql: 'files from <namespace>:<dataset-name> where core.runs in (27731, 27732)' },
-  { label: 'Run-number range', mql: 'files from <namespace>:<dataset-name> where core.runs >= 27000 and core.runs <= 28000' },
-  { label: 'Files for a run, across all datasets', mql: 'files where core.runs in (27731)' },
-  { label: 'Narrowed by namespace', mql: "files where core.runs in (27731) and namespace = 'hd-protodune-det-reco'" },
-  { label: 'Filter by data tier', mql: "files from <namespace>:<dataset-name> where core.data_tier = 'full-reconstructed'" },
-  { label: 'Confirmed reco only', mql: "files from <namespace>:<dataset-name> where dune.output_status = 'confirmed'" },
+  {
+    label: 'Filter by runs and data tier',
+    mql: "files from <namespace>:<dataset-name> where core.runs in (27731, 27732) and core.data_tier = 'full-reconstructed'",
+  },
+  {
+    label: 'Limit to first 10 results',
+    mql: 'files from <namespace>:<dataset-name> limit 10',
+  },
 ];
 
 function insertSnippet(text) {
@@ -163,6 +163,11 @@ async function onValidate() {
   } finally {
     validating.value = false;
   }
+}
+
+function onClear() {
+  mql.value = '';
+  validateResult.value = null;
 }
 
 async function onRun() {
@@ -380,6 +385,14 @@ function fmtBytes(n) {
           >{{ validateResult.error }}</div>
           <div v-if="saveError" class="validate-error">{{ saveError }}</div>
           <div class="editor-actions">
+            <button
+              class="btn"
+              :disabled="!mql"
+              :title="'Clear the MQL editor'"
+              @click="onClear"
+            >
+              Clear
+            </button>
             <button class="btn" :disabled="validating || !mql.trim()" @click="onValidate">
               {{ validating ? 'Validating…' : 'Validate' }}
             </button>
