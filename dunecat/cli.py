@@ -150,8 +150,11 @@ def login_cmd(
         _metacat_login(user=user, method=method)
         return
     if target == "all":
+        # The whole point of the unified pipeline is OIDC, so force the
+        # metacat leg to -m token regardless of METACAT_AUTH_METHOD in .env.
+        # Users who want password must invoke `dunecat login metacat` explicitly.
         _rucio_login(exit_on_done=False)
-        _metacat_login(user=user, method=method, exit_on_done=False)
+        _metacat_login(user=user, method=method or "token", exit_on_done=False)
         raise typer.Exit(0)
     typer.echo(
         f"Unknown login target: '{target}'. Use 'all', 'rucio', or 'metacat'.",
