@@ -68,8 +68,10 @@ BEARER_TOKEN_FILE=/tmp/bt_u<your-uid>      # default htgettoken path on Linux/ma
 Mint a token (browser device-code flow the first time per ~10 days):
 
 ```bash
-uv run htgettoken --vaulttokenttl=10d --vaultserver=htvaultprod.fnal.gov --issuer=dune
+uv run dunecat login rucio
 ```
+
+This wraps `htgettoken --vaulttokenttl=10d --vaultserver=htvaultprod.fnal.gov --issuer=dune` — the canonical DUNE vault flags. Run it directly if you prefer.
 
 This produces:
 
@@ -79,12 +81,12 @@ This produces:
   `htgettoken` invocations re-mint the bearer **without** another browser
   dance.
 
-To keep the bearer fresh during a long uvicorn session, run htgettoken
-every ~2 hours. Two convenient options on macOS:
+To keep the bearer fresh during a long uvicorn session, re-mint every
+~2 hours. Two convenient options on macOS:
 
 ```bash
 # Quick: from another terminal whenever you see a 401 from /api/replicas
-uv run htgettoken --vaultserver=htvaultprod.fnal.gov --issuer=dune
+uv run dunecat login rucio
 
 # Hands-off: a launchd / cron job
 # In `crontab -e`, every 2 hours:

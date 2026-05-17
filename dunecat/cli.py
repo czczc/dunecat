@@ -114,17 +114,34 @@ def file_datasets_cmd(
 
 @app.command("login")
 def login_cmd(
+    target: str = typer.Argument(
+        "metacat",
+        help="Which service to log into: 'metacat' (default) or 'rucio'.",
+    ),
     user: str | None = typer.Option(
         None, "--user", "-u",
-        help="Username (defaults to METACAT_USER from .env).",
+        help="Username (metacat only; defaults to METACAT_USER from .env).",
     ),
     method: str | None = typer.Option(
         None, "--method", "-m",
-        help="Auth method (defaults to METACAT_AUTH_METHOD from .env).",
+        help="Auth method (metacat only; defaults to METACAT_AUTH_METHOD from .env).",
     ),
 ) -> None:
-    """Wrap `metacat auth login`, sourcing server URLs and defaults from .env."""
+    """Log in to metacat (default) or rucio.
+
+    metacat: wraps `metacat auth login`, sourcing server URLs from .env.
+    rucio:   wraps `htgettoken` with the canonical DUNE vault flags.
+    """
     load_dotenv()
+    if target == "rucio":
+        _rucio_login()
+        return
+    if target != "metacat":
+        typer.echo(
+            f"Unknown login target: '{target}'. Use 'metacat' or 'rucio'.",
+            err=True,
+        )
+        raise typer.Exit(2)
     server = os.environ.get("METACAT_SERVER_URL")
     auth = os.environ.get("METACAT_AUTH_SERVER_URL")
     user = user or os.environ.get("METACAT_USER") or None
@@ -149,6 +166,25 @@ def login_cmd(
         )
         raise typer.Exit(2)
     cmd = ["metacat", "-s", server, "-a", auth, "auth", "login", "-m", method, user]
+    typer.echo("$ " + " ".join(cmd), err=True)
+    rc = subprocess.call(cmd)
+    raise typer.Exit(rc)
+
+
+def _rucio_login() -> None:
+    if shutil.which("htgettoken") is None:
+        typer.echo(
+            "`htgettoken` not found on PATH. Try `uv run dunecat login rucio` "
+            "so it can find the one in the project's virtualenv.",
+            err=True,
+        )
+        raise typer.Exit(2)
+    cmd = [
+        "htgettoken",
+        "--vaulttokenttl=10d",
+        "--vaultserver=htvaultprod.fnal.gov",
+        "--issuer=dune",
+    ]
     typer.echo("$ " + " ".join(cmd), err=True)
     rc = subprocess.call(cmd)
     raise typer.Exit(rc)

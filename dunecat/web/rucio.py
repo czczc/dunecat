@@ -20,10 +20,7 @@ from typing import Any
 
 log = logging.getLogger("uvicorn.error")
 
-HTGETTOKEN_CMD = (
-    "htgettoken --vaulttokenttl=10d "
-    "--vaultserver=htvaultprod.fnal.gov --issuer=dune"
-)
+HTGETTOKEN_CMD = "uv run dunecat login rucio"
 
 
 class RucioAuthError(Exception):
