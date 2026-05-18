@@ -42,6 +42,38 @@ app.add_typer(file_app, name="file")
 app.add_typer(server_app, name="server")
 
 
+@app.command("hub")
+def hub_cmd(
+    host: str = typer.Option("127.0.0.1", "--host", help="Interface to bind."),
+    port: int = typer.Option(8001, "--port", help="Port to listen on."),
+    reload: bool = typer.Option(
+        False, "--reload", help="Auto-reload on code changes (dev only)."
+    ),
+) -> None:
+    """Run the multi-user hub backend (dunecat.hub.app:app) on uvicorn.
+
+    Crypto key resolution at startup:
+      1. DUNECAT_HUB_SECRET_KEY env (production; set via systemd
+         EnvironmentFile or similar)
+      2. ~/.dunecat/hub.key (loaded if present)
+      3. Auto-generate a fresh key, write it to ~/.dunecat/hub.key
+         (mode 0600), and log a warning — dev convenience only
+
+    For prod deployments, always set DUNECAT_HUB_SECRET_KEY explicitly
+    so a misplaced key file can't silently break decryption.
+    """
+    import uvicorn
+
+    uvicorn.run(
+        "dunecat.hub.app:app",
+        host=host,
+        port=port,
+        reload=reload,
+        proxy_headers=True,
+        forwarded_allow_ips="127.0.0.1",
+    )
+
+
 @app.callback()
 def _root(
     server: str | None = typer.Option(
