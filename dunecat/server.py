@@ -62,12 +62,12 @@ def _is_alive(pid: int) -> bool:
 
 
 def _find_js_runner() -> str:
-    for cmd in ("npm", "bun", "deno"):
+    for cmd in ("npm", "bun"):
         if shutil.which(cmd):
             return cmd
     raise RuntimeError(
         "No JavaScript package manager found. "
-        "Install one of: npm (Node.js), bun, or deno."
+        "Install one of: npm (Node.js) or bun."
     )
 
 
