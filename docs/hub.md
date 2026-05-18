@@ -206,17 +206,53 @@ DUNECAT_PROXY_TARGET=http://127.0.0.1:8001 npm --prefix frontend run dev
 `<AppHeader>` shows a Sign Out button when `mode === "hub"`; it POSTs
 `/hub/logout` and redirects to `login_url`.
 
-## What's *still* not yet built (follow-up issues)
+## Static SPA serving (issue #28 — landed)
 
-- **The remaining catalog routes** (#27): everything beyond
-  `/api/detectors`. Same pattern — `Depends(current_user)` +
-  `metacat_for(user)`.
-- **Static SPA serving in prod**: hub mounts `frontend/dist/` at `/`
-  with a `StaticFiles(html=True)` after the API routes are registered
-  (planned in #28).
-- **Per-request timeouts** on metacat/Rucio calls (Q11).
+When `frontend/dist/index.html` exists, the hub serves the SPA itself
+— no Vite needed for prod. Three mount points:
+
+- `/assets/*` → built JS/CSS from Vite (`StaticFiles`)
+- `/logo/*` → static images from `frontend/public/logo/`
+- catch-all `GET /{full_path:path}` → returns `index.html` for any
+  unmatched path, so Vue Router's HTML5 history mode works
+  (`/datasets`, `/files/x:y`, etc.).
+
+The catch-all explicitly refuses `api/...` and `hub/...` prefixes so a
+typo'd API URL still returns JSON 404 instead of silently serving the
+SPA shell.
+
+`GET /` itself runs through `routes/login.py:home`:
+
+- no session → 303 to `/hub/login`
+- session + SPA bundle on disk → serve `frontend/dist/index.html`
+- session + no SPA bundle → render the inline fallback (dev only)
+
+Build the bundle for the hub with:
+
+```bash
+npm --prefix frontend run build
+```
+
+Then `uv run dunecat hub` serves it at `http://127.0.0.1:8001/`. No
+Vite involved in prod. Dev iteration on the frontend still uses Vite:
+
+```bash
+DUNECAT_PROXY_TARGET=http://127.0.0.1:8001 npm --prefix frontend run dev
+```
+
+## What's *still* not yet built
+
+- **`/api/replicas`** — Rucio per-user is awkward (`ReplicaClient`
+  reads `BEARER_TOKEN_FILE` env var, which is process-global). Plan:
+  write each user's bearer to a per-request temp file, reset the
+  cached client, guard with a process-wide lock. Tracked as a
+  follow-up; the SPA's file-detail "Replicas" panel will be empty in
+  hub mode until then.
+- **Per-session caching of the metacat session token.** Currently
+  every request re-mints (vault → bearer → metacat login_token), ~150 ms.
+  Cheap enough for v1; profile-driven if it bites.
 - **Reverse proxy + TLS + systemd packaging** (Q10).
-- **Health endpoint** stays minimal; no backup, no monitoring (Q12).
+- **Backups, monitoring** (Q12).
 
 ## Production deployment notes (BNL)
 

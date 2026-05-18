@@ -14,9 +14,10 @@ from __future__ import annotations
 import json
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 from .. import crypto, db
 from ..auth import flow as flow_mod
@@ -267,13 +268,23 @@ def logout(
     return resp
 
 
+_SPA_INDEX = (
+    Path(__file__).resolve().parents[3] / "frontend" / "dist" / "index.html"
+)
+
+
 @router.get("/", response_class=HTMLResponse)
 def home(
     dunecat_session: str | None = Cookie(default=None, alias=COOKIE_NAME),
 ) -> Response:
-    """Minimal home page. If signed in, render an identity + logout
-    page. Otherwise, redirect to /hub/login. The full SPA is a
-    separate follow-up issue."""
+    """Root page.
+
+    * No session → 303 to `/hub/login` (server-side, no SPA-load flash).
+    * Session present + SPA bundle built → serve `frontend/dist/index.html`;
+      the SPA handles routing / identity from there.
+    * Session present + no SPA bundle → render the inline fallback HTML
+      (handy for backend-only dev work without `npm run build`).
+    """
     if not dunecat_session:
         return RedirectResponse(url="/hub/login", status_code=303)
     with db.connect() as conn:
@@ -284,6 +295,8 @@ def home(
             "SELECT expires_at FROM vault_tokens WHERE user_id = ?",
             (user.id,),
         ).fetchone()
+    if _SPA_INDEX.exists():
+        return FileResponse(_SPA_INDEX)
     return HTMLResponse(
         _HOME_HTML.format(
             username=user.metacat_username,

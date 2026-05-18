@@ -195,13 +195,31 @@ def test_home_redirects_to_login_when_unauthenticated(client):
     assert r.headers["location"] == "/hub/login"
 
 
-def test_home_renders_when_authenticated(client):
+def test_home_renders_inline_fallback_when_spa_absent(client, monkeypatch, tmp_path):
+    """Authenticated GET / with no SPA bundle renders the inline
+    "signed in as X" HTML — the dev-time fallback."""
+    from dunecat.hub.routes import login as login_module
+
+    monkeypatch.setattr(login_module, "_SPA_INDEX", tmp_path / "nope.html")
     _drive_login(client, sub="uuid-dave", credkey="dave")
     r = client.get("/")
     assert r.status_code == 200
     assert "Signed in as <strong>dave</strong>" in r.text
-    # Logout button should be present.
     assert 'id="logout"' in r.text
+
+
+def test_home_serves_spa_when_bundle_built(client, monkeypatch, tmp_path):
+    """When `frontend/dist/index.html` exists, authenticated GET /
+    serves it (the SPA takes over routing client-side)."""
+    fake_index = tmp_path / "index.html"
+    fake_index.write_text("<!doctype html><html><body>FAKE-SPA</body></html>")
+    from dunecat.hub.routes import login as login_module
+
+    monkeypatch.setattr(login_module, "_SPA_INDEX", fake_index)
+    _drive_login(client, sub="uuid-erin2", credkey="erin2")
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "FAKE-SPA" in r.text
 
 
 def test_login_then_me_then_logout(client):
