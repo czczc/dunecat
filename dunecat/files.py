@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 from typing import Any
 
+from metacat.webapi import MetaCatClient
+
 from .client import get_client
 from .errors import FileDIDNotFoundError
 from .filters import FileFilters
@@ -11,9 +13,11 @@ def find_files(
     filters: FileFilters,
     with_metadata: bool = False,
     batch_size: int = 1000,
+    *,
+    client: MetaCatClient | None = None,
 ) -> Iterator[dict[str, Any]]:
     mql = build_mql(did, filters)
-    client = get_client()
+    client = client or get_client()
     yield from client.query(
         mql,
         with_metadata=with_metadata,
@@ -33,8 +37,8 @@ def file_did(item: dict[str, Any]) -> str:
     return f"{item['namespace']}:{item['name']}"
 
 
-def file_datasets(did: str) -> list[str]:
-    client = get_client()
+def file_datasets(did: str, *, client: MetaCatClient | None = None) -> list[str]:
+    client = client or get_client()
     record = client.get_file(did=did, with_datasets=True)
     if record is None:
         raise FileDIDNotFoundError(f"File not found: {did}")

@@ -137,18 +137,48 @@ Four tables. All in `dunecat/hub/db.py`.
 - `device_flows(id PK, poll_body TEXT, expires_at, status)`
   — transient login flows. Garbage-collected every 5 min.
 
-## Catalog routes (in progress — issue #27)
+## Catalog routes (issue #27)
 
-Only the first slice is wired so far:
+Ported, all `Depends(current_user)` + `metacat_for(user)`:
 
-- `GET /api/detectors` — YAML-only, auth-gated. Verifies the
-  `Depends(current_user)` seam end-to-end without involving metacat.
+- **Datasets**: `/api/detectors`, `/api/detectors/counts`,
+  `/api/datasets`, `/api/datasets/facets`, `/api/datasets/refresh`,
+  `/api/dataset`
+- **Files**: `/api/files`, `/api/files/count`, `/api/file`,
+  `/api/run/{run}`
+- **Queries**: `/api/query/run`, `/api/query/count`,
+  `/api/query/validate`
+- **Saved queries** (per-user, `UNIQUE(user_id, name)`):
+  `GET /api/queries`, `POST /api/queries`,
+  `PUT /api/queries/{id}`, `DELETE /api/queries/{id}`
+- **Conditions DB** (auth-free upstream; we still require a session):
+  `/api/runs/{detector}/{run}/conditions`,
+  `/api/runs/{detector}/conditions`,
+  `/api/detectors/{detector_id}/condb-columns`
 
-The remaining catalog routes (`/api/datasets`, `/api/files`,
-`/api/queries`, conditions, replicas, ...) port from
-`dunecat/web/routes.py` with one structural change per handler: a
-`user: User = Depends(current_user)` parameter and a per-user metacat
-client via `metacat_for(user)` (not yet committed). See issue #27.
+Auth flow per request:
+
+1. `Depends(current_user)` looks up the session via cookie.
+2. `metacat_for(user)` decrypts the user's vault token →
+   mints a fresh OIDC bearer (vault HTTP) → calls metacat's
+   `login_token(username, bearer)` to get a session token →
+   returns a `MetaCatClient` ready to use.
+3. Each external call is wrapped in `with_timeout(...)` (60 s for
+   metacat, 30 s for condb). On timeout: 504, the worker thread
+   unwinds.
+
+Per-request overhead is two FNAL round-trips (vault + metacat
+login_token), roughly 100–150 ms. Per-session caching of the metacat
+session token is a future optimisation, not built.
+
+### Not (yet) ported
+
+- `/api/replicas` — Rucio's `ReplicaClient` reads its bearer from a
+  process-global file via `BEARER_TOKEN_FILE`. Adapting that to
+  per-user is more involved (write per-user temp file; reset the
+  cached client; guard against concurrent env mutation), so it lives
+  in a follow-up. The SPA's file-detail page will surface "Replicas
+  not available in hub mode yet" until then.
 
 ## SPA integration (in progress — issue #28)
 

@@ -1,23 +1,27 @@
 from collections.abc import Iterator
 from typing import Any
 
+from metacat.webapi import MetaCatClient
+
 from .client import get_client
 from .errors import DatasetNotFoundError
 from .files import find_files
 from .filters import FileFilters, value_matches
 
 
-def show_dataset(did: str) -> dict[str, Any]:
-    client = get_client()
+def show_dataset(did: str, *, client: MetaCatClient | None = None) -> dict[str, Any]:
+    client = client or get_client()
     ds = client.get_dataset(did=did)
     if ds is None:
         raise DatasetNotFoundError(f"Dataset not found: {did}")
     return ds
 
 
-def dataset_values(did: str, field: str) -> set[Any]:
+def dataset_values(
+    did: str, field: str, *, client: MetaCatClient | None = None
+) -> set[Any]:
     seen: set[Any] = set()
-    for item in find_files(did, FileFilters(), with_metadata=True):
+    for item in find_files(did, FileFilters(), with_metadata=True, client=client):
         metadata = item.get("metadata") or {}
         if field not in metadata:
             continue
@@ -35,9 +39,11 @@ def list_datasets(
     pattern: str | None = None,
     namespace: str | None = None,
     meta: tuple[tuple[str, str], ...] = (),
+    *,
+    client: MetaCatClient | None = None,
 ) -> Iterator[str]:
     namespace_pattern, name_pattern = _split_pattern(pattern, namespace)
-    client = get_client()
+    client = client or get_client()
     for ds in client.list_datasets(
         namespace_pattern=namespace_pattern,
         name_pattern=name_pattern,

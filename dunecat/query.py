@@ -1,13 +1,19 @@
 from collections.abc import Iterator
 from typing import Any
 
+from metacat.webapi import MetaCatClient
+
 from .client import get_client
 
 
 def run_query(
-    mql: str, with_metadata: bool = False, batch_size: int = 1000
+    mql: str,
+    with_metadata: bool = False,
+    batch_size: int = 1000,
+    *,
+    client: MetaCatClient | None = None,
 ) -> Iterator[dict[str, Any]]:
-    client = get_client()
+    client = client or get_client()
     yield from client.query(
         mql, with_metadata=with_metadata, batch_size=batch_size
     )

@@ -44,6 +44,42 @@ CREATE TABLE IF NOT EXISTS device_flows (
     status       TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'expired'))
 );
 CREATE INDEX IF NOT EXISTS device_flows_expires_idx ON device_flows (expires_at);
+
+-- Global caches (Q8): metacat / condb / Rucio responses don't vary
+-- per DUNE user, so one row serves everyone.
+CREATE TABLE IF NOT EXISTS datasets_cache (
+    cache_key  TEXT PRIMARY KEY,
+    body       TEXT NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS condb_cache (
+    folder     TEXT NOT NULL,
+    tv         INTEGER NOT NULL,
+    body       TEXT,
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (folder, tv)
+);
+
+CREATE TABLE IF NOT EXISTS rucio_cache (
+    scope      TEXT NOT NULL,
+    name       TEXT NOT NULL,
+    body       TEXT,
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (scope, name)
+);
+
+-- Saved queries are per-user (Q8).
+CREATE TABLE IF NOT EXISTS saved_queries (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    mql         TEXT NOT NULL,
+    created_at  TEXT NOT NULL,
+    last_run_at TEXT,
+    UNIQUE (user_id, name)
+);
+CREATE INDEX IF NOT EXISTS saved_queries_user_idx ON saved_queries (user_id);
 """
 
 
