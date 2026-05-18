@@ -13,7 +13,7 @@ and a DUNE metacat / FNAL services account.
 git clone git@github.com:czczc/dunecat.git
 cd dunecat
 uv sync
-cd frontend && npm install && cd ..
+cd frontend && npm install && cd ..  # or use bun
 cp .env.example .env       # then fill in METACAT_USER + RUCIO_ACCOUNT
 uv run dunecat login       # browser opens for OIDC; once per ~10 days
 ```

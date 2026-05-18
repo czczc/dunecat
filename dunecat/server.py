@@ -9,6 +9,7 @@ files in ``~/.dunecat/log``.
 from __future__ import annotations
 
 import os
+import shutil
 import signal
 import subprocess
 import time
@@ -60,6 +61,16 @@ def _is_alive(pid: int) -> bool:
     return True
 
 
+def _find_js_runner() -> str:
+    for cmd in ("npm", "bun", "deno"):
+        if shutil.which(cmd):
+            return cmd
+    raise RuntimeError(
+        "No JavaScript package manager found. "
+        "Install one of: npm (Node.js), bun, or deno."
+    )
+
+
 def _spawn_cmd(name: str, port: int) -> tuple[list[str], Path]:
     if name == "backend":
         return (
@@ -67,8 +78,9 @@ def _spawn_cmd(name: str, port: int) -> tuple[list[str], Path]:
             PROJECT_ROOT,
         )
     if name == "frontend":
+        js = _find_js_runner()
         return (
-            ["npm", "run", "dev", "--", "--port", str(port), "--host", "127.0.0.1"],
+            [js, "run", "dev", "--", "--port", str(port), "--host", "127.0.0.1"],
             PROJECT_ROOT / "frontend",
         )
     raise ValueError(name)
