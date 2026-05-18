@@ -2,10 +2,11 @@
 import { onMounted, ref, computed } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { nav, loadSavedQueries } from '../../composables/useNav.js';
-import { getMe } from '../../api.js';
+import { getMe, getConfig, logout } from '../../api.js';
 
 const router = useRouter();
 const me = ref(null);
+const config = getConfig(); // populated at boot in main.js
 
 const initials = computed(() =>
   me.value ? me.value.slice(0, 2).toUpperCase() : '',
@@ -15,7 +16,8 @@ onMounted(async () => {
   loadSavedQueries();
   try {
     const resp = await getMe();
-    me.value = resp?.user || null;
+    // local app returns {user}; hub returns {metacat_username, ...}.
+    me.value = resp?.metacat_username || resp?.user || null;
   } catch {
     me.value = null;
   }
@@ -30,6 +32,11 @@ function onSavedPicked(e) {
   } else {
     router.push({ name: 'query', query: { id: Number(raw) } });
   }
+}
+
+async function onSignOut() {
+  await logout();
+  window.location = config.loginUrl || '/hub/login';
 }
 </script>
 
@@ -66,6 +73,15 @@ function onSavedPicked(e) {
         </option>
       </select>
       <div v-if="initials" class="user" :title="me">{{ initials }}</div>
+      <button
+        v-if="config.mode === 'hub' && me"
+        class="signout"
+        type="button"
+        @click="onSignOut"
+        title="Sign out"
+      >
+        Sign out
+      </button>
     </div>
   </header>
 </template>
@@ -147,4 +163,16 @@ function onSavedPicked(e) {
   font-size: 11.5px;
   font-weight: 600;
 }
+.signout {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
+  background: var(--page);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--body);
+  cursor: pointer;
+}
+.signout:hover { background: var(--surface); }
 </style>

@@ -1,5 +1,27 @@
+// App-wide config populated at boot from GET /api/config. Reads from
+// this module pick up the same object the bootstrap step wrote, so
+// every fetch sees the right mode without prop-drilling.
+const appConfig = { mode: 'local', loginUrl: null };
+
+export function setConfig(cfg) {
+  appConfig.mode = cfg?.mode || 'local';
+  appConfig.loginUrl = cfg?.login_url || null;
+}
+
+export function getConfig() {
+  return { ...appConfig };
+}
+
 async function jsonFetch(url, options = {}) {
-  const resp = await fetch(url, options);
+  const resp = await fetch(url, {
+    credentials: 'same-origin', // session cookie rides along (Vite proxy is same-origin)
+    ...options,
+  });
+  if (resp.status === 401 && appConfig.mode === 'hub') {
+    window.location = appConfig.loginUrl || '/hub/login';
+    // Caller will see this throw, but the page is navigating away.
+    throw new Error('redirecting to login');
+  }
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({}));
     const err = new Error(body.detail || `HTTP ${resp.status}`);
@@ -8,6 +30,25 @@ async function jsonFetch(url, options = {}) {
   }
   if (resp.status === 204) return null;
   return resp.json();
+}
+
+// Bare fetch, no 401-redirect — used at boot to learn the mode itself.
+// If this fails, the SPA falls back to mode=local.
+export async function fetchConfig() {
+  try {
+    const r = await fetch('/api/config', { credentials: 'same-origin' });
+    if (!r.ok) return { mode: 'local' };
+    return await r.json();
+  } catch {
+    return { mode: 'local' };
+  }
+}
+
+export async function logout() {
+  await fetch('/hub/logout', {
+    method: 'POST',
+    credentials: 'same-origin',
+  });
 }
 
 function buildQuery(params) {

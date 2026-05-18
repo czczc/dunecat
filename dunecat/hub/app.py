@@ -27,6 +27,8 @@ load_dotenv()  # pull DUNECAT_HUB_SECRET_KEY etc. from .env before init
 
 from . import crypto, db  # noqa: E402
 from .auth import session as session_mod  # noqa: E402
+from .routes.config import router as config_router  # noqa: E402
+from .routes.detectors import router as detectors_router  # noqa: E402
 from .routes.login import router as login_router  # noqa: E402
 from .routes.me import router as me_router  # noqa: E402
 
@@ -72,6 +74,8 @@ app = FastAPI(
 
 app.include_router(login_router)
 app.include_router(me_router)
+app.include_router(config_router)
+app.include_router(detectors_router)
 
 
 @app.get("/health")

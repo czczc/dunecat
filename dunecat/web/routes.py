@@ -116,6 +116,13 @@ async def _metacat_error(_: Request, exc: MCWebAPIError) -> JSONResponse:
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
+@app.get("/api/config")
+def get_config() -> dict[str, str]:
+    """Mode flag consumed by the SPA at boot. The hub returns
+    {"mode": "hub", ...} from the same path."""
+    return {"mode": "local"}
+
+
 @app.get("/api/me")
 def get_me() -> dict[str, str | None]:
     return {"user": os.environ.get("METACAT_USER") or None}

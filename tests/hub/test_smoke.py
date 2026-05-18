@@ -158,6 +158,32 @@ def test_health(client):
     assert r.json() == {"status": "ok"}
 
 
+def test_config_is_unauthenticated_and_reports_hub(client):
+    r = client.get("/api/config")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["mode"] == "hub"
+    assert body["login_url"] == "/hub/login"
+
+
+def test_detectors_requires_auth(client):
+    r = client.get("/api/detectors")
+    assert r.status_code == 401
+
+
+def test_detectors_returns_yaml_when_authenticated(client):
+    _drive_login(client, sub="uuid-erin", credkey="erin")
+    r = client.get("/api/detectors")
+    assert r.status_code == 200
+    body = r.json()
+    assert isinstance(body, list)
+    assert body, "expected at least one detector in YAML"
+    # Each entry has the expected shape.
+    sample = body[0]
+    for k in ("id", "name", "namespaces", "chip"):
+        assert k in sample
+
+
 def test_me_unauthenticated(client):
     r = client.get("/api/me")
     assert r.status_code == 401
