@@ -35,6 +35,7 @@ from dunecat.filters import FileFilters, parse_run_range, parse_runs, value_matc
 from dunecat.web import condb
 
 from .. import cache as hub_cache
+from .. import rucio as hub_rucio
 from ..auth.bearer import metacat_for
 from ..auth.dep import current_user
 from ..auth.session import User
@@ -47,6 +48,7 @@ from ..detectors import (
 from ..timeouts import (
     CONDB_TIMEOUT_S,
     METACAT_TIMEOUT_S,
+    RUCIO_TIMEOUT_S,
     with_timeout,
 )
 
@@ -336,6 +338,53 @@ def refresh_datasets(
     for ns in det["namespaces"]:
         hub_cache.invalidate_datasets(ns)
     return Response(status_code=204)
+
+
+@router.get("/api/replicas")
+def get_replicas(
+    did: str = Query(..., description="scope:name DID"),
+    user: User = Depends(current_user),
+) -> dict[str, Any]:
+    """Rucio replica lookup for one file DID, scoped to the
+    requesting user's bearer. Cached for 1h (global cache; replica
+    info doesn't vary per DUNE user)."""
+    if ":" not in did:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+    scope, name = did.split(":", 1)
+    if not scope or not name:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+
+    cached = hub_cache.get_rucio_cached(scope, name)
+    if cached is not None:
+        return {"cached": True, **cached}
+
+    start = time.monotonic()
+    try:
+        body = with_timeout(
+            hub_rucio.list_replicas_for,
+            user,
+            scope,
+            name,
+            timeout=RUCIO_TIMEOUT_S,
+            label=f"rucio list_replicas {did}",
+        )
+    except HTTPException:
+        raise
+    except hub_rucio.RucioAuthError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except hub_rucio.RucioError as e:
+        log.warning("/api/replicas did=%s: rucio error: %s", did, e)
+        raise HTTPException(status_code=502, detail=f"Rucio error: {e}")
+    log.info(
+        "/api/replicas did=%s replicas=%d took=%.2fs",
+        did,
+        len(body["replicas"]) if body else 0,
+        time.monotonic() - start,
+    )
+    if body is None:
+        raise HTTPException(status_code=404, detail=f"No replicas for {did}")
+    hub_cache.set_rucio_cached(scope, name, body)
+    return {"cached": False, **body}
 
 
 @router.get("/api/dataset")

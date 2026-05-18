@@ -155,6 +155,12 @@ Ported, all `Depends(current_user)` + `metacat_for(user)`:
   `/api/runs/{detector}/{run}/conditions`,
   `/api/runs/{detector}/conditions`,
   `/api/detectors/{detector_id}/condb-columns`
+- **Rucio replicas**: `/api/replicas?did=scope:name`. Per-user via
+  `BEARER_TOKEN` env var set briefly under a process-wide lock while
+  constructing `ReplicaClient` (then the bearer is baked into
+  `self.auth_token` and the actual `list_replicas` call runs outside
+  the lock). Results are cached globally for 1 h since replica info
+  doesn't vary per DUNE user.
 
 Auth flow per request:
 
@@ -171,14 +177,6 @@ Per-request overhead is two FNAL round-trips (vault + metacat
 login_token), roughly 100–150 ms. Per-session caching of the metacat
 session token is a future optimisation, not built.
 
-### Not (yet) ported
-
-- `/api/replicas` — Rucio's `ReplicaClient` reads its bearer from a
-  process-global file via `BEARER_TOKEN_FILE`. Adapting that to
-  per-user is more involved (write per-user temp file; reset the
-  cached client; guard against concurrent env mutation), so it lives
-  in a follow-up. The SPA's file-detail page will surface "Replicas
-  not available in hub mode yet" until then.
 
 ## SPA integration (in progress — issue #28)
 
@@ -242,12 +240,6 @@ DUNECAT_PROXY_TARGET=http://127.0.0.1:8001 npm --prefix frontend run dev
 
 ## What's *still* not yet built
 
-- **`/api/replicas`** — Rucio per-user is awkward (`ReplicaClient`
-  reads `BEARER_TOKEN_FILE` env var, which is process-global). Plan:
-  write each user's bearer to a per-request temp file, reset the
-  cached client, guard with a process-wide lock. Tracked as a
-  follow-up; the SPA's file-detail "Replicas" panel will be empty in
-  hub mode until then.
 - **Per-session caching of the metacat session token.** Currently
   every request re-mints (vault → bearer → metacat login_token), ~150 ms.
   Cheap enough for v1; profile-driven if it bites.

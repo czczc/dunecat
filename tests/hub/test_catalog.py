@@ -236,6 +236,68 @@ def test_dataset_endpoint_with_mocked_metacat(client):
     assert body["file_count"] == 42
 
 
+def test_replicas_endpoint_with_mocked_rucio(client):
+    """/api/replicas: cached path, fresh path, 401 on auth failure,
+    404 on unknown DID. Uses the per-user `list_replicas_for` helper
+    via mock so we don't touch FNAL or the env-var dance."""
+    _drive_login(client, sub="uuid-frank", credkey="frank")
+
+    # Fresh path: helper returns a body; route caches it and tags
+    # cached=false.
+    fake_body = {
+        "scope": "hd-protodune",
+        "name": "demo.root",
+        "bytes": 12345,
+        "md5": None,
+        "adler32": "abcd1234",
+        "replicas": [{"rse": "RSE_X", "pfn": "root://x/file"}],
+    }
+    with patch(
+        "dunecat.hub.rucio.list_replicas_for", return_value=fake_body
+    ) as mocked:
+        r = client.get("/api/replicas", params={"did": "hd-protodune:demo.root"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["cached"] is False
+    assert body["replicas"] == fake_body["replicas"]
+    assert mocked.call_count == 1
+
+    # Second call: served from cache without invoking the helper.
+    with patch(
+        "dunecat.hub.rucio.list_replicas_for"
+    ) as mocked2:
+        r = client.get("/api/replicas", params={"did": "hd-protodune:demo.root"})
+    assert r.status_code == 200
+    assert r.json()["cached"] is True
+    assert mocked2.call_count == 0
+
+    # Auth failure path → 401.
+    from dunecat.hub.rucio import RucioAuthError
+    with patch(
+        "dunecat.hub.rucio.list_replicas_for",
+        side_effect=RucioAuthError("bearer rejected"),
+    ):
+        r = client.get("/api/replicas", params={"did": "x:y"})
+    assert r.status_code == 401
+    assert "bearer rejected" in r.json()["detail"]
+
+    # Unknown DID → 404.
+    with patch(
+        "dunecat.hub.rucio.list_replicas_for", return_value=None
+    ):
+        r = client.get(
+            "/api/replicas", params={"did": "hd-protodune:gone.root"}
+        )
+    assert r.status_code == 404
+
+
+def test_replicas_validates_did_shape(client):
+    _drive_login(client, sub="uuid-gina", credkey="gina")
+    for bad_did in ("missing-colon", ":no-scope", "no-name:"):
+        r = client.get("/api/replicas", params={"did": bad_did})
+        assert r.status_code == 400, f"{bad_did!r} → {r.status_code}"
+
+
 def test_catalog_routes_require_auth(client):
     """A representative sample of catalog routes 401 without a cookie."""
     for path, method in [
@@ -244,6 +306,7 @@ def test_catalog_routes_require_auth(client):
         ("/api/dataset?did=x:y", "GET"),
         ("/api/file?did=x:y", "GET"),
         ("/api/files?dataset=x:y", "GET"),
+        ("/api/replicas?did=x:y", "GET"),
         ("/api/queries", "GET"),
         ("/api/query/run", "POST"),
     ]:
