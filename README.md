@@ -4,6 +4,10 @@
 
 A unified Web UI over DUNE's [metacat](https://github.com/fermitools/metacat), [conditions DB](https://condb2.readthedocs.io/en/latest/index.html), and [Rucio](https://rucio.cern.ch) — search files, inspect runs, and find replicas without juggling three tools.
 
+<p align="center">
+  <a href="https://www.phy.bnl.gov/~chao/animation/dunecat-intro.mp4">Watch the intro video</a>
+</p>
+
 ## Quick start
 
 Requirements: Python 3.12+ with [`uv`](https://docs.astral.sh/uv/), Node.js 20+,
