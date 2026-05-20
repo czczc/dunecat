@@ -1,9 +1,10 @@
 # dunecat-hub
 
 A multi-user web variant of dunecat, designed to run on a shared remote
-server (e.g. behind the BNL VPN) instead of a single user's laptop.
-Lives in `dunecat/hub/` alongside — and deliberately separate from —
-the single-user local app at `dunecat/web/`.
+server (behind a reverse proxy, optionally under a URL sub-path)
+instead of a single user's laptop. Lives in `dunecat/hub/` alongside
+— and deliberately separate from — the single-user local app at
+`dunecat/web/`.
 
 This doc is a quick reference so future-you doesn't have to re-read
 the implementation. For the original design walk-through see issue #26
@@ -154,7 +155,10 @@ Ported, all `Depends(current_user)` + `metacat_for(user)`:
 - **Conditions DB** (auth-free upstream; we still require a session):
   `/api/runs/{detector}/{run}/conditions`,
   `/api/runs/{detector}/conditions`,
-  `/api/detectors/{detector_id}/condb-columns`
+  `/api/detectors/{detector_id}/condb-columns`.
+  The shared `dunecat.web.condb` module takes a `cache_mod` kwarg so
+  the hub routes its caches through `dunecat.hub.cache` (hub.sqlite),
+  not the local app's `~/.dunecat/dunecat.db`.
 - **Rucio replicas**: `/api/replicas?did=scope:name`. Per-user via
   `BEARER_TOKEN` env var set briefly under a process-wide lock while
   constructing `ReplicaClient` (then the bearer is baked into
@@ -238,32 +242,65 @@ Vite involved in prod. Dev iteration on the frontend still uses Vite:
 DUNECAT_PROXY_TARGET=http://127.0.0.1:8001 npm --prefix frontend run dev
 ```
 
-## What's *still* not yet built
+## Deployment under a URL sub-path
 
-- **Per-session caching of the metacat session token.** Currently
-  every request re-mints (vault → bearer → metacat login_token), ~150 ms.
-  Cheap enough for v1; profile-driven if it bites.
-- **Reverse proxy + TLS + systemd packaging** (Q10).
-- **Backups, monitoring** (Q12).
+The hub can be served at the root of a hostname *or* under a sub-path
+of an existing one (e.g. behind a reverse proxy that already serves
+other apps). Both modes use the same code; two knobs flip the
+behaviour, both default to root:
 
-## Production deployment notes (BNL)
+| Knob | Default | Sub-path value |
+|---|---|---|
+| `VITE_BASE` (build env) | `/` | `/<prefix>/` (with trailing slash) |
+| `dunecat hub --root-path` (uvicorn flag) | `""` | `/<prefix>` |
 
-Out of scope for this PoC, but for the eventual deployment:
+The reverse proxy is expected to **strip the prefix** before
+forwarding — e.g. Apache `ProxyPass /<prefix>/ http://127.0.0.1:8001/`
+with both trailing slashes. The backend never sees the prefix; the
+`--root-path` flag tells FastAPI what externally-visible prefix to
+embed in generated URLs (`/api/config`'s `login_url`, redirects, the
+cookie's `Path`).
 
-- Uvicorn behind Caddy or nginx; TLS via BNL CIT (Let's Encrypt won't
-  work behind VPN — see issue #4 in `.idea/next-steps-issues.md`).
-- Run under systemd with `EnvironmentFile=/etc/dunecat-hub/env` that
-  sets `DUNECAT_HUB_SECRET_KEY` and `DUNECAT_HUB_DB` explicitly.
-- Back up the SQLite DB nightly to your usual ops target; back up the
-  key file separately (e.g. password manager) so a backup tarball
-  alone can't decrypt the DB.
-- Outbound HTTPS from BNL to `htvaultprod.fnal.gov` and
-  `metacat.fnal.gov` must work — verify with the issue #2 curl check.
+The frontend prepends `import.meta.env.BASE_URL` to every fetch in
+`frontend/src/api.js`, and Vue Router uses the same base — so deep
+links and asset URLs all resolve correctly without further wiring.
+
+## Production deployment
+
+Live at BNL behind an existing Apache vhost (TLS terminated by an
+upstream BNL central proxy). The full runbook is in
+`.idea/prod-deploy-bnl.md` (gitignored — contains the actual URL
+prefix). Summary:
+
+- Uvicorn under systemd, `EnvironmentFile=/etc/dunecat-hub/env` that
+  pins `DUNECAT_HUB_SECRET_KEY` and `DUNECAT_HUB_DB` explicitly.
+- Apache `ProxyPass` adds `X-Forwarded-Proto: https` so the session
+  cookie's `Secure` flag fires.
+- SPA built with `VITE_BASE=/<prefix>/`, backend launched with
+  matching `--root-path /<prefix>`.
+- AES-GCM key lives in the env file and a password manager — *not* in
+  the same backup target as `/var/lib/dunecat-hub/hub.sqlite`.
+
+Ops scripts at `scripts/hub-deploy.sh` (pull + uv sync + npm build +
+restart) and `scripts/hub-logs.sh` (WARN/ERR summary + live tail).
+
+## What's not yet built
+
+- **Per-session caching of the metacat SignedToken / Rucio
+  ReplicaClient.** Every catalog request re-mints (vault → bearer →
+  metacat `login_token`), ~150 ms overhead per call. Cheap enough for
+  v1; profile before optimising.
+- **Nightly DB backup cron** — one `sqlite3 ... .backup` line away.
+- **External uptime monitoring** — cron-curl from another box.
+- **Per-IP rate limiting on `/hub/login`.** Public deployment makes
+  the device-flow endpoint a flood target; Apache `mod_evasive` or
+  `mod_ratelimit` is the standard answer.
 
 ## Pointers
 
 - Source: `dunecat/hub/`
-- Tests: `tests/hub/test_smoke.py` (mocked end-to-end)
+- Tests: `tests/hub/test_smoke.py` (mocked end-to-end), `tests/hub/test_catalog.py`
+- Prod runbook: `.idea/prod-deploy-bnl.md` (gitignored)
 - Local-only feasibility spike: `.idea/spike/vault_device_flow.py`
 - Architectural decisions: issue #26 body, `.idea/next-steps-issues.md`
 - htgettoken reference (vault HTTP endpoints): `.venv/lib/python3.12/site-packages/htgettoken/__init__.py`
