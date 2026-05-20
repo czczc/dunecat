@@ -30,13 +30,11 @@ def test_detectors_endpoint_returns_yaml_only(client):
     response = client.get("/api/detectors")
     assert response.status_code == 200
     payload = response.json()
-    assert {d["id"] for d in payload} == {
-        "protodune-hd",
-        "protodune-vd",
-        "fardet-hd",
-        "fardet-vd",
-    }
-    # Counts must NOT be on this endpoint (it's now YAML-only / instant)
+    ids = {d["id"] for d in payload}
+    # Don't pin the exact set — the YAML grows as new detectors come
+    # online. Just confirm the canonical four are present and that the
+    # endpoint's *shape* contract holds (no counts, namespaces present).
+    assert {"protodune-hd", "protodune-vd", "fardet-hd", "fardet-vd"} <= ids
     for d in payload:
         assert "datasets_count" not in d
         assert "files_count" not in d
@@ -97,15 +95,17 @@ def test_authentication_error_surfaces_as_401(monkeypatch, client):
     monkeypatch.setattr(
         "dunecat.web.detectors.get_client", lambda: FakeClient(), raising=False
     )
-    monkeypatch.setenv("METACAT_SERVER_URL", "https://m.example/app")
-    monkeypatch.setenv("METACAT_AUTH_SERVER_URL", "https://m.example/auth")
 
     response = client.get("/api/detectors/counts")
 
     assert response.status_code == 401
     body = response.json()
-    assert "Token missing or expired" in body["detail"]
-    assert "metacat -s https://m.example/app" in body["detail"]
+    detail = body["detail"]
+    # The 401 message must tell the user (a) what happened and
+    # (b) what to type to recover.
+    assert "Metacat auth rejected" in detail
+    assert "token expired" in detail
+    assert "uv run dunecat login" in detail
 
 
 # --- /api/datasets ---------------------------------------------------------
@@ -210,9 +210,11 @@ def test_datasets_pagination_boundary(monkeypatch, client):
 
 def test_datasets_pattern_filter(monkeypatch, client):
     _install_fake_client(monkeypatch)
+    # `pattern` is a case-insensitive substring match (matches the UI
+    # placeholder copy: "Filter dataset name — e.g. cosmic or beam_2024").
     response = client.get(
         "/api/datasets",
-        params={"detector": "protodune-hd", "pattern": "*cosmic*"},
+        params={"detector": "protodune-hd", "pattern": "cosmic"},
     )
     body = response.json()
     names = [r["name"] for r in body["rows"]]
