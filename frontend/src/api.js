@@ -3,6 +3,16 @@
 // every fetch sees the right mode without prop-drilling.
 const appConfig = { mode: 'local', loginUrl: null };
 
+// URL prefix to prepend to backend paths. Vite injects BASE_URL from
+// `base` in vite.config.js — '/' for root mounts, '/<prefix>/' when
+// built with VITE_BASE set. We strip the trailing slash so we can
+// concatenate with paths that start with '/'.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function withBase(path) {
+  return /^https?:/.test(path) ? path : BASE + path;
+}
+
 export function setConfig(cfg) {
   appConfig.mode = cfg?.mode || 'local';
   appConfig.loginUrl = cfg?.login_url || null;
@@ -13,12 +23,12 @@ export function getConfig() {
 }
 
 async function jsonFetch(url, options = {}) {
-  const resp = await fetch(url, {
+  const resp = await fetch(withBase(url), {
     credentials: 'same-origin', // session cookie rides along (Vite proxy is same-origin)
     ...options,
   });
   if (resp.status === 401 && appConfig.mode === 'hub') {
-    window.location = appConfig.loginUrl || '/hub/login';
+    window.location = appConfig.loginUrl || withBase('/hub/login');
     // Caller will see this throw, but the page is navigating away.
     throw new Error('redirecting to login');
   }
@@ -36,7 +46,7 @@ async function jsonFetch(url, options = {}) {
 // If this fails, the SPA falls back to mode=local.
 export async function fetchConfig() {
   try {
-    const r = await fetch('/api/config', { credentials: 'same-origin' });
+    const r = await fetch(withBase('/api/config'), { credentials: 'same-origin' });
     if (!r.ok) return { mode: 'local' };
     return await r.json();
   } catch {
@@ -45,7 +55,7 @@ export async function fetchConfig() {
 }
 
 export async function logout() {
-  await fetch('/hub/logout', {
+  await fetch(withBase('/hub/logout'), {
     method: 'POST',
     credentials: 'same-origin',
   });

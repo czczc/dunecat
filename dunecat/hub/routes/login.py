@@ -75,13 +75,13 @@ _LOGIN_HTML = """\
     const statusEl = document.getElementById("status");
     async function tick() {{
       try {{
-        const r = await fetch("/hub/login/poll?flow_id=" + encodeURIComponent(flowId),
+        const r = await fetch("{base_path}/hub/login/poll?flow_id=" + encodeURIComponent(flowId),
                               {{credentials: "same-origin"}});
         const data = await r.json();
         if (data.status === "ok") {{
           statusEl.textContent = "Signed in. Redirecting...";
           statusEl.className = "status ok";
-          window.location = "/";
+          window.location = "{base_path}/";
           return;
         }}
         if (data.status === "pending") {{
@@ -131,14 +131,14 @@ _HOME_HTML = """\
   <p class="hint">
     This is the dunecat-hub minimum-viable PoC (issue #26). The full
     catalog UI is a follow-up issue. Try
-    <a href="/api/me">/api/me</a> for your raw identity JSON.
+    <a href="{base_path}/api/me">/api/me</a> for your raw identity JSON.
   </p>
   <script>
     document.getElementById("logout").addEventListener("click", async () => {{
-      await fetch("/hub/logout", {{
+      await fetch("{base_path}/hub/logout", {{
         method: "POST", credentials: "same-origin",
       }});
-      window.location = "/hub/login";
+      window.location = "{base_path}/hub/login";
     }});
   </script>
 </body>
@@ -153,6 +153,22 @@ def _cookie_secure_for(request: Request) -> bool:
     return request.url.scheme == "https"
 
 
+def _base_path(request: Request) -> str:
+    """URL prefix the app is mounted under externally, or ``""``.
+
+    Comes from uvicorn's ``--root-path``. Used to construct redirect
+    URLs, cookie ``Path``, and inline-HTML links so they stay correct
+    behind a path-stripping reverse proxy.
+    """
+    return request.scope.get("root_path", "") or ""
+
+
+def _cookie_path(request: Request) -> str:
+    """Cookie ``Path`` attribute — the prefix plus trailing slash, or
+    ``"/"`` when running at the root."""
+    return _base_path(request) + "/"
+
+
 def _new_flow_id() -> str:
     import secrets
 
@@ -160,7 +176,7 @@ def _new_flow_id() -> str:
 
 
 @router.get("/hub/login", response_class=HTMLResponse)
-def login_page() -> HTMLResponse:
+def login_page(request: Request) -> HTMLResponse:
     start = flow_mod.start()
     flow_id = _new_flow_id()
     expires = (datetime.now(UTC) + DEVICE_FLOW_LIFETIME).isoformat()
@@ -174,6 +190,7 @@ def login_page() -> HTMLResponse:
         auth_url=start.auth_url,
         user_code=start.user_code or "(see URL)",
         flow_id_json=json.dumps(flow_id),
+        base_path=_base_path(request),
     )
     return HTMLResponse(html)
 
@@ -249,7 +266,7 @@ def login_poll(flow_id: str, request: Request) -> Response:
         httponly=True,
         secure=_cookie_secure_for(request),
         samesite="lax",
-        path="/",
+        path=_cookie_path(request),
         max_age=int(session_mod.SESSION_LIFETIME.total_seconds()),
     )
     return resp
@@ -264,7 +281,7 @@ def logout(
         with db.connect() as conn:
             session_mod.delete_session(conn, dunecat_session)
     resp = JSONResponse({"status": "ok"})
-    resp.delete_cookie(key=COOKIE_NAME, path="/")
+    resp.delete_cookie(key=COOKIE_NAME, path=_cookie_path(request))
     return resp
 
 
@@ -275,6 +292,7 @@ _SPA_INDEX = (
 
 @router.get("/", response_class=HTMLResponse)
 def home(
+    request: Request,
     dunecat_session: str | None = Cookie(default=None, alias=COOKIE_NAME),
 ) -> Response:
     """Root page.
@@ -285,12 +303,13 @@ def home(
     * Session present + no SPA bundle → render the inline fallback HTML
       (handy for backend-only dev work without `npm run build`).
     """
+    login_url = f"{_base_path(request)}/hub/login"
     if not dunecat_session:
-        return RedirectResponse(url="/hub/login", status_code=303)
+        return RedirectResponse(url=login_url, status_code=303)
     with db.connect() as conn:
         user = session_mod.load_session(conn, dunecat_session)
         if user is None:
-            return RedirectResponse(url="/hub/login", status_code=303)
+            return RedirectResponse(url=login_url, status_code=303)
         row = conn.execute(
             "SELECT expires_at FROM vault_tokens WHERE user_id = ?",
             (user.id,),
@@ -301,5 +320,6 @@ def home(
         _HOME_HTML.format(
             username=user.metacat_username,
             vault_expires_at=row["expires_at"] if row else "—",
+            base_path=_base_path(request),
         )
     )

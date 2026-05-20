@@ -49,6 +49,14 @@ def hub_cmd(
     reload: bool = typer.Option(
         False, "--reload", help="Auto-reload on code changes (dev only)."
     ),
+    root_path: str = typer.Option(
+        "",
+        "--root-path",
+        help=(
+            "Public URL prefix when running behind a reverse proxy that "
+            "strips the prefix (e.g. '/twister/dunecat'). Empty = root mount."
+        ),
+    ),
 ) -> None:
     """Run the multi-user hub backend (dunecat.hub.app:app) on uvicorn.
 
@@ -71,6 +79,7 @@ def hub_cmd(
         reload=reload,
         proxy_headers=True,
         forwarded_allow_ips="127.0.0.1",
+        root_path=root_path,
     )
 
 
