@@ -168,6 +168,7 @@ def fetch_runs(
     beam_setp_max: float | None = None,
     polarity: str | None = None,  # "positive" or "negative" (case-insensitive); None = any
     extra_conds: list[str] | None = None,
+    cache_mod: Any = None,  # override `cache` module (e.g. hub uses its own)
 ) -> list[dict[str, Any]]:
     """Return normalized condb rows under the given filters.
 
@@ -229,7 +230,7 @@ def fetch_runs(
         norm = _normalize(r)
         # Cache the unfiltered row keyed on (folder, tv) so drilling into a
         # single run from the results table is free.
-        cache.set_condb_cached(folder, tv_int, norm)
+        (cache_mod or cache).set_condb_cached(folder, tv_int, norm)
         if run_type and norm.get("run_type") != run_type:
             continue
         out.append(norm)
@@ -337,14 +338,21 @@ def _search_with_bounds(
     return query_side(None)
 
 
-def fetch_run(folder: str, run: int) -> dict[str, Any] | None:
+def fetch_run(
+    folder: str, run: int, *, cache_mod: Any = None
+) -> dict[str, Any] | None:
     """Return one normalized condb row for ``(folder, run)``, or ``None``.
 
     Cached indefinitely in the SQLite store — condb rows for past runs are
     immutable. Negative results (run not in folder) are cached too so we
     don't re-hit the server for known misses.
+
+    ``cache_mod`` overrides the default cache module (``dunecat.web.cache``);
+    the hub passes its own ``dunecat.hub.cache`` so caches land in the
+    hub's SQLite instead of the local user's.
     """
-    cached = cache.get_condb_cached(folder, run)
+    cm = cache_mod or cache
+    cached = cm.get_condb_cached(folder, run)
     if cached != "MISS":
         return cached  # dict or None
 
@@ -372,7 +380,7 @@ def fetch_run(folder: str, run: int) -> dict[str, Any] | None:
             body = _normalize(r)
             break
 
-    cache.set_condb_cached(folder, run, body)
+    cm.set_condb_cached(folder, run, body)
     return body
 
 

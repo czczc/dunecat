@@ -650,6 +650,7 @@ def get_run_conditions(
     try:
         row = with_timeout(
             condb.fetch_run, folder, run,
+            cache_mod=hub_cache,
             timeout=CONDB_TIMEOUT_S,
             label=f"condb fetch_run {folder}/{run}",
         )
@@ -817,6 +818,7 @@ def get_runs_conditions(
             beam_setp_max=beam_setp_max,
             polarity=pol,
             extra_conds=validated_extra or None,
+            cache_mod=hub_cache,
             timeout=CONDB_TIMEOUT_S,
             label=f"condb fetch_runs {folder}",
         )
