@@ -173,11 +173,7 @@ async function onGenerate() {
     const { mql: generated, notes } = await queryFromEnglish(text);
     generateNotes.value = notes || '';
     if (generated) {
-      // Don't silently clobber a query the user already has in the editor.
-      const occupied = mql.value.trim() && generated !== mql.value;
-      if (occupied && !window.confirm('Replace the current query with the generated MQL?')) {
-        return;
-      }
+      // Clicking Generate is itself the intent to replace; just do it.
       mql.value = generated;
       validateResult.value = null;
     }
