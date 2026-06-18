@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
+from dunecat import llm
+
 router = APIRouter()
 
 
@@ -16,4 +18,8 @@ def get_config(request: Request) -> dict:
     # When the app is mounted under a URL prefix (uvicorn --root-path),
     # the externally-visible login URL needs the prefix too.
     root = request.scope.get("root_path", "")
-    return {"mode": "hub", "login_url": f"{root}/hub/login"}
+    return {
+        "mode": "hub",
+        "login_url": f"{root}/hub/login",
+        "llm_enabled": llm.is_enabled(),
+    }

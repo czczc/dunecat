@@ -30,6 +30,7 @@ from fastapi.responses import Response
 from metacat.webapi import MCWebAPIError
 from pydantic import BaseModel, Field
 
+from dunecat import llm
 from dunecat.files import build_mql
 from dunecat.filters import FileFilters, parse_run_range, parse_runs, value_matches
 from dunecat.web import condb
@@ -864,6 +865,10 @@ class _QueryRunRequest(BaseModel):
     saved_query_id: int | None = None
 
 
+class _FromEnglishRequest(BaseModel):
+    english: str
+
+
 class _SavedQueryCreate(BaseModel):
     name: str
     mql: str
@@ -961,6 +966,35 @@ def query_validate(
     except HTTPException:
         raise
     return {"ok": True}
+
+
+@router.post("/api/query/from-english")
+def query_from_english(
+    req: _FromEnglishRequest,
+    _user: User = Depends(current_user),
+) -> dict[str, str]:
+    if not llm.is_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="English-to-MQL is not enabled on this server",
+        )
+    english = req.english.strip()
+    if not english:
+        raise HTTPException(status_code=400, detail="english is required")
+    start = time.monotonic()
+    try:
+        result = llm.generate_mql(english)
+    except Exception as e:
+        log.warning("/api/query/from-english failed: %s", e)
+        raise HTTPException(
+            status_code=502, detail="Couldn't generate a query from that"
+        )
+    log.info(
+        "/api/query/from-english took=%.2fs mql=%r",
+        time.monotonic() - start,
+        result["mql"][:120],
+    )
+    return result
 
 
 @router.get("/api/queries")

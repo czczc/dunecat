@@ -1,7 +1,7 @@
 // App-wide config populated at boot from GET /api/config. Reads from
 // this module pick up the same object the bootstrap step wrote, so
 // every fetch sees the right mode without prop-drilling.
-const appConfig = { mode: 'local', loginUrl: null };
+const appConfig = { mode: 'local', loginUrl: null, llmEnabled: false };
 
 // URL prefix to prepend to backend paths. Vite injects BASE_URL from
 // `base` in vite.config.js — '/' for root mounts, '/<prefix>/' when
@@ -16,6 +16,7 @@ function withBase(path) {
 export function setConfig(cfg) {
   appConfig.mode = cfg?.mode || 'local';
   appConfig.loginUrl = cfg?.login_url || null;
+  appConfig.llmEnabled = !!cfg?.llm_enabled;
 }
 
 export function getConfig() {
@@ -137,6 +138,13 @@ export const validateQuery = (mql) =>
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mql }),
+  });
+
+export const queryFromEnglish = (english) =>
+  jsonFetch('/api/query/from-english', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ english }),
   });
 
 export const listSavedQueries = () => jsonFetch('/api/queries');

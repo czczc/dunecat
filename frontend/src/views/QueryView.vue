@@ -5,6 +5,8 @@ import {
   countQuery,
   createSavedQuery,
   deleteSavedQuery,
+  getConfig,
+  queryFromEnglish,
   runQuery,
   updateSavedQuery,
   validateQuery,
@@ -151,6 +153,34 @@ function insertSnippet(text) {
     ta.focus();
     ta.selectionStart = ta.selectionEnd = start + text.length;
   });
+}
+
+// English -> MQL generation (shown only when the server has an LLM
+// configured). Fills the editor with the generated MQL on success.
+const llmEnabled = getConfig().llmEnabled;
+const english = ref('');
+const generating = ref(false);
+const generateError = ref(null);
+const generateNotes = ref('');
+
+async function onGenerate() {
+  const text = english.value.trim();
+  if (!text || generating.value) return;
+  generating.value = true;
+  generateError.value = null;
+  generateNotes.value = '';
+  try {
+    const { mql: generated, notes } = await queryFromEnglish(text);
+    if (generated) {
+      mql.value = generated;
+      validateResult.value = null;
+    }
+    generateNotes.value = notes || '';
+  } catch (e) {
+    generateError.value = e.message;
+  } finally {
+    generating.value = false;
+  }
 }
 
 async function onValidate() {
@@ -353,6 +383,28 @@ function fmtBytes(n) {
 
     <div class="grid">
       <section class="main">
+        <!-- English -> MQL (only when an LLM is configured) -->
+        <div v-if="llmEnabled" class="card ask-card">
+          <div class="ask-bar">
+            <input
+              v-model="english"
+              class="ask-input"
+              placeholder="Describe what you're looking for in plain English…"
+              :disabled="generating"
+              @keydown.enter="onGenerate"
+            />
+            <button
+              class="btn btn-primary"
+              :disabled="generating || !english.trim()"
+              @click="onGenerate"
+            >
+              {{ generating ? 'Generating…' : '✨ Generate MQL' }}
+            </button>
+          </div>
+          <div v-if="generateError" class="validate-error">{{ generateError }}</div>
+          <div v-else-if="generateNotes" class="ask-notes">{{ generateNotes }}</div>
+        </div>
+
         <!-- Editor -->
         <div class="card">
           <div class="card-head">
@@ -635,6 +687,36 @@ function fmtBytes(n) {
   padding: 10px 14px;
   border-top: 1px solid var(--rule);
   background: var(--page);
+}
+
+/* English -> MQL */
+.ask-card { padding: 12px 14px; }
+.ask-bar { display: flex; gap: 8px; align-items: center; }
+.ask-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  outline: none;
+}
+.ask-input:focus { border-color: var(--ink); }
+.ask-notes {
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.4;
+}
+.ask-card .validate-error {
+  margin-top: 8px;
+  border-top: none;
+  border-radius: 7px;
 }
 
 /* Buttons */
