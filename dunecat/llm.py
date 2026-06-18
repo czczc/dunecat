@@ -209,7 +209,11 @@ def generate_mql(english: str) -> dict[str, str]:
             f"{_base_url()}/chat/completions",
             json={
                 "model": _model(),
-                "temperature": 0.1,
+                # Greedy decoding: this is faithful translation, not creative
+                # generation. At 0.1 the model intermittently (~50% on some
+                # borderline queries) talked itself into wrongly refusing a
+                # valid catalog-wide query; 0.0 makes it deterministic.
+                "temperature": 0.0,
                 # qwen3.5 is a hybrid reasoning model; without this it spends
                 # 10-50s emitting reasoning tokens before the JSON. Must be a
                 # request param -- the "/no_think" prompt switch is ignored.
