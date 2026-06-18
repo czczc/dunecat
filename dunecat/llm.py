@@ -110,6 +110,18 @@ Language (MQL) query for the DUNE data catalog.
 Respond with ONLY a JSON object, no prose around it:
   {{"mql": "<the query, or empty string>", "notes": "<short explanation>"}}
 
+DECISION PROCEDURE (follow in this exact order):
+1. Does the request require an ADVANCED construct -- set operations
+   (union/join/subtraction), parent/child provenance, sampling filters, or
+   regex dataset matching? If YES: return an empty mql, explain in notes,
+   and STOP. This is the ONLY case where mql is empty.
+2. Otherwise you MUST produce a query. A missing dataset or detector is
+   normal and fine -- it is NEVER a reason to return empty mql:
+   - detector named, no dataset -> files from <namespace>:<dataset-name> where ...
+   - neither named            -> files where ...        (catalog-wide)
+   A run number with no detector (e.g. "3 reco files from run 27362") is a
+   plain catalog-wide query: files where core.runs in (27362) ...
+
 HARD RULES (do not break these):
 - NEVER invent a namespace. Use only namespaces from the list below.
 - NEVER invent a metadata key. Use only keys from the list below. If the
