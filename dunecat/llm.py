@@ -21,14 +21,42 @@ full failure taxonomy + fence-strip fallback land in a separate slice.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import re
 
 import requests
 
 from dunecat.web.detectors import load_detectors
 
+log = logging.getLogger("uvicorn.error")
+
 DEFAULT_MODEL = "qwen3.5:4b"
 DEFAULT_TIMEOUT_S = 45.0
+
+
+class LLMError(Exception):
+    """Base for English-to-MQL failures the route maps to HTTP codes."""
+
+
+class LLMUnreachable(LLMError):
+    """The model endpoint refused the connection / DNS failed."""
+
+
+class LLMTimeout(LLMError):
+    """Generation took longer than DUNECAT_LLM_TIMEOUT."""
+
+
+class LLMModelNotFound(LLMError):
+    """The configured model isn't available on the server."""
+
+    def __init__(self, model: str) -> None:
+        super().__init__(f"model {model!r} not found")
+        self.model = model
+
+
+class LLMBadResponse(LLMError):
+    """The model returned something we couldn't parse into {mql, notes}."""
 
 
 def is_enabled() -> bool:
@@ -150,32 +178,68 @@ User: files that are in dataset A but not dataset B
 """
 
 
+def _parse_json_object(content: str) -> dict | None:
+    """Parse the model's reply into a JSON object, tolerating a model
+    that wraps it in ```json fences or stray prose. Returns None if no
+    JSON object can be recovered."""
+    try:
+        obj = json.loads(content)
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        pass
+    # Fallback: grab the first {...} span (handles fences / leading prose).
+    match = re.search(r"\{.*\}", content, re.DOTALL)
+    if not match:
+        return None
+    try:
+        obj = json.loads(match.group(0))
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
 def generate_mql(english: str) -> dict[str, str]:
     """Translate one English request into {mql, notes}.
 
-    Raises on any transport/parse failure; the caller maps that to an
-    HTTP error (the granular taxonomy is a follow-up slice).
+    Raises a specific :class:`LLMError` subclass on failure; the caller
+    maps each to an HTTP status code.
     """
-    resp = requests.post(
-        f"{_base_url()}/chat/completions",
-        json={
-            "model": _model(),
-            "temperature": 0.1,
-            # qwen3.5 is a hybrid reasoning model; without this it spends
-            # 10-50s emitting reasoning tokens before the JSON. Must be a
-            # request param -- the "/no_think" prompt switch is ignored here.
-            "reasoning_effort": "none",
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": _build_system_prompt()},
-                {"role": "user", "content": english},
-            ],
-        },
-        timeout=_timeout(),
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.post(
+            f"{_base_url()}/chat/completions",
+            json={
+                "model": _model(),
+                "temperature": 0.1,
+                # qwen3.5 is a hybrid reasoning model; without this it spends
+                # 10-50s emitting reasoning tokens before the JSON. Must be a
+                # request param -- the "/no_think" prompt switch is ignored.
+                "reasoning_effort": "none",
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": _build_system_prompt()},
+                    {"role": "user", "content": english},
+                ],
+            },
+            timeout=_timeout(),
+        )
+    except requests.Timeout as e:
+        raise LLMTimeout(str(e)) from e
+    except requests.ConnectionError as e:
+        raise LLMUnreachable(str(e)) from e
+    except requests.RequestException as e:
+        raise LLMError(str(e)) from e
+
+    # A missing model comes back as 404 on the OpenAI-compatible endpoint.
+    if resp.status_code == 404:
+        raise LLMModelNotFound(_model())
+    if resp.status_code >= 400:
+        raise LLMError(f"model endpoint returned HTTP {resp.status_code}")
+
     content = resp.json()["choices"][0]["message"]["content"]
-    parsed = json.loads(content)
+    parsed = _parse_json_object(content)
+    if parsed is None:
+        log.warning("llm: unparseable response: %r", content[:500])
+        raise LLMBadResponse("could not parse model response")
     return {
         "mql": (parsed.get("mql") or "").strip(),
         "notes": (parsed.get("notes") or "").strip(),

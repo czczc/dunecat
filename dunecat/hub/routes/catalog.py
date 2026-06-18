@@ -984,7 +984,25 @@ def query_from_english(
     start = time.monotonic()
     try:
         result = llm.generate_mql(english)
-    except Exception as e:
+    except llm.LLMUnreachable:
+        raise HTTPException(
+            status_code=503, detail="Couldn't reach the language model"
+        )
+    except llm.LLMTimeout:
+        raise HTTPException(
+            status_code=504, detail="The language model timed out — try again"
+        )
+    except llm.LLMModelNotFound as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Model {e.model!r} isn't available — run `ollama pull {e.model}`",
+        )
+    except llm.LLMBadResponse:
+        raise HTTPException(
+            status_code=502,
+            detail="The language model returned an unreadable response",
+        )
+    except llm.LLMError as e:
         log.warning("/api/query/from-english failed: %s", e)
         raise HTTPException(
             status_code=502, detail="Couldn't generate a query from that"
