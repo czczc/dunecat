@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from metacat.webapi import AuthenticationError, MCWebAPIError
 
+from dunecat import llm
 from dunecat.client import get_client as _raw_metacat_client
 from dunecat.files import build_mql
 from dunecat.filters import (
@@ -117,10 +118,10 @@ async def _metacat_error(_: Request, exc: MCWebAPIError) -> JSONResponse:
 
 
 @app.get("/api/config")
-def get_config() -> dict[str, str]:
+def get_config() -> dict[str, Any]:
     """Mode flag consumed by the SPA at boot. The hub returns
     {"mode": "hub", ...} from the same path."""
-    return {"mode": "local"}
+    return {"mode": "local", "llm_enabled": llm.is_enabled()}
 
 
 @app.get("/api/me")
@@ -339,6 +340,10 @@ class _QueryRequest(BaseModel):
     mql: str
 
 
+class _FromEnglishRequest(BaseModel):
+    english: str
+
+
 class _QueryRunRequest(BaseModel):
     mql: str
     page: int = Field(default=1, ge=1)
@@ -509,6 +514,50 @@ def query_validate(req: _QueryRequest) -> dict[str, Any]:
     except MCWebAPIError as e:
         return {"ok": False, "error": str(e)}
     return {"ok": True}
+
+
+@app.post("/api/query/from-english")
+def query_from_english(req: _FromEnglishRequest) -> dict[str, str]:
+    if not llm.is_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="English-to-MQL is not enabled on this server",
+        )
+    english = req.english.strip()
+    if not english:
+        raise HTTPException(status_code=400, detail="english is required")
+    start = time.monotonic()
+    try:
+        result = llm.generate_mql(english)
+    except llm.LLMUnreachable:
+        raise HTTPException(
+            status_code=503, detail="Couldn't reach the language model"
+        )
+    except llm.LLMTimeout:
+        raise HTTPException(
+            status_code=504, detail="The language model timed out — try again"
+        )
+    except llm.LLMModelNotFound as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Model {e.model!r} isn't available — run `ollama pull {e.model}`",
+        )
+    except llm.LLMBadResponse:
+        raise HTTPException(
+            status_code=502,
+            detail="The language model returned an unreadable response",
+        )
+    except llm.LLMError as e:
+        log.warning("/api/query/from-english failed: %s", e)
+        raise HTTPException(
+            status_code=502, detail="Couldn't generate a query from that"
+        )
+    log.info(
+        "/api/query/from-english took=%.2fs mql=%r",
+        time.monotonic() - start,
+        result["mql"][:120],
+    )
+    return result
 
 
 @app.get("/api/file")
