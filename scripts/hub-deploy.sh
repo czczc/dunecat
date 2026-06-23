@@ -9,12 +9,24 @@
 #   DUNECAT_REPO   repo checkout to update (default: /opt/dunecat)
 #   VITE_BASE      passed to the Vite build (default: /). Trailing slash.
 #                  Set this to the same prefix as `--root-path` in the
-#                  systemd unit when serving under a URL sub-path.
+#                  systemd unit when serving under a URL sub-path. Per-host
+#                  defaults live in scripts/hub-deploy.env (sourced below);
+#                  this env var overrides them.
 #
 # Side effects: `git pull --ff-only`, `uv sync`, `npm install`,
 # `npm run build`, `sudo systemctl restart dunecat-hub`.
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Per-host deploy defaults (e.g. VITE_BASE for the twister sub-path). An
+# explicit VITE_BASE=... on the command line still wins; the env file only
+# fills it in when unset.
+if [[ -f "$SCRIPT_DIR/hub-deploy.env" ]]; then
+    # shellcheck source=scripts/hub-deploy.env
+    source "$SCRIPT_DIR/hub-deploy.env"
+fi
 
 REPO="${DUNECAT_REPO:-/opt/dunecat}"
 
