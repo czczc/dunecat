@@ -45,8 +45,8 @@ _TIMEOUT = 10.0
 # ----- HTTP boundary (patched in tests) ------------------------------------
 
 
-def _vault_post(url: str, body: dict) -> requests.Response:
-    return requests.post(url, json=body, timeout=_TIMEOUT)
+def _vault_post(url: str, body: dict, headers: dict | None = None) -> requests.Response:
+    return requests.post(url, json=body, headers=headers, timeout=_TIMEOUT)
 
 
 def _vault_get(url: str, headers: dict, params: dict) -> requests.Response:
@@ -123,11 +123,33 @@ def poll(poll_body: dict) -> PollResult:
     return PollResult(outcome="complete", auth=r.json().get("auth"))
 
 
+def _secret_path(credkey: str) -> str:
+    return f"secret/oauth/creds/{ISSUER}/{credkey}:{ROLE}"
+
+
+def store_refresh_token(vault_token: str, credkey: str, refresh_token: str) -> None:
+    """Store the user's OAuth refresh token at their vault secret path.
+
+    Vault mints bearer tokens on the GET in ``mint_bearer`` by exchanging
+    the *stored* refresh token. That stored token ages out (CILogon
+    expires refresh tokens after ~weeks of inactivity), so a login flow
+    that only GETs works the first time but later reads a stale token and
+    gets a 400. Re-storing the freshly-minted refresh token from *this*
+    device flow on every login keeps the credential current — which is
+    exactly what htgettoken does each run (__init__.py:1282-1293).
+    """
+    r = _vault_post(
+        f"{VAULT}/v1/{_secret_path(credkey)}",
+        {"server": ISSUER, "refresh_token": refresh_token},
+        headers={"X-Vault-Token": vault_token},
+    )
+    r.raise_for_status()
+
+
 def mint_bearer(vault_token: str, credkey: str) -> str:
     """Read the secret path and return the bearer JWT."""
-    path = f"secret/oauth/creds/{ISSUER}/{credkey}:{ROLE}"
     r = _vault_get(
-        f"{VAULT}/v1/{path}",
+        f"{VAULT}/v1/{_secret_path(credkey)}",
         headers={"X-Vault-Token": vault_token},
         params={"minimum_seconds": 60},
     )
@@ -146,6 +168,13 @@ def complete(auth: dict) -> LoginResult:
         raise RuntimeError(
             "vault response missing metadata.credkey; cannot identify user"
         )
+    refresh_token = metadata.get("oauth2_refresh_token")
+    if not refresh_token:
+        raise RuntimeError(
+            "vault response missing metadata.oauth2_refresh_token; "
+            "cannot store credentials to mint a bearer"
+        )
+    store_refresh_token(vault_token, credkey, refresh_token)
     bearer = mint_bearer(vault_token, credkey)
     claims = jwt_claims(bearer)
     sub = claims.get("sub")

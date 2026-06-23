@@ -87,7 +87,10 @@ def _drive_login(client, *, sub: str, credkey: str) -> None:
             "auth": {
                 "client_token": f"vault-token-for-{credkey}",
                 "lease_duration": 2419200,
-                "metadata": {"credkey": credkey},
+                "metadata": {
+                    "credkey": credkey,
+                    "oauth2_refresh_token": f"refresh-for-{credkey}",
+                },
             }
         },
     )
@@ -95,11 +98,13 @@ def _drive_login(client, *, sub: str, credkey: str) -> None:
         200, {"data": {"access_token": _fake_bearer(sub)}}
     )
 
-    def fake_post(url: str, body: dict):
+    def fake_post(url: str, body: dict, headers: dict | None = None):
         if url.endswith("/auth_url"):
             return start_resp
         if url.endswith("/poll"):
             return poll_resp
+        if "/v1/secret/oauth/creds/" in url:
+            return _stub_response(204, None)
         raise AssertionError(f"unexpected POST {url}")
 
     def fake_get(url: str, headers: dict, params: dict):

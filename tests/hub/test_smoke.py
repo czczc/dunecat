@@ -108,7 +108,10 @@ def _drive_login(
                 "auth": {
                     "client_token": f"vault-token-for-{credkey}",
                     "lease_duration": 2419200,
-                    "metadata": {"credkey": credkey},
+                    "metadata": {
+                        "credkey": credkey,
+                        "oauth2_refresh_token": f"refresh-for-{credkey}",
+                    },
                 }
             },
         )
@@ -117,16 +120,26 @@ def _drive_login(
         200, {"data": {"access_token": _fake_bearer(sub, credkey)}}
     )
 
-    def fake_post(url: str, body: dict):
+    # Model vault: it can only mint a bearer (GET) once the refresh token
+    # has been stored (POST) at the secret path — otherwise it 400s.
+    stored: set[str] = set()
+
+    def fake_post(url: str, body: dict, headers: dict | None = None):
         if url.endswith("/auth_url"):
             return start_resp
         if url.endswith("/poll"):
             return poll_responses.pop(0)
+        if "/v1/secret/oauth/creds/" in url:
+            assert body.get("refresh_token"), "store call missing refresh_token"
+            stored.add(url)
+            return _stub_response(204, None)
         raise AssertionError(f"unexpected POST {url}")
 
     def fake_get(url: str, headers: dict, params: dict):
         # bearer mint
         if "/v1/secret/oauth/creds/" in url:
+            if url not in stored:
+                return _stub_response(400, {"errors": ["no refresh token stored"]})
             return bearer_resp
         raise AssertionError(f"unexpected GET {url}")
 
@@ -240,6 +253,49 @@ def test_login_then_me_then_logout(client):
     # Cookie now gone client-side; /api/me should be 401.
     r = client.get("/api/me")
     assert r.status_code == 401
+
+
+def test_complete_stores_refresh_token_before_minting():
+    """Regression for the 400 on .../secret/oauth/creds/<credkey>:default:
+    vault mints a bearer (GET) from the *stored* refresh token, which ages
+    out after ~weeks of inactivity. A GET-only login works the first time
+    but later reads a stale token and 400s; re-storing the fresh refresh
+    token from this device flow (POST) before the GET keeps it current.
+    Pin the store-before-mint ordering."""
+    from dunecat.hub.auth import flow as flow_mod
+
+    calls: list[str] = []
+
+    def fake_post(url: str, body: dict, headers: dict | None = None):
+        if "/v1/secret/oauth/creds/" in url:
+            assert body == {"server": "dune", "refresh_token": "rt-frank"}
+            assert headers == {"X-Vault-Token": "vault-token-frank"}
+            calls.append("store")
+            return _stub_response(204, None)
+        raise AssertionError(f"unexpected POST {url}")
+
+    def fake_get(url: str, headers: dict, params: dict):
+        if "/v1/secret/oauth/creds/" in url:
+            # mint must come after the store, never before
+            assert calls == ["store"], "mint_bearer ran before refresh token stored"
+            calls.append("mint")
+            return _stub_response(200, {"data": {"access_token": _fake_bearer("uuid-frank", "frank")}})
+        raise AssertionError(f"unexpected GET {url}")
+
+    auth = {
+        "client_token": "vault-token-frank",
+        "lease_duration": 2419200,
+        "metadata": {"credkey": "frank", "oauth2_refresh_token": "rt-frank"},
+    }
+    with (
+        patch.object(flow_mod, "_vault_post", side_effect=fake_post),
+        patch.object(flow_mod, "_vault_get", side_effect=fake_get),
+    ):
+        result = flow_mod.complete(auth)
+
+    assert calls == ["store", "mint"]
+    assert result.metacat_username == "frank"
+    assert result.oidc_sub == "uuid-frank"
 
 
 def test_second_login_same_user_does_not_duplicate(client):
