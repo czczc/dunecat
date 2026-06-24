@@ -10,7 +10,9 @@
 #   dest-dir     where to write it (defaults to the current directory).
 #
 # Token handling:
-#   - Reuses $BEARER_TOKEN_FILE (default /tmp/bt_u<uid>) if it has > MIN_TTL left.
+#   - Reuses $BEARER_TOKEN_FILE (WLCG discovery default:
+#     $XDG_RUNTIME_DIR/bt_u<uid> on Linux, else /tmp/bt_u<uid>) if it has
+#     more than MIN_TTL left.
 #   - Otherwise runs htgettoken. If your cached *vault* token is still valid this
 #     is non-interactive; once that expires too, htgettoken opens a browser for SSO.
 #
@@ -20,10 +22,15 @@ set -euo pipefail
 VAULT="${VAULT:-htvaultprod.fnal.gov}"
 ISSUER="${ISSUER:-dune}"
 MIN_TTL="${MIN_TTL:-300}"                       # remint if fewer seconds remain
-export BEARER_TOKEN_FILE="${BEARER_TOKEN_FILE:-/tmp/bt_u$(id -u)}"
+# WLCG Bearer Token Discovery location: $XDG_RUNTIME_DIR/bt_u<uid> if that var
+# is set (typical on Linux, e.g. /run/user/1000), else /tmp/bt_u<uid> (macOS).
+# Exported so htgettoken writes and xrdcp reads the same path.
+export BEARER_TOKEN_FILE="${BEARER_TOKEN_FILE:-${XDG_RUNTIME_DIR:-/tmp}/bt_u$(id -u)}"
 
 usage() {
-  sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  # Print the leading comment block (after the shebang) up to the first
+  # non-comment line, stripping the leading "# ".
+  awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "${BASH_SOURCE[0]}"
   exit "${1:-0}"
 }
 
