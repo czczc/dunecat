@@ -12,6 +12,13 @@ intermediate CA (``InCommon RSA IGTF Server CA 3``) isn't in certifi's bundle
 and the server doesn't send it, so ``requests`` fails verification. ``curl``
 uses the system trust store, which has it.
 
+Other grid endpoints (INFN/CNAF StoRM, FNAL dCache on Linux) present host
+certs signed by IGTF CAs that aren't in any public/system store either. WLCG
+nodes keep those CAs under ``$X509_CERT_DIR`` (default
+``/etc/grid-security/certificates``); when that directory exists we point
+curl at it with ``--capath`` so verification succeeds, and otherwise emit a
+hint on the resulting cert error instead of a bare exit code.
+
 Auth is the OIDC bearer minted by ``dunecat login``: ``xrdcp`` reads it from
 ``BEARER_TOKEN_FILE``; ``curl`` sends it as an Authorization header.
 """
@@ -20,6 +27,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -57,6 +65,25 @@ def _require(tool: str, hint: str) -> str:
     return path
 
 
+def _capath_args() -> list[str]:
+    """``--capath <dir>`` for curl when a grid CA directory is available,
+    else empty. Honors ``$X509_CERT_DIR`` (WLCG convention), falling back to
+    ``/etc/grid-security/certificates``. Additive to curl's default trust
+    store, so publicly-signed hosts (e.g. PIC) keep working."""
+    cadir = os.environ.get("X509_CERT_DIR") or "/etc/grid-security/certificates"
+    return ["--capath", cadir] if os.path.isdir(cadir) else []
+
+
+def _tls_hint(url: str) -> str:
+    host = urlsplit(url).hostname or url
+    return (
+        f"TLS verification failed for {host} (curl exit 60): the host likely "
+        "uses an IGTF/grid CA absent from your trust store. Install the grid "
+        "CA bundle (e.g. /etc/grid-security/certificates via fetch-crl or "
+        "osg-ca-certs) or point $X509_CERT_DIR at it, then retry."
+    )
+
+
 def _dcache_locality(webdav_url: str, token: str) -> str | None:
     """fileLocality for a FNAL dCache WebDAV URL via the :3880 REST frontend,
     or None if it can't be determined. Uses curl for the same CA reasons as the
@@ -65,7 +92,7 @@ def _dcache_locality(webdav_url: str, token: str) -> str | None:
     try:
         out = subprocess.run(
             [_require("curl", "needed for dCache locality check"),
-             "-s", "-H", f"Authorization: Bearer {token}", api],
+             "-s", *_capath_args(), "-H", f"Authorization: Bearer {token}", api],
             capture_output=True,
             text=True,
             timeout=_LOCALITY_TIMEOUT,
@@ -125,10 +152,11 @@ def _download_curl(url: str, dest: Path, token: str) -> Path:
     out = _out_path(url, dest)
     # -f: fail (non-zero) on HTTP errors rather than saving an error page;
     # -L: follow redirects; -C -: resume a partial file on retry.
-    rc = subprocess.call(
-        [curl, "-fL", "-C", "-", "-H", f"Authorization: Bearer {token}",
-         "-o", str(out), url]
-    )
+    cmd = [curl, "-fL", "-C", "-", "-H", f"Authorization: Bearer {token}",
+           *_capath_args(), "-o", str(out), url]
+    rc = subprocess.call(cmd)
+    if rc == 60:  # peer certificate could not be authenticated
+        raise DownloadError(_tls_hint(url))
     if rc != 0:
         raise DownloadError(f"curl failed (exit {rc})")
     return out

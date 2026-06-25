@@ -106,6 +106,24 @@ def test_download_curl_failure_raises(monkeypatch, tmp_path):
         d.download("https://host/path/file.hdf5", tmp_path, token="T")
 
 
+def test_download_curl_uses_grid_capath_when_present(monkeypatch, tmp_path):
+    seen = _fake_subprocess(monkeypatch, write=b"x")
+    cadir = tmp_path / "certs"
+    cadir.mkdir()
+    monkeypatch.setenv("X509_CERT_DIR", str(cadir))
+    d.download("https://host/path/file.hdf5", tmp_path, token="T")
+    cmd = seen["cmd"]
+    assert "--capath" in cmd
+    assert cmd[cmd.index("--capath") + 1] == str(cadir)
+
+
+def test_download_curl_tls_failure_gives_grid_ca_hint(monkeypatch, tmp_path):
+    _fake_subprocess(monkeypatch, rc=60)  # curl exit 60 == cert not authenticated
+    with pytest.raises(d.DownloadError, match="X509_CERT_DIR"):
+        d.download("https://xfer-archive.cr.cnaf.infn.it:8443/p/f.hdf5", tmp_path,
+                   token="T")
+
+
 def test_download_unsupported_scheme_errors(tmp_path):
     with pytest.raises(d.DownloadError, match="unsupported URL scheme"):
         d.download("ftp://host/file.hdf5", tmp_path, token="T")
