@@ -173,7 +173,7 @@ function fmtBytesShort(n) {
           <span>
             Replicas
             <span v-if="replicas?.replicas" class="head-meta">
-              · {{ replicas.replicas.length }}{{ replicas.cached ? ' · cached' : '' }}
+              · {{ replicas.replicas.length }} site{{ replicas.replicas.length === 1 ? '' : 's' }}{{ replicas.cached ? ' · cached' : '' }}
             </span>
           </span>
           <button class="btn btn-small" @click="toggleReplicas">
@@ -190,9 +190,18 @@ function fmtBytesShort(n) {
             <div class="replicas-error-detail">{{ replicasError.message }}</div>
           </div>
           <div v-else-if="replicas?.replicas?.length" class="replicas-list">
-            <div v-for="r in replicas.replicas" :key="`${r.rse}|${r.pfn}`" class="replica-row">
-              <div class="replica-rse">{{ r.rse }}</div>
-              <div class="replica-pfn">{{ r.pfn }}</div>
+            <div v-for="site in replicas.replicas" :key="site.rse" class="replica-site">
+              <div class="replica-site-head">
+                <span class="replica-rse">{{ site.rse }}</span>
+                <span class="replica-loc" :class="`loc-${(site.type || '').toLowerCase()}`">
+                  {{ site.type === 'TAPE' ? 'on tape' : site.type === 'DISK' ? 'on disk' : (site.type || '?') }}
+                </span>
+              </div>
+              <div v-for="(p, i) in site.pfns" :key="p.pfn" class="replica-door">
+                <span class="replica-proto" :class="`proto-${p.scheme}`">{{ p.scheme }}</span>
+                <span v-if="i === 0" class="replica-pref">preferred</span>
+                <span class="replica-pfn">{{ p.pfn }}</span>
+              </div>
             </div>
           </div>
           <div v-else-if="replicas" class="card-empty">
@@ -387,17 +396,55 @@ function fmtBytesShort(n) {
   letter-spacing: 0;
 }
 .replicas-list { padding: 6px 0; }
-.replica-row {
+.replica-site {
   padding: 8px 14px;
   border-top: 1px solid var(--rule);
 }
-.replica-row:first-child { border-top: none; }
+.replica-site:first-child { border-top: none; }
+.replica-site-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
 .replica-rse {
   font-family: var(--font-mono);
   font-size: 11.5px;
   font-weight: 600;
   color: var(--ink);
-  margin-bottom: 3px;
+}
+.replica-loc {
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.loc-disk { background: #e3f7e8; color: #1a7f3c; }
+.loc-tape { background: #fdeede; color: #a8631a; }
+.replica-door {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0 2px 10px;
+}
+.replica-proto {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.proto-root { background: var(--accent-soft, #e3f0ff); color: var(--accent, #1a5fb4); }
+.proto-davs, .proto-https { background: var(--rule, #e6e6e6); color: var(--dim); }
+.replica-pref {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--accent, #1a5fb4);
 }
 .replica-pfn {
   font-family: var(--font-mono);

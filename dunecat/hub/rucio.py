@@ -39,6 +39,37 @@ class RucioError(Exception):
 
 _construction_lock = threading.Lock()
 
+# Disk sites before tape sites when ordering the grouped result.
+_TYPE_RANK = {"DISK": 0, "TAPE": 1}
+
+
+def _group_replicas(pfns: dict[str, Any]) -> list[dict[str, Any]]:
+    """Group Rucio's per-PFN info (the ``pfns`` map) by site into
+    ``[{rse, type, pfns: [{scheme, pfn, priority}]}]``.
+
+    Disk sites come before tape sites; within a site the doors are ordered
+    by Rucio's own priority, which ranks ``root://`` (typically faster)
+    ahead of ``davs://``.
+    """
+    sites: dict[str, dict[str, Any]] = {}
+    for pfn, info in pfns.items():
+        rse = info.get("rse") or "?"
+        site = sites.setdefault(
+            rse, {"rse": rse, "type": (info.get("type") or "").upper(), "pfns": []}
+        )
+        site["pfns"].append(
+            {
+                "scheme": pfn.split("://", 1)[0],
+                "pfn": pfn,
+                "priority": info.get("priority"),
+            }
+        )
+    for site in sites.values():
+        site["pfns"].sort(key=lambda p: (p["priority"] is None, p["priority"] or 0))
+    return sorted(
+        sites.values(), key=lambda s: (_TYPE_RANK.get(s["type"], 9), s["rse"])
+    )
+
 
 def _replica_client_for(user: User):
     """Build a fresh ReplicaClient bound to this user's bearer.
@@ -90,7 +121,15 @@ def list_replicas_for(
         raise RucioAuthError(str(e))
 
     try:
-        results = list(client.list_replicas([{"scope": scope, "name": name}]))
+        # Ask for all common schemes so each RSE shows both its xrootd
+        # (root://) and WebDAV (davs://) doors — they reach the same bytes
+        # but differ in token support per site.
+        results = list(
+            client.list_replicas(
+                [{"scope": scope, "name": name}],
+                schemes=["root", "davs", "https"],
+            )
+        )
     except Exception as e:
         from rucio.common.exception import (  # noqa: PLC0415
             CannotAuthenticate,
@@ -106,10 +145,7 @@ def list_replicas_for(
     if not results:
         return None
     r = results[0]
-    replicas: list[dict[str, str]] = []
-    for rse, pfns in (r.get("rses") or {}).items():
-        for pfn in (pfns or []):
-            replicas.append({"rse": rse, "pfn": pfn})
+    replicas = _group_replicas(r.get("pfns") or {})
     return {
         "scope": r.get("scope"),
         "name": r.get("name"),
