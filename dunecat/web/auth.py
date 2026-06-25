@@ -95,8 +95,14 @@ def _iat_of(token: str) -> datetime | None:
 
 
 def _bearer_path() -> Path:
-    raw = os.environ.get("BEARER_TOKEN_FILE") or f"/tmp/bt_u{os.geteuid()}"
-    return Path(raw)
+    # WLCG Bearer Token Discovery: honor an explicit BEARER_TOKEN_FILE, else
+    # $XDG_RUNTIME_DIR/bt_u<uid> on Linux (e.g. /run/user/1000), else
+    # /tmp/bt_u<uid> (macOS). Must match where htgettoken writes and xrdcp
+    # reads — see scripts/dune-xrdcp.sh, which uses the same precedence.
+    if raw := os.environ.get("BEARER_TOKEN_FILE"):
+        return Path(raw)
+    runtime = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
+    return Path(runtime) / f"bt_u{os.geteuid()}"
 
 
 def _read_bearer_from_disk() -> None:

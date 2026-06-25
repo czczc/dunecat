@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 import typer
@@ -37,8 +38,30 @@ from .timestamps import (
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 dataset_app = typer.Typer(no_args_is_help=True, add_completion=False)
 file_app = typer.Typer(no_args_is_help=True, add_completion=False)
-app.add_typer(dataset_app, name="dataset")
-app.add_typer(file_app, name="file")
+app.add_typer(
+    dataset_app,
+    name="dataset",
+    help="Inspect datasets: list, show, list files, distinct metadata values.",
+)
+app.add_typer(
+    file_app, name="file", help="Inspect files: which datasets contain a file."
+)
+
+
+def _venv_tool(name: str) -> str | None:
+    """Resolve a console script that ships as one of dunecat's dependencies
+    (``htgettoken``, ``metacat``).
+
+    Under ``uv tool install``/``uvx`` these scripts are installed into the
+    same venv as the running interpreter (``sys.prefix/bin``) but are *not*
+    symlinked onto PATH — only dunecat's own entry point is. A plain
+    ``shutil.which`` therefore misses them, so we also look beside the
+    interpreter. This is what lets ``uvx dunecat login`` work without a
+    separate ``uv tool install htgettoken``.
+    """
+    return shutil.which(name) or shutil.which(
+        name, path=str(Path(sys.prefix) / "bin")
+    )
 app.add_typer(server_app, name="server")
 
 
@@ -197,6 +220,17 @@ def login_cmd(
         # metacat leg to -m token regardless of METACAT_AUTH_METHOD in .env.
         # Users who want password must invoke `dunecat login metacat` explicitly.
         _rucio_login(exit_on_done=False)
+        # The rucio bearer alone is enough to download files. Only attempt the
+        # metacat leg if metacat is actually configured; otherwise a
+        # download-only user gets a spurious non-zero exit (issue: Brett).
+        if not os.environ.get("METACAT_SERVER_URL"):
+            typer.echo(
+                "metacat not configured (no METACAT_SERVER_URL); skipping the "
+                "metacat login step. The bearer token is ready for downloads. "
+                "Run `dunecat login metacat` once metacat env vars are set.",
+                err=True,
+            )
+            raise typer.Exit(0)
         _metacat_login(user=user, method=method or "token", exit_on_done=False)
         raise typer.Exit(0)
     typer.echo(
@@ -207,15 +241,16 @@ def login_cmd(
 
 
 def _rucio_login(*, exit_on_done: bool = True) -> None:
-    if shutil.which("htgettoken") is None:
+    htget = _venv_tool("htgettoken")
+    if htget is None:
         typer.echo(
-            "`htgettoken` not found on PATH. Try `uv run dunecat login` "
-            "so it can find the one in the project's virtualenv.",
+            "`htgettoken` not found. It installs as a dunecat dependency; if "
+            "you're running a standalone build, try `uv run dunecat login`.",
             err=True,
         )
         raise typer.Exit(2)
     cmd = [
-        "htgettoken",
+        htget,
         "--vaulttokenttl=10d",
         "--vaultserver=htvaultprod.fnal.gov",
         "--issuer=dune",
@@ -251,14 +286,15 @@ def _metacat_login(
     if missing:
         typer.echo("Missing: " + ", ".join(missing), err=True)
         raise typer.Exit(2)
-    if shutil.which("metacat") is None:
+    metacat = _venv_tool("metacat")
+    if metacat is None:
         typer.echo(
-            "`metacat` CLI not found on PATH. Try `uv run dunecat login` "
-            "so it can find the one in the project's virtualenv.",
+            "`metacat` CLI not found. It installs as a dunecat dependency; if "
+            "you're running a standalone build, try `uv run dunecat login`.",
             err=True,
         )
         raise typer.Exit(2)
-    cmd = ["metacat", "-s", server, "-a", auth, "auth", "login", "-m", method, user]
+    cmd = [metacat, "-s", server, "-a", auth, "auth", "login", "-m", method, user]
     typer.echo("$ " + " ".join(cmd), err=True)
     rc = subprocess.call(cmd)
     if exit_on_done:
@@ -326,6 +362,7 @@ def query_cmd(
         1000, "--batch-size", help="Server-side batch size for streaming."
     ),
 ) -> None:
+    """Run a raw MQL query and stream matching file DIDs (or JSONL)."""
     with _handled_errors():
         for item in run_query(mql, with_metadata=with_metadata, batch_size=batch_size):
             if json_out:

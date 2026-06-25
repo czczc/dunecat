@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from typer.testing import CliRunner
 
@@ -6,6 +8,23 @@ from dunecat import cli
 from dunecat.web import auth
 
 runner = CliRunner()
+
+
+# ---- bearer token discovery ------------------------------------------------
+
+
+def test_bearer_path_precedence(monkeypatch):
+    """WLCG discovery order: explicit env > XDG_RUNTIME_DIR > /tmp."""
+    uid = os.geteuid()
+    monkeypatch.delenv("BEARER_TOKEN_FILE", raising=False)
+    monkeypatch.setenv("XDG_RUNTIME_DIR", "/run/user/1000")
+    assert str(auth._bearer_path()) == f"/run/user/1000/bt_u{uid}"
+
+    monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
+    assert str(auth._bearer_path()) == f"/tmp/bt_u{uid}"
+
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "/explicit/bt")
+    assert str(auth._bearer_path()) == "/explicit/bt"
 
 
 # ---- URL rewriting ---------------------------------------------------------

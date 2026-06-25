@@ -69,6 +69,23 @@ def test_authentication_error_exits_2_with_login_instructions(monkeypatch):
     assert "auth login" in result.stderr
 
 
+def test_login_all_skips_metacat_when_unconfigured(monkeypatch):
+    """`dunecat login` with no METACAT_SERVER_URL should mint the rucio
+    bearer and exit 0, not fail on the metacat leg (download-only users)."""
+    monkeypatch.setattr(cli, "load_dotenv", lambda: None)
+    monkeypatch.setattr(cli, "_rucio_login", lambda *, exit_on_done=True: None)
+    monkeypatch.delenv("METACAT_SERVER_URL", raising=False)
+
+    attempted = []
+    monkeypatch.setattr(cli, "_metacat_login", lambda **kw: attempted.append(kw))
+
+    result = runner.invoke(cli.app, ["login"])
+
+    assert result.exit_code == 0, result.output
+    assert "skipping the metacat login" in result.stderr
+    assert attempted == []  # metacat leg never attempted
+
+
 def test_server_flag_overrides_env(monkeypatch):
     captured = {}
 

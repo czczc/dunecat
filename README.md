@@ -31,6 +31,18 @@ open http://127.0.0.1:5173
 
 Use `127.0.0.1`, not `localhost` (macOS prefers IPv6; uvicorn binds IPv4 only).
 
+## CLI only (no clone)
+
+For just the `dunecat` command-line client (query / download, no web app),
+install straight from git — `htgettoken` and `metacat` come along as
+dependencies, so no separate install is needed:
+
+```bash
+uv tool install git+https://github.com/czczc/dunecat   # adds `dunecat` to PATH
+# or run ad hoc without installing:
+uvx --from git+https://github.com/czczc/dunecat dunecat login
+```
+
 ## Managing the servers
 
 ```bash
