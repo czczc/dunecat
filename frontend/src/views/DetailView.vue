@@ -197,9 +197,8 @@ function fmtBytesShort(n) {
                   {{ site.type === 'TAPE' ? 'on tape' : site.type === 'DISK' ? 'on disk' : (site.type || '?') }}
                 </span>
               </div>
-              <div v-for="(p, i) in site.pfns" :key="p.pfn" class="replica-door">
+              <div v-for="p in site.pfns" :key="p.pfn" class="replica-door">
                 <span class="replica-proto" :class="`proto-${p.scheme}`">{{ p.scheme }}</span>
-                <span v-if="i === 0" class="replica-pref">preferred</span>
                 <span class="replica-pfn">{{ p.pfn }}</span>
               </div>
             </div>
@@ -438,13 +437,9 @@ function fmtBytesShort(n) {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.proto-root { background: var(--accent-soft, #e3f0ff); color: var(--accent, #1a5fb4); }
-.proto-davs, .proto-https { background: var(--rule, #e6e6e6); color: var(--dim); }
-.replica-pref {
-  flex: none;
-  font-size: 9.5px;
-  font-weight: 600;
-  color: var(--accent, #1a5fb4);
+.proto-root, .proto-davs, .proto-https {
+  background: var(--rule, #e6e6e6);
+  color: var(--dim);
 }
 .replica-pfn {
   font-family: var(--font-mono);
