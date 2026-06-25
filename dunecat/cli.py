@@ -267,6 +267,52 @@ def _metacat_login(
         raise typer.Exit(rc)
 
 
+@app.command("download")
+def download_cmd(
+    url: str = typer.Argument(
+        ...,
+        help="Replica PFN to download: root://, davs://, or https:// URL.",
+    ),
+    dest: str = typer.Option(
+        ".", "--dest", "-d", help="Destination directory (default: current)."
+    ),
+) -> None:
+    """Download a single replica to a local file.
+
+    Picks xrdcp for root:// and HTTPS/WebDAV for davs://|https://, rewrites
+    FNAL dCache's gsi-only door to its WebDAV door, and refuses tape-resident
+    files up front. Uses the bearer token from `dunecat login`.
+    """
+    from .download import DownloadError, download
+    from .web import auth
+
+    load_dotenv()
+    auth.prime()
+    try:
+        auth.ensure_fresh_bearer()
+    except auth.VaultExpiredError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(2)
+    except auth.AuthRenewError as e:
+        # Non-fatal: the token already on disk may still be usable.
+        typer.echo(f"warning: {e}", err=True)
+
+    token_path = auth._bearer_path()
+    if not token_path.exists():
+        typer.echo("No bearer token found. Run: dunecat login", err=True)
+        raise typer.Exit(2)
+    # xrdcp discovers the token via BEARER_TOKEN_FILE.
+    os.environ["BEARER_TOKEN_FILE"] = str(token_path)
+    token = token_path.read_text().strip()
+
+    try:
+        out = download(url, dest, token=token)
+    except DownloadError as e:
+        typer.echo(f"download failed: {e}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"saved: {out}")
+
+
 @app.command("query")
 def query_cmd(
     mql: str = typer.Argument(..., help="Raw MQL query string."),
