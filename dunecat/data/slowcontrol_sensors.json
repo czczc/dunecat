@@ -1,0 +1,7694 @@
+{
+ "generated": "2026-07-30",
+ "detectors": {
+  "np02": {
+   "api": "https://np02-data-api-slow-control.app.cern.ch",
+   "sensors": [
+    {
+     "id": "47897643080475",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897777298203",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897877961499",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898767153947",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898783931163",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898800708379",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898817485595",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898834262811",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898851040027",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898867817243",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898884594459",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898901371675",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898918148891",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898934926107",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898951703323",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898985257755",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899035589403",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899085921051",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899136252699",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899320802075",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899337579291",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899354356507",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899706678043",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899723455259",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899740232475",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899757009691",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899924781851",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899941559067",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47899958336283",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900126108443",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900142885659",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900159662875",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900511984411",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900528761627",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900545538843",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900562316059",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900679756571",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900696533787",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900713311003",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900730088219",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900746865435",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47900763642651",
+     "name": "",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47926315319579",
+     "name": "",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47901585703963",
+     "name": "B2_BS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901334045723",
+     "name": "B2_SS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901518595099",
+     "name": "B3_BS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901535372315",
+     "name": "B3_BS_HOR_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901552149531",
+     "name": "B3_BS_HOR_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47900881060891",
+     "name": "B3_JS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47901686367259",
+     "name": "B3_LS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47901115941915",
+     "name": "B3_SS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901132719131",
+     "name": "B3_SS_HOR_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901149496347",
+     "name": "B3_SS_HOR_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901568926747",
+     "name": "B4_BS_VER_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901082387483",
+     "name": "B4_SS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47900847506459",
+     "name": "BC_JS_03_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47900864283675",
+     "name": "BC_JS_03_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47901652812827",
+     "name": "BC_LS_03_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47901669590043",
+     "name": "BC_LS_03_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47926399205659",
+     "name": "NP02_DCS_01_2CV4202",
+     "label": "CV4202",
+     "unit": "%",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47900897838107",
+     "name": "DS_JS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47901099164699",
+     "name": "DS_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901283714075",
+     "name": "FRM_SS_HOR_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901300491291",
+     "name": "FRM_SS_HOR_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901199827995",
+     "name": "FRM_SS_VER_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47960339513627",
+     "name": "NP02_DCS_01_LE0101",
+     "label": "LE0101",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960373068059",
+     "name": "NP02_DCS_01_LE0102",
+     "label": "LE0102",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960389845275",
+     "name": "NP02_DCS_01_LE0103",
+     "label": "LE0103",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960406622491",
+     "name": "NP02_DCS_01_LE0104",
+     "label": "LE0104",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960423399707",
+     "name": "NP02_DCS_01_LE0201",
+     "label": "LE0201",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960440176923",
+     "name": "NP02_DCS_01_LE0202",
+     "label": "LE0202",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960456954139",
+     "name": "NP02_DCS_01_LE0203",
+     "label": "LE0203",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960473731355",
+     "name": "NP02_DCS_01_LE0204",
+     "label": "LE0204",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960490508571",
+     "name": "NP02_DCS_01_LE0301",
+     "label": "LE0301",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960507285787",
+     "name": "NP02_DCS_01_LE0302",
+     "label": "LE0302",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960524063003",
+     "name": "NP02_DCS_01_LE0303",
+     "label": "LE0303",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960540840219",
+     "name": "NP02_DCS_01_LE0304",
+     "label": "LE0304",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960557617435",
+     "name": "NP02_DCS_01_LE0401",
+     "label": "LE0401",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960574394651",
+     "name": "NP02_DCS_01_LE0402",
+     "label": "LE0402",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960591171867",
+     "name": "NP02_DCS_01_LE0403",
+     "label": "LE0403",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960607949083",
+     "name": "NP02_DCS_01_LE0404",
+     "label": "LE0404",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47911366843163",
+     "name": "NP02_DCS_01_LE0301FK",
+     "label": "LE301FK",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47911383620379",
+     "name": "NP02_DCS_01_LE0302FK",
+     "label": "LE302FK",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47899169807131",
+     "name": "NP02_DCS_01_TE[16]",
+     "label": "LT0501 (7.406m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899186584347",
+     "name": "NP02_DCS_01_TE[17]",
+     "label": "LT0502 (7.396m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899203361563",
+     "name": "NP02_DCS_01_TE[18]",
+     "label": "LT0503 (7.386m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899220138779",
+     "name": "NP02_DCS_01_TE[19]",
+     "label": "LT0504 (7.376m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899236915995",
+     "name": "NP02_DCS_01_TE[20]",
+     "label": "LT0505 (7.366m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899253693211",
+     "name": "NP02_DCS_01_TE[21]",
+     "label": "LT0506 (7.356m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899270470427",
+     "name": "NP02_DCS_01_TE[22]",
+     "label": "LT0507 (7.186m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899287247643",
+     "name": "NP02_DCS_01_TE[23]",
+     "label": "LT0508 (7.016m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899304024859",
+     "name": "NP02_DCS_01_TE[24]",
+     "label": "LT0509 (6.846m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899975113499",
+     "name": "NP02_DCS_01_TE[45]",
+     "label": "LT0701 (7.402m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899991890715",
+     "name": "NP02_DCS_01_TE[46]",
+     "label": "LT0702 (7.392m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900008667931",
+     "name": "NP02_DCS_01_TE[47]",
+     "label": "LT0703 (7.382m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900025445147",
+     "name": "NP02_DCS_01_TE[48]",
+     "label": "LT0704 (7.372m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900042222363",
+     "name": "NP02_DCS_01_TE[49]",
+     "label": "LT0705 (7.362m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900058999579",
+     "name": "NP02_DCS_01_TE[50]",
+     "label": "LT0706 (7.352m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900075776795",
+     "name": "NP02_DCS_01_TE[51]",
+     "label": "LT0707 (7.182m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900092554011",
+     "name": "NP02_DCS_01_TE[52]",
+     "label": "LT0708 (7.012m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900109331227",
+     "name": "NP02_DCS_01_TE[53]",
+     "label": "LT0709 (6.842m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47901350822939",
+     "name": "M3_SS_VER_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901266936859",
+     "name": "M3_SS_VER_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901048833051",
+     "name": "M3_SS_VER_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901015278619",
+     "name": "M3_SS_VER_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901787030555",
+     "name": "M3_SS_VER_05",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901602481179",
+     "name": "M4_BS_VER_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901501817883",
+     "name": "M4_BS_VER_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901485040667",
+     "name": "M4_BS_VER_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901468263451",
+     "name": "M4_BS_VER_05",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901367600155",
+     "name": "M4_SS_VER_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901317268507",
+     "name": "M4_SS_VER_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901065610267",
+     "name": "M4_SS_VER_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901032055835",
+     "name": "M4_SS_VER_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901803807771",
+     "name": "M4_SS_VER_05",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47900914615323",
+     "name": "MC_BJS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47900931392539",
+     "name": "MC_BJS_03_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47900948169755",
+     "name": "MC_BJS_03_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901451486235",
+     "name": "MC_BSS_HOR_2B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901434709019",
+     "name": "MC_BSS_HOR_3B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47901417931803",
+     "name": "MC_BSS_HOR_4B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47900964946971",
+     "name": "MC_LJS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47900981724187",
+     "name": "MC_LJS_03_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47900998501403",
+     "name": "MC_LJS_03_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47901770253339",
+     "name": "MC_SLS_HOR_2B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901753476123",
+     "name": "MC_SLS_HOR_3B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901736698907",
+     "name": "MC_SLS_HOR_4B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901837362203",
+     "name": "MEM1_SS_3AX_05_45",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901233382427",
+     "name": "MEM1_SS_3AX_05_HOR",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901820584987",
+     "name": "MEM1_SS_3AX_05_VER",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901183050779",
+     "name": "MEM1_SS_HOR_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901216605211",
+     "name": "MEM1_SS_HOR_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901166273563",
+     "name": "MEM1_SS_VER_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901250159643",
+     "name": "MEM1_SS_VER_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901719921691",
+     "name": "MEM_LS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47901703144475",
+     "name": "MEM_LS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47943277084955",
+     "name": "NP02_DCS_01_2PT3210",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47943293862171",
+     "name": "NP02_DCS_01_2PT3220",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47926348874011",
+     "name": "NP02_DCS_01_2QT4710",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47926365651227",
+     "name": "NP02_DCS_01_2QT4720",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47926382428443",
+     "name": "NP02_DCS_01_2QT4730",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47911064853275",
+     "name": "NP02_DCS_01_AI2_6_Spare",
+     "label": "",
+     "unit": "bar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47911081630491",
+     "name": "NP02_DCS_01_AI2_7_Spare",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47900579093275",
+     "name": "NP02_DCS_01_AIR_08_13",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900595870491",
+     "name": "NP02_DCS_01_AIR_08_14",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900612647707",
+     "name": "NP02_DCS_01_AIR_08_15",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900629424923",
+     "name": "NP02_DCS_01_AIR_08_16",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900646202139",
+     "name": "NP02_DCS_01_AIR_08_17",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900662979355",
+     "name": "NP02_DCS_01_AIR_08_18",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "floor",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47960691835419",
+     "name": "NP02_DCS_01_CRP_1_1_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960775721499",
+     "name": "NP02_DCS_01_CRP_1_2_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960792498715",
+     "name": "NP02_DCS_01_CRP_1_3_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960809275931",
+     "name": "NP02_DCS_01_CRP_1_4_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960708612635",
+     "name": "NP02_DCS_01_CRP_2_1_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960826053147",
+     "name": "NP02_DCS_01_CRP_2_2_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960842830363",
+     "name": "NP02_DCS_01_CRP_2_3_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960859607579",
+     "name": "NP02_DCS_01_CRP_2_4_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960725389851",
+     "name": "NP02_DCS_01_CRP_3_1_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960876384795",
+     "name": "NP02_DCS_01_CRP_3_2_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960893162011",
+     "name": "NP02_DCS_01_CRP_3_3_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960909939227",
+     "name": "NP02_DCS_01_CRP_3_4_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960742167067",
+     "name": "NP02_DCS_01_CRP_4_1_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960926716443",
+     "name": "NP02_DCS_01_CRP_4_2_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960943493659",
+     "name": "NP02_DCS_01_CRP_4_3_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47960960270875",
+     "name": "NP02_DCS_01_CRP_4_4_POS",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47955658727963",
+     "name": "NP02_DCS_01_FFS_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955658729243",
+     "name": "NP02_DCS_01_FFS_V",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955675505179",
+     "name": "NP02_DCS_01_GRID1_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955675506459",
+     "name": "NP02_DCS_01_GRID1_V",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955692282395",
+     "name": "NP02_DCS_01_GRID2_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955692283675",
+     "name": "NP02_DCS_01_GRID2_V",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955742614043",
+     "name": "NP02_DCS_01_GRID3_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955742615323",
+     "name": "NP02_DCS_01_GRID3_V",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955725836827",
+     "name": "NP02_DCS_01_GRID4_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47955725838107",
+     "name": "NP02_DCS_01_GRID4_V",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47363557163291",
+     "name": "NP02_DCS_01_Heinz_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "comissioning",
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47363590717723",
+     "name": "NP02_DCS_01_Heinz_Limit",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47363607494939",
+     "name": "NP02_DCS_01_Heinz_OnOff_Sts",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47897559194395",
+     "name": "NP02_DCS_01_TSS_001_AA_BA",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897575971611",
+     "name": "NP02_DCS_01_TSS_001_AA_BB",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897760520987",
+     "name": "NP02_DCS_01_TSS_001_AC_BC",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897659857691",
+     "name": "NP02_DCS_01_TSS_001_AD_BD",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897861184283",
+     "name": "NP02_DCS_01_TSS_001_AE_BE",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897592748827",
+     "name": "NP02_DCS_01_TSS_002_AA_BA",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897676634907",
+     "name": "NP02_DCS_01_TSS_002_AB_BB",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897794075419",
+     "name": "NP02_DCS_01_TSS_002_AD_BD",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897894738715",
+     "name": "NP02_DCS_01_TSS_002_AE_BE",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897693412123",
+     "name": "NP02_DCS_01_TSS_002_AF_BF",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897609526043",
+     "name": "NP02_DCS_01_TSS_002_AH_BH",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897626303259",
+     "name": "NP02_DCS_01_TSS_002_AI_BI",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897810852635",
+     "name": "NP02_DCS_01_TSS_002_AJ_BJ",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897827629851",
+     "name": "NP02_DCS_01_TSS_002_AK_BK",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897844407067",
+     "name": "NP02_DCS_01_TSS_002_AL_BL",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897710189339",
+     "name": "NP02_DCS_01_TSS_002_AM_BM",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897726966555",
+     "name": "NP02_DCS_01_TSS_002_AN_BN",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897743743771",
+     "name": "NP02_DCS_01_TSS_002_AO_BO",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897911515931",
+     "name": "NP02_DCS_01_TSS_002_AP_BP",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897928293147",
+     "name": "NP02_DCS_01_TSS_002_AQ_BQ",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47897945070363",
+     "name": "NP02_DCS_01_TSS_002_AR_BR",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "insidelayout",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47364161144091",
+     "name": "NP02_DCS_01_gizmo_I",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47364161144347",
+     "name": "NP02_DCS_01_gizmo_Q",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47364161143323",
+     "name": "NP02_DCS_01_gizmo_RES",
+     "label": "",
+     "unit": "\u2126",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47364161143579",
+     "name": "NP02_DCS_01_gizmo_TH",
+     "label": "",
+     "unit": "\u2126",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47364161143835",
+     "name": "NP02_DCS_01_gizmo_mag",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47910779640603",
+     "name": "NP02_MHT0100AI",
+     "label": "",
+     "unit": "%",
+     "subsystems": [
+      "bellegarde",
+      "coldbox",
+      "comissioning",
+      "crptemps",
+      "cryogenics",
+      "cryostat",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "insidelayout",
+      "jura",
+      "lausanne",
+      "lems",
+      "links",
+      "multiplexer",
+      "pds",
+      "pl506",
+      "saleve",
+      "tinternal",
+      "underfloor",
+      "vdcam",
+      "vdcontrol",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47910964189979",
+     "name": "NP02_PE0100AI",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47910980967195",
+     "name": "NP02_PE0101AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47910997744411",
+     "name": "NP02_PE0102AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47911031298843",
+     "name": "NP02_PE0104AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47911048076059",
+     "name": "NP02_PE0105AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47910813195035",
+     "name": "NP02_PT0106AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "bellegarde",
+      "coldbox",
+      "comissioning",
+      "crptemps",
+      "cryogenics",
+      "cryostat",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "insidelayout",
+      "jura",
+      "lausanne",
+      "lems",
+      "links",
+      "multiplexer",
+      "pds",
+      "pl506",
+      "saleve",
+      "tinternal",
+      "underfloor",
+      "vdcam",
+      "vdcontrol",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47910796417819",
+     "name": "NP02_TT0100AI",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "bellegarde",
+      "coldbox",
+      "comissioning",
+      "crptemps",
+      "cryogenics",
+      "cryostat",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "insidelayout",
+      "jura",
+      "lausanne",
+      "lems",
+      "links",
+      "multiplexer",
+      "pds",
+      "pl506",
+      "saleve",
+      "tinternal",
+      "underfloor",
+      "vdcam",
+      "vdcontrol",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47363691381019",
+     "name": "NP04_DCS_01_Heinz_V_Raw",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "comissioning",
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48201360998943",
+     "name": "NP_VD_3T0001",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201377776159",
+     "name": "NP_VD_3T0002",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201394553375",
+     "name": "NP_VD_3T0003",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201411330591",
+     "name": "NP_VD_3T0004",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201428107807",
+     "name": "NP_VD_3T0005",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201444885023",
+     "name": "NP_VD_3T0006",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48201461662239",
+     "name": "NP_VD_3T0007",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202468295199",
+     "name": "NP_VD_3T0008",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202485072415",
+     "name": "NP_VD_3T0009",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202501849631",
+     "name": "NP_VD_3T0010",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202518626847",
+     "name": "NP_VD_3T0011",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202535404063",
+     "name": "NP_VD_3T0012",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202552181279",
+     "name": "NP_VD_3T1001",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202568958495",
+     "name": "NP_VD_3T1002",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202602512927",
+     "name": "NP_VD_3T1003",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48202636067359",
+     "name": "NP_VD_3T1004",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48206696153631",
+     "name": "NP_VD_CamT1",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "vdcam"
+     ]
+    },
+    {
+     "id": "48206712930847",
+     "name": "NP_VD_CamT2",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "vdcam"
+     ]
+    },
+    {
+     "id": "48206729708063",
+     "name": "NP_VD_CamT3",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "vdcam"
+     ]
+    },
+    {
+     "id": "48205202981151",
+     "name": "NP_VD_HV_Imon",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48205186203935",
+     "name": "NP_VD_HV_Vmon",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48206645821727",
+     "name": "NP_VD_SGFT",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48206494826783",
+     "name": "NP_VD_crpressure",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47926415982875",
+     "name": "NP02_DCS_01_2DPT4500",
+     "label": "PDT4500",
+     "unit": "bar",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47926332096795",
+     "name": "NP02_DCS_01_2PDT4915",
+     "label": "PDT4915",
+     "unit": "mbar",
+     "subsystems": [
+      "comissioning",
+      "cryogenics",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47926432760091",
+     "name": "NP02_DCS_01_2PT4432",
+     "label": "PT4432",
+     "unit": "mbar",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47926298542363",
+     "name": "NP02_DCS_01_2PT4910",
+     "label": "PT4910",
+     "unit": "bar",
+     "subsystems": [
+      "comissioning",
+      "cryogenics",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47900797174811",
+     "name": "TC_JS_02_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47900830729243",
+     "name": "TC_JS_02_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47901619258395",
+     "name": "TC_LS_02_A",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47901636035611",
+     "name": "TC_LS_02_B",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne"
+     ]
+    },
+    {
+     "id": "47899773786907",
+     "name": "NP02_DCS_01_TE0010",
+     "label": "TE0010",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899790564123",
+     "name": "NP02_DCS_01_TE0011",
+     "label": "TE0011",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899807341339",
+     "name": "NP02_DCS_01_TE0012",
+     "label": "TE0012",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899824118555",
+     "name": "NP02_DCS_01_TE0013",
+     "label": "TE0013",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899840895771",
+     "name": "NP02_DCS_01_TE0014",
+     "label": "TE0014",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899857672987",
+     "name": "NP02_DCS_01_TE0015",
+     "label": "TE0015",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899874450203",
+     "name": "NP02_DCS_01_TE0016",
+     "label": "TE0016",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899891227419",
+     "name": "NP02_DCS_01_TE0017",
+     "label": "TE0017",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47899908004635",
+     "name": "NP02_DCS_01_TE0018",
+     "label": "TE0018",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "multiplexer",
+      "underfloor"
+     ]
+    },
+    {
+     "id": "47897961847579",
+     "name": "NP02_DCS_01_TE[0]",
+     "label": "TE0201",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47897978624795",
+     "name": "NP02_DCS_01_TE[1]",
+     "label": "TE0202",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47897995402011",
+     "name": "NP02_DCS_01_TE[2]",
+     "label": "TE0203",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898012179227",
+     "name": "NP02_DCS_01_TE[3]",
+     "label": "TE0204",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898028956443",
+     "name": "",
+     "label": "TE0205",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898045733659",
+     "name": "",
+     "label": "TE0206",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898062510875",
+     "name": "",
+     "label": "TE0207",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898079288091",
+     "name": "",
+     "label": "TE0208",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898096065307",
+     "name": "",
+     "label": "TE0209",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898112842523",
+     "name": "",
+     "label": "TE0210",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898129619739",
+     "name": "",
+     "label": "TE0211",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898146396955",
+     "name": "",
+     "label": "TE0212",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898163174171",
+     "name": "",
+     "label": "TE0213",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898179951387",
+     "name": "",
+     "label": "TE0214",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898196728603",
+     "name": "",
+     "label": "TE0215",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898213505819",
+     "name": "",
+     "label": "TE0216",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898230283035",
+     "name": "",
+     "label": "TE0217",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898247060251",
+     "name": "",
+     "label": "TE0218",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898263837467",
+     "name": "",
+     "label": "TE0219",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898280614683",
+     "name": "",
+     "label": "TE0220",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898297391899",
+     "name": "",
+     "label": "TE0221",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898314169115",
+     "name": "",
+     "label": "TE0222",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898330946331",
+     "name": "",
+     "label": "TE0223",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898347723547",
+     "name": "",
+     "label": "TE0224",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898364500763",
+     "name": "NP02_DCS_01_TE[4]",
+     "label": "TE0301",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898381277979",
+     "name": "",
+     "label": "TE0302",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898398055195",
+     "name": "",
+     "label": "TE0303",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898414832411",
+     "name": "",
+     "label": "TE0304",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898431609627",
+     "name": "",
+     "label": "TE0305",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898448386843",
+     "name": "NP02_DCS_01_TE[5]",
+     "label": "TE0306",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898465164059",
+     "name": "",
+     "label": "TE0307",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898481941275",
+     "name": "",
+     "label": "TE0308",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898498718491",
+     "name": "",
+     "label": "TE0309",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898515495707",
+     "name": "",
+     "label": "TE0310",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898532272923",
+     "name": "",
+     "label": "TE0311",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898549050139",
+     "name": "",
+     "label": "TE0312",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898565827355",
+     "name": "",
+     "label": "TE0313",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898582604571",
+     "name": "NP02_DCS_01_TE[6]",
+     "label": "TE0314",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898599381787",
+     "name": "",
+     "label": "TE0315",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898616159003",
+     "name": "",
+     "label": "TE0316",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898632936219",
+     "name": "",
+     "label": "TE0317",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898649713435",
+     "name": "NP02_DCS_01_TE[7]",
+     "label": "TE0318",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47898666490651",
+     "name": "",
+     "label": "TE0319",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898683267867",
+     "name": "",
+     "label": "TE0320",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898700045083",
+     "name": "",
+     "label": "TE0321",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898716822299",
+     "name": "",
+     "label": "TE0322",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898733599515",
+     "name": "",
+     "label": "TE0323",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898750376731",
+     "name": "",
+     "label": "TE0324",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer"
+     ]
+    },
+    {
+     "id": "47898968480539",
+     "name": "NP02_DCS_01_TE[8]",
+     "label": "TE0413",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899002034971",
+     "name": "NP02_DCS_01_TE[9]",
+     "label": "TE0415",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899018812187",
+     "name": "NP02_DCS_01_TE[10]",
+     "label": "TE0416",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899052366619",
+     "name": "NP02_DCS_01_TE[11]",
+     "label": "TE0418",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899069143835",
+     "name": "NP02_DCS_01_TE[12]",
+     "label": "TE0419",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899102698267",
+     "name": "NP02_DCS_01_TE[13]",
+     "label": "TE0421",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899119475483",
+     "name": "NP02_DCS_01_TE[14]",
+     "label": "TE0422",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899153029915",
+     "name": "NP02_DCS_01_TE[15]",
+     "label": "TE0424",
+     "unit": "K",
+     "subsystems": [
+      "crptemps",
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899371133723",
+     "name": "NP02_DCS_01_TE[25]",
+     "label": "TE0513 (0.544m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899387910939",
+     "name": "NP02_DCS_01_TE[26]",
+     "label": "TE0514 (0.374m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899404688155",
+     "name": "NP02_DCS_01_TE[27]",
+     "label": "TE0515 (0.204m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899421465371",
+     "name": "NP02_DCS_01_TE[28]",
+     "label": "TE0516 (0.034m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899438242587",
+     "name": "NP02_DCS_01_TE[29]",
+     "label": "TE0517 (1.933m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899455019803",
+     "name": "NP02_DCS_01_TE[30]",
+     "label": "TE0518 (1.763m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899471797019",
+     "name": "NP02_DCS_01_TE[31]",
+     "label": "TE0519 (1.593m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899488574235",
+     "name": "NP02_DCS_01_TE[32]",
+     "label": "TE0520 (1.423m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899505351451",
+     "name": "NP02_DCS_01_TE[33]",
+     "label": "TE0521 (3.287m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899522128667",
+     "name": "NP02_DCS_01_TE[34]",
+     "label": "TE0522 (3.117m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899538905883",
+     "name": "NP02_DCS_01_TE[35]",
+     "label": "TE0523 (2.947m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899555683099",
+     "name": "NP02_DCS_01_TE[36]",
+     "label": "TE0524 (2.777m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899572460315",
+     "name": "NP02_DCS_01_TE[37]",
+     "label": "TE0601 (4.660m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899589237531",
+     "name": "NP02_DCS_01_TE[38]",
+     "label": "TE0602 (4.490m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899606014747",
+     "name": "NP02_DCS_01_TE[39]",
+     "label": "TE0603 (4.320m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899622791963",
+     "name": "NP02_DCS_01_TE[40]",
+     "label": "TE0604 (4.150m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899639569179",
+     "name": "NP02_DCS_01_TE[41]",
+     "label": "TE0605 (6.006m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899656346395",
+     "name": "NP02_DCS_01_TE[42]",
+     "label": "TE0606 (5.836m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899673123611",
+     "name": "NP02_DCS_01_TE[43]",
+     "label": "TE0607 (5.666m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47899689900827",
+     "name": "NP02_DCS_01_TE[44]",
+     "label": "TE0608 (5.496m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900176440091",
+     "name": "NP02_DCS_01_TE[54]",
+     "label": "TE0713 (1.247m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900193217307",
+     "name": "NP02_DCS_01_TE[55]",
+     "label": "TE0714 (1.077m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900209994523",
+     "name": "NP02_DCS_01_TE[56]",
+     "label": "TE0715 (0.907m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900226771739",
+     "name": "NP02_DCS_01_TE[57]",
+     "label": "TE0716 (0.737m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900243548955",
+     "name": "NP02_DCS_01_TE[58]",
+     "label": "TE0717 (2.604m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900260326171",
+     "name": "NP02_DCS_01_TE[59]",
+     "label": "TE0718 (2.434m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900277103387",
+     "name": "NP02_DCS_01_TE[60]",
+     "label": "TE0719 (2.264m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900293880603",
+     "name": "NP02_DCS_01_TE[61]",
+     "label": "TE0720 (2.094m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900310657819",
+     "name": "NP02_DCS_01_TE[62]",
+     "label": "TE0721 (3.963m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900327435035",
+     "name": "NP02_DCS_01_TE[63]",
+     "label": "TE0722 (3.793m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900344212251",
+     "name": "NP02_DCS_01_TE[64]",
+     "label": "TE0723 (3.623m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900360989467",
+     "name": "NP02_DCS_01_TE[65]",
+     "label": "TE0724 (3.453m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900377766683",
+     "name": "NP02_DCS_01_TE[66]",
+     "label": "TE0801 (5.331m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900394543899",
+     "name": "NP02_DCS_01_TE[67]",
+     "label": "TE0802 (5.161m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900411321115",
+     "name": "NP02_DCS_01_TE[68]",
+     "label": "TE0803 (4.991m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900428098331",
+     "name": "NP02_DCS_01_TE[69]",
+     "label": "TE0804 (4.821m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900444875547",
+     "name": "NP02_DCS_01_TE[70]",
+     "label": "TE0805 (6.681m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900461652763",
+     "name": "NP02_DCS_01_TE[71]",
+     "label": "TE0806 (6.511m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900478429979",
+     "name": "NP02_DCS_01_TE[72]",
+     "label": "TE0807 (6.341m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47900495207195",
+     "name": "NP02_DCS_01_TE[73]",
+     "label": "TE0808 (6.171m)",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47901401154587",
+     "name": "TT_AMBIANCE_BORROM",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901870916635",
+     "name": "TT_AMBIENCE_TOP",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901384377371",
+     "name": "TT_CONTACT_BOTTOM",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47901854139419",
+     "name": "TT_CONTACT_TOP",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "saleve"
+     ]
+    }
+   ]
+  },
+  "np04": {
+   "api": "https://np04-data-api-slow-control.app.cern.ch",
+   "sensors": [
+    {
+     "id": "47358725348123",
+     "name": "",
+     "label": "",
+     "unit": "%",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47358742125339",
+     "name": "",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "cryogenics"
+     ]
+    },
+    {
+     "id": "47873550976026",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873550996506",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873550996762",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873567753242",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873567773722",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873567773978",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873584530458",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873584550938",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873584551194",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873618084890",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873618105370",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873618105626",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873634862106",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873634882586",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873634882842",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873651639322",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873651659802",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873651660058",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873701970970",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873701991450",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873701991706",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873718748186",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873718768666",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873718768922",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873735525402",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873735545882",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873735546138",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873836188698",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873836209178",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873836209434",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873852965914",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873852986394",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873852986650",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873869743130",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873869763610",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873869763866",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873886520346",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873886540826",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873886541082",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873903297562",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873903318042",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873903318298",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873920074778",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873920095258",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873920095514",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873936851994",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873936872474",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873936872730",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873953629210",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873953649690",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873953649946",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873987183642",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873987204122",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47873987204378",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874003960858",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874003981338",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874003981594",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874020738074",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874020758554",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874020758810",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874037515290",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874037535770",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47874037536026",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875564241946",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875564262426",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875564262682",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875581019162",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875581039642",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875581039898",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875597796378",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875597816858",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875597817114",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875631350810",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875631371290",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875631371546",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875648128026",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875648148506",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875648148762",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875664905242",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875664925722",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875664925978",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875715236890",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875715257370",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875715257626",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875732014106",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875732034586",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875732034842",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875748791322",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875748811802",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875748812058",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875849454618",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875849475098",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875849475354",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875866231834",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875866252314",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875866252570",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875883009050",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875883029530",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875883029786",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875899786266",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875899806746",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875899807002",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875916563482",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875916583962",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875916584218",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875933340698",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875933361178",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875933361434",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875950117914",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875950138394",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875950138650",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875966895130",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875966915610",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47875966915866",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876000449562",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876000470042",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876000470298",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876017226778",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876017247258",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876017247514",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876034003994",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876034024474",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876034024730",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876050781210",
+     "name": "",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876050801690",
+     "name": "",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47876050801946",
+     "name": "",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd"
+     ]
+    },
+    {
+     "id": "47890412077338",
+     "name": "NP04_DCS_01_TE0010",
+     "label": "0010 (6.323 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890428854554",
+     "name": "NP04_DCS_01_TE0011",
+     "label": "0011 (6.205 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890445631770",
+     "name": "NP04_DCS_01_TE0012",
+     "label": "0012 (6.087 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890462408986",
+     "name": "NP04_DCS_01_TE0013",
+     "label": "0013 (5.969 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890479186202",
+     "name": "NP04_DCS_01_TE0014",
+     "label": "0014 (5.851 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890495963418",
+     "name": "NP04_DCS_01_TE0015",
+     "label": "0015 (5.733 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890512740634",
+     "name": "NP04_DCS_01_TE0016",
+     "label": "0016 (5.615 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890529517850",
+     "name": "NP04_DCS_01_TE0017",
+     "label": "0017 (5.497 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890546295066",
+     "name": "NP04_DCS_01_TE0018",
+     "label": "0018 (5.379 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890563072282",
+     "name": "NP04_DCS_01_TE0019",
+     "label": "0019 (5.143 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890579849498",
+     "name": "NP04_DCS_01_TE0020",
+     "label": "0020 (4.907 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890596626714",
+     "name": "NP04_DCS_01_TE0021",
+     "label": "0021 (4.671 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890613403930",
+     "name": "NP04_DCS_01_TE0022",
+     "label": "0022 (4.435 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890630181146",
+     "name": "NP04_DCS_01_TE0023",
+     "label": "0023 (4.199 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890646958362",
+     "name": "NP04_DCS_01_TE0024",
+     "label": "0024 (3.963 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890663735578",
+     "name": "NP04_DCS_01_TE0025",
+     "label": "0025 (3.727 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890680512794",
+     "name": "NP04_DCS_01_TE0026",
+     "label": "0026 (3.491 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890697290010",
+     "name": "NP04_DCS_01_TE0027",
+     "label": "0027 (3.255 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890714067226",
+     "name": "NP04_DCS_01_TE0028",
+     "label": "0028 (3.019 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890730844442",
+     "name": "NP04_DCS_01_TE0029",
+     "label": "0029 (2.783 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890747621658",
+     "name": "NP04_DCS_01_TE0030",
+     "label": "0030 (2.547 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890764398874",
+     "name": "NP04_DCS_01_TE0031",
+     "label": "0031 (2.311 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890781176090",
+     "name": "NP04_DCS_01_TE0032",
+     "label": "0032 (2.193 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890797953306",
+     "name": "NP04_DCS_01_TE0033",
+     "label": "0033 (2.075 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890814730522",
+     "name": "NP04_DCS_01_TE0034",
+     "label": "0034 (1.957 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890831507738",
+     "name": "NP04_DCS_01_TE0035",
+     "label": "0035 (1.839 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890848284954",
+     "name": "NP04_DCS_01_TE0036",
+     "label": "0036 (1.721 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890865062170",
+     "name": "NP04_DCS_01_TE0037",
+     "label": "0037 (1.603 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890881839386",
+     "name": "NP04_DCS_01_TE0038",
+     "label": "0038 (1.485 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890898616602",
+     "name": "NP04_DCS_01_TE0039",
+     "label": "0039 (1.367 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890915393818",
+     "name": "NP04_DCS_01_TE0040",
+     "label": "0040 (1.249 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890932171034",
+     "name": "NP04_DCS_01_TE0041",
+     "label": "0041 (1.131 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890948948250",
+     "name": "NP04_DCS_01_TE0042",
+     "label": "0042 (1.013 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890965725466",
+     "name": "NP04_DCS_01_TE0043",
+     "label": "0043 (0.895 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890982502682",
+     "name": "NP04_DCS_01_TE0044",
+     "label": "0044 (0.777 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890999279898",
+     "name": "NP04_DCS_01_TE0045",
+     "label": "0045 (0.659 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891016057114",
+     "name": "NP04_DCS_01_TE0046",
+     "label": "0046 (0.541 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891032834330",
+     "name": "NP04_DCS_01_TE0047",
+     "label": "0047 (0.423 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891049611546",
+     "name": "NP04_DCS_01_TE0048",
+     "label": "0048 (0.305 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891066388762",
+     "name": "NP04_DCS_01_TE0049",
+     "label": "0049 (0.673 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891083165978",
+     "name": "NP04_DCS_01_TE0050",
+     "label": "0050 (0.571 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891099943194",
+     "name": "NP04_DCS_01_TE0051",
+     "label": "0051 (0.470 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891116720410",
+     "name": "NP04_DCS_01_TE0052",
+     "label": "0052 (0.368 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891133497626",
+     "name": "NP04_DCS_01_TE0053",
+     "label": "0053 (0.267 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891150274842",
+     "name": "NP04_DCS_01_TE0054",
+     "label": "0054 (0.165 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891167052058",
+     "name": "NP04_DCS_01_TE0055",
+     "label": "0055 (3.619 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891183829274",
+     "name": "NP04_DCS_01_TE0056",
+     "label": "0056 (3.111 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891200606490",
+     "name": "NP04_DCS_01_TE0057",
+     "label": "0057 (2.603 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891217383706",
+     "name": "NP04_DCS_01_TE0058",
+     "label": "0058 (2.095 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891234160922",
+     "name": "NP04_DCS_01_TE0059",
+     "label": "0059 (1.587 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891250938138",
+     "name": "NP04_DCS_01_TE0060",
+     "label": "0060 (1.079 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891267715354",
+     "name": "NP04_DCS_01_TE0061",
+     "label": "0061 (6.667 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891284492570",
+     "name": "NP04_DCS_01_TE0062",
+     "label": "0062 (6.159 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891301269786",
+     "name": "NP04_DCS_01_TE0063",
+     "label": "0063 (5.651 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891318047002",
+     "name": "NP04_DCS_01_TE0064",
+     "label": "0064 (5.143 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891334824218",
+     "name": "NP04_DCS_01_TE0065",
+     "label": "0065 (4.635 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891351601434",
+     "name": "NP04_DCS_01_TE0066",
+     "label": "0066 (4.127 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891385155866",
+     "name": "NP04_DCS_01_TE0068",
+     "label": "0068 (7.582 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891401933082",
+     "name": "NP04_DCS_01_TE0069",
+     "label": "0069 (7.480 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891418710298",
+     "name": "NP04_DCS_01_TE0070",
+     "label": "0070 (7.379 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891435487514",
+     "name": "NP04_DCS_01_TE0071",
+     "label": "0071 (7.277 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891452264730",
+     "name": "NP04_DCS_01_TE0072",
+     "label": "0072 (7.175 m)",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47883936095002",
+     "name": "B2_BS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884607183642",
+     "name": "B2_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47883919317786",
+     "name": "B3_BS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884103867162",
+     "name": "B3_JS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884305193754",
+     "name": "B3_LS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884590406426",
+     "name": "B3_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47883902540570",
+     "name": "B4_BS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884573629210",
+     "name": "B4_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47883835431706",
+     "name": "BC_BS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884070312730",
+     "name": "BC_JS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884271639322",
+     "name": "BC_LS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884808510234",
+     "name": "BC_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884791733018",
+     "name": "BC_SS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884741401370",
+     "name": "BC_SS_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "48020200620570",
+     "name": "NP04_DCS_01_4CV3160",
+     "label": "CV3160",
+     "unit": "%",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020217397786",
+     "name": "NP04_DCS_01_4CV3170",
+     "label": "CV3170",
+     "unit": "%",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020234175002",
+     "name": "NP04_DCS_01_4CV3500",
+     "label": "CV3500",
+     "unit": "%",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020250952218",
+     "name": "NP04_DCS_01_4CV3510",
+     "label": "CV3510",
+     "unit": "%",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47888667251994",
+     "name": "CV4100",
+     "label": "CV4100",
+     "unit": "%",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47888684029210",
+     "name": "CV4101",
+     "label": "CV4101",
+     "unit": "%",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47883969649434",
+     "name": "DS_BS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884120644378",
+     "name": "DS_JS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884355525402",
+     "name": "DS_LS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884707846938",
+     "name": "DS_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884154198810",
+     "name": "MC_BJS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884137421594",
+     "name": "MC_BJS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884019981082",
+     "name": "MC_BSS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47883986426650",
+     "name": "MC_BSS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884221307674",
+     "name": "MC_LJS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884187753242",
+     "name": "MC_LJS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884439411482",
+     "name": "MC_LSS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884489743130",
+     "name": "MC_LSS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884405857050",
+     "name": "MC_LSS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884389079834",
+     "name": "MC_LSS_04",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47883885763354",
+     "name": "MEM_BS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47883868986138",
+     "name": "MEM_BS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884338748186",
+     "name": "MEM_LS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884321970970",
+     "name": "MEM_LS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884892396314",
+     "name": "MEM_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884657515290",
+     "name": "MEM_SS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884875619098",
+     "name": "MEM_SS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47895881449754",
+     "name": "NP04_2IT0100AI",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "beamplug",
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47878902930202",
+     "name": "NP04_2PT0100AI",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "beamplug",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47883114011418",
+     "name": "NP04_2PT0100AIR",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "beamplug",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878919707418",
+     "name": "NP04_2PT0101AI",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "beamplug"
+     ]
+    },
+    {
+     "id": "47883130788634",
+     "name": "NP04_2PT0101AIR",
+     "label": "",
+     "unit": "bar",
+     "subsystems": [
+      "beamplug"
+     ]
+    },
+    {
+     "id": "47878953261850",
+     "name": "NP04_2TT0100AI",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "beamplug"
+     ]
+    },
+    {
+     "id": "47878970039066",
+     "name": "NP04_2TT0101AI",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "beamplug"
+     ]
+    },
+    {
+     "id": "47917859602714",
+     "name": "NP04_4CV4202",
+     "label": "",
+     "unit": "%",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47931835023642",
+     "name": "NP04_4PT4910",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "xenon"
+     ]
+    },
+    {
+     "id": "47895663345946",
+     "name": "NP04_DCS_01_GroundPlanes_Ch01",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895680123162",
+     "name": "NP04_DCS_01_GroundPlanes_Ch02",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895696900378",
+     "name": "NP04_DCS_01_GroundPlanes_Ch03",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895713677594",
+     "name": "NP04_DCS_01_GroundPlanes_Ch04",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895730454810",
+     "name": "NP04_DCS_01_GroundPlanes_Ch05",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895747232026",
+     "name": "NP04_DCS_01_GroundPlanes_Ch06",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895764009242",
+     "name": "NP04_DCS_01_GroundPlanes_Ch07",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895780786458",
+     "name": "NP04_DCS_01_GroundPlanes_Ch08",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895797563674",
+     "name": "NP04_DCS_01_GroundPlanes_Ch09",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895814340890",
+     "name": "NP04_DCS_01_GroundPlanes_Ch10",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895831118106",
+     "name": "NP04_DCS_01_GroundPlanes_Ch11",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47895864672538",
+     "name": "NP04_DCS_01_GroundPlanes_Ch12",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47894757376282",
+     "name": "NP04_DCS_01_Heinz_I",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48000437059866",
+     "name": "NP04_DCS_01_Heinz_Limit",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48001980563738",
+     "name": "NP04_DCS_01_Heinz_OnOff_Sts",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48002299330842",
+     "name": "NP04_DCS_01_Heinz_V_Cathode",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48002852978970",
+     "name": "NP04_DCS_01_Heinz_V_Cathode_97MOhms",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "48001913454874",
+     "name": "NP04_DCS_01_Heinz_V_Raw",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "groundplanes"
+     ]
+    },
+    {
+     "id": "47897777275162",
+     "name": "NP04_DCS_01_LT0100",
+     "label": "",
+     "unit": "mm",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "48019361759514",
+     "name": "NP04_DCS_01_NP04_4FT4592",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47931801469210",
+     "name": "NP04_DCS_01_NP04_4PDT4500",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47931851800858",
+     "name": "NP04_DCS_01_NP04_4PT4920",
+     "label": "",
+     "unit": "bar",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47897609503002",
+     "name": "NP04_DCS_01_NP04_4QT4710",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47897626280218",
+     "name": "NP04_DCS_01_NP04_4QT4711",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47897643057434",
+     "name": "NP04_DCS_01_NP04_4QT4720",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47897676611866",
+     "name": "NP04_DCS_01_NP04_4QT4730",
+     "label": "",
+     "unit": "ppm",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47928748018202",
+     "name": "NP04_DCS_01_PrM0_PrM_BL_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748017434",
+     "name": "NP04_DCS_01_PrM0_PrM_BL_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748019738",
+     "name": "NP04_DCS_01_PrM0_PrM_I_A",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748023578",
+     "name": "NP04_DCS_01_PrM0_PrM_I_C",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748017690",
+     "name": "NP04_DCS_01_PrM0_PrM_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748016922",
+     "name": "NP04_DCS_01_PrM0_PrM_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748017946",
+     "name": "NP04_DCS_01_PrM0_PrM_T_A",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748017178",
+     "name": "NP04_DCS_01_PrM0_PrM_T_C",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748026394",
+     "name": "NP04_DCS_01_PrM0_PrM_Trans_Corr",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748018970",
+     "name": "NP04_DCS_01_PrM0_PrM_V_A",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748018458",
+     "name": "NP04_DCS_01_PrM0_PrM_V_A_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748019226",
+     "name": "NP04_DCS_01_PrM0_PrM_V_C",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748018714",
+     "name": "NP04_DCS_01_PrM0_PrM_V_C_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748024602",
+     "name": "NP04_DCS_01_PrM0_PrM_corrected_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748024346",
+     "name": "NP04_DCS_01_PrM0_PrM_corrected_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748016154",
+     "name": "NP04_DCS_01_PrM0_PrM_corrected_charge_ratio",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928748016410",
+     "name": "NP04_DCS_01_PrM0_PrM_corrected_e_lifetime",
+     "label": "",
+     "unit": "ms",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764795418",
+     "name": "NP04_DCS_01_PrM1_PrM_BL_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764794650",
+     "name": "NP04_DCS_01_PrM1_PrM_BL_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764796954",
+     "name": "NP04_DCS_01_PrM1_PrM_I_A",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764800794",
+     "name": "NP04_DCS_01_PrM1_PrM_I_C",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764794906",
+     "name": "NP04_DCS_01_PrM1_PrM_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764794138",
+     "name": "NP04_DCS_01_PrM1_PrM_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764795162",
+     "name": "NP04_DCS_01_PrM1_PrM_T_A",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764794394",
+     "name": "NP04_DCS_01_PrM1_PrM_T_C",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764803610",
+     "name": "NP04_DCS_01_PrM1_PrM_Trans_Corr",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764796186",
+     "name": "NP04_DCS_01_PrM1_PrM_V_A",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764795674",
+     "name": "NP04_DCS_01_PrM1_PrM_V_A_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764796442",
+     "name": "NP04_DCS_01_PrM1_PrM_V_C",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764795930",
+     "name": "NP04_DCS_01_PrM1_PrM_V_C_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764801818",
+     "name": "NP04_DCS_01_PrM1_PrM_corrected_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764801562",
+     "name": "NP04_DCS_01_PrM1_PrM_corrected_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764793370",
+     "name": "NP04_DCS_01_PrM1_PrM_corrected_charge_ratio",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928764793626",
+     "name": "NP04_DCS_01_PrM1_PrM_corrected_e_lifetime",
+     "label": "",
+     "unit": "ms",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781572634",
+     "name": "NP04_DCS_01_PrM2_PrM_BL_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781571866",
+     "name": "NP04_DCS_01_PrM2_PrM_BL_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781574170",
+     "name": "NP04_DCS_01_PrM2_PrM_I_A",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781578010",
+     "name": "NP04_DCS_01_PrM2_PrM_I_C",
+     "label": "",
+     "unit": "\u00b5A",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781572122",
+     "name": "NP04_DCS_01_PrM2_PrM_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781571354",
+     "name": "NP04_DCS_01_PrM2_PrM_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781572378",
+     "name": "NP04_DCS_01_PrM2_PrM_T_A",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781571610",
+     "name": "NP04_DCS_01_PrM2_PrM_T_C",
+     "label": "",
+     "unit": "\u00b5s",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781580826",
+     "name": "NP04_DCS_01_PrM2_PrM_Trans_Corr",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781573402",
+     "name": "NP04_DCS_01_PrM2_PrM_V_A",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781572890",
+     "name": "NP04_DCS_01_PrM2_PrM_V_A_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781573658",
+     "name": "NP04_DCS_01_PrM2_PrM_V_C",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781573146",
+     "name": "NP04_DCS_01_PrM2_PrM_V_C_Set",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781579034",
+     "name": "NP04_DCS_01_PrM2_PrM_corrected_Q_A",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781578778",
+     "name": "NP04_DCS_01_PrM2_PrM_corrected_Q_C",
+     "label": "",
+     "unit": "mV",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781570586",
+     "name": "NP04_DCS_01_PrM2_PrM_corrected_charge_ratio",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47928781570842",
+     "name": "NP04_DCS_01_PrM2_PrM_corrected_e_lifetime",
+     "label": "",
+     "unit": "ms",
+     "subsystems": [
+      "purity"
+     ]
+    },
+    {
+     "id": "47891368378650",
+     "name": "NP04_DCS_01_TE0067",
+     "label": "",
+     "unit": "K",
+     "subsystems": [
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47873534219546",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel0_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873534219290",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel0_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873534198810",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel0_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873601328410",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel1_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873601328154",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel1_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873601307674",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel1_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873685214490",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel2_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873685214234",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel2_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47873685193754",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK4_Channel2_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875547485466",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel0_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875547485210",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel0_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875547464730",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel0_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875614594330",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel1_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875614594074",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel1_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875614573594",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel1_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875698480410",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel2_MeasurementCurrent",
+     "label": "",
+     "unit": "A",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875698480154",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel2_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47875698459674",
+     "name": "NP04_DCS_01_Wiener_CE_PL506_RACK6_Channel2_Status_On",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "mpodpd",
+      "pl506"
+     ]
+    },
+    {
+     "id": "47890059777306",
+     "name": "NP04_DCS_01_Wiener_MPOD_CE_RACK6_Board2_Channel07_MeasurementCurrent",
+     "label": "",
+     "unit": "nA",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47890059777050",
+     "name": "NP04_DCS_01_Wiener_MPOD_CE_RACK6_Board2_Channel07_MeasurementSenseVoltage",
+     "label": "",
+     "unit": "V",
+     "subsystems": [
+      "comissioning"
+     ]
+    },
+    {
+     "id": "47861572044058",
+     "name": "NP04_DCS_01_gizmo_I",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47861572044314",
+     "name": "NP04_DCS_01_gizmo_Q",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47861572043290",
+     "name": "NP04_DCS_01_gizmo_RES",
+     "label": "",
+     "unit": "\u2126",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47861572043546",
+     "name": "NP04_DCS_01_gizmo_TH",
+     "label": "",
+     "unit": "\u2126",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47861572043802",
+     "name": "NP04_DCS_01_gizmo_mag",
+     "label": "",
+     "unit": "",
+     "subsystems": [
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47879389469466",
+     "name": "NP04_DCS_01_xenon",
+     "label": "",
+     "unit": "%",
+     "subsystems": [
+      "xenon"
+     ]
+    },
+    {
+     "id": "48021878342170",
+     "name": "NP04_DCS_01_xenon_weight",
+     "label": "",
+     "unit": "kg",
+     "subsystems": [
+      "xenon"
+     ]
+    },
+    {
+     "id": "47878785489690",
+     "name": "NP04_MHT0100AI",
+     "label": "",
+     "unit": "%",
+     "subsystems": [
+      "beamplug",
+      "bellegarde",
+      "bottom",
+      "coldbox",
+      "comissioning",
+      "crate",
+      "cryostat",
+      "east",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "jura",
+      "lausanne",
+      "mpodcehv",
+      "mpodcehvdas",
+      "mpodcehvras",
+      "mpodpd",
+      "mpodpddas",
+      "mpodpdras",
+      "multiplexer",
+      "north",
+      "pipes",
+      "pl506",
+      "purity",
+      "saleve",
+      "south",
+      "spbottom",
+      "spgradient",
+      "splevel2",
+      "spwall",
+      "tinternal",
+      "top",
+      "west",
+      "wib",
+      "xenon",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47878684826394",
+     "name": "NP04_PT0100AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878701603610",
+     "name": "NP04_PT0101AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47882929462042",
+     "name": "NP04_PT0102AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878735158042",
+     "name": "NP04_PT0103AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878751935258",
+     "name": "NP04_PT0104AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878768712474",
+     "name": "NP04_PT0105AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47878819044122",
+     "name": "NP04_PT0106AI",
+     "label": "",
+     "unit": "mbar",
+     "subsystems": [
+      "beamplug",
+      "bellegarde",
+      "bottom",
+      "coldbox",
+      "comissioning",
+      "crate",
+      "cryostat",
+      "east",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "jura",
+      "lausanne",
+      "mpodcehv",
+      "mpodcehvdas",
+      "mpodcehvras",
+      "mpodpd",
+      "mpodpddas",
+      "mpodpdras",
+      "multiplexer",
+      "north",
+      "pipes",
+      "pl506",
+      "purity",
+      "saleve",
+      "south",
+      "spbottom",
+      "spgradient",
+      "splevel2",
+      "spwall",
+      "tinternal",
+      "top",
+      "west",
+      "wib",
+      "xenon",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47878802266906",
+     "name": "NP04_TT0100AI",
+     "label": "",
+     "unit": "\u2103",
+     "subsystems": [
+      "beamplug",
+      "bellegarde",
+      "bottom",
+      "coldbox",
+      "comissioning",
+      "crate",
+      "cryostat",
+      "east",
+      "floor",
+      "gauges",
+      "groundplanes",
+      "inside",
+      "jura",
+      "lausanne",
+      "mpodcehv",
+      "mpodcehvdas",
+      "mpodcehvras",
+      "mpodpd",
+      "mpodpddas",
+      "mpodpdras",
+      "multiplexer",
+      "north",
+      "pipes",
+      "pl506",
+      "purity",
+      "saleve",
+      "south",
+      "spbottom",
+      "spgradient",
+      "splevel2",
+      "spwall",
+      "tinternal",
+      "top",
+      "west",
+      "wib",
+      "xenon",
+      "zmonitor"
+     ]
+    },
+    {
+     "id": "47879272028954",
+     "name": "NP04_PT0110AI",
+     "label": "PT0110",
+     "unit": "mbar",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "47879288806170",
+     "name": "NP04_PT0111AI",
+     "label": "PT0111",
+     "unit": "mbar",
+     "subsystems": [
+      "comissioning",
+      "cryostat"
+     ]
+    },
+    {
+     "id": "48020267729434",
+     "name": "NP04_DCS_01_4PT3170",
+     "label": "PT3170",
+     "unit": "bar",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020284506650",
+     "name": "NP04_DCS_01_4PT3500",
+     "label": "PT3500",
+     "unit": "bar",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020301283866",
+     "name": "NP04_DCS_01_4PT3510",
+     "label": "PT3510",
+     "unit": "bar",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48021643460890",
+     "name": "NP04_4PT4150",
+     "label": "PT4150",
+     "unit": "bar",
+     "subsystems": [
+      "xenon"
+     ]
+    },
+    {
+     "id": "47883952872218",
+     "name": "TCO_BS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "bellegarde"
+     ]
+    },
+    {
+     "id": "47884036758298",
+     "name": "TC_JS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "jura"
+     ]
+    },
+    {
+     "id": "47884238084890",
+     "name": "TC_LS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "lausanne",
+      "top"
+     ]
+    },
+    {
+     "id": "47884540074778",
+     "name": "TC_SS_01",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884506520346",
+     "name": "TC_SS_02",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47884623960858",
+     "name": "TC_SS_03",
+     "label": "",
+     "unit": "\u03bcm/m",
+     "subsystems": [
+      "saleve"
+     ]
+    },
+    {
+     "id": "47890261082394",
+     "name": "NP04_DCS_01_TE0001",
+     "label": "TE0001",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890277859610",
+     "name": "NP04_DCS_01_TE0002",
+     "label": "TE0002",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890294636826",
+     "name": "NP04_DCS_01_TE0003",
+     "label": "TE0003",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890311414042",
+     "name": "NP04_DCS_01_TE0004",
+     "label": "TE0004",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890328191258",
+     "name": "NP04_DCS_01_TE0005",
+     "label": "TE0005",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890344968474",
+     "name": "NP04_DCS_01_TE0006",
+     "label": "TE0006",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890361745690",
+     "name": "NP04_DCS_01_TE0007",
+     "label": "TE0007",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890378522906",
+     "name": "NP04_DCS_01_TE0008",
+     "label": "TE0008",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47890395300122",
+     "name": "NP04_DCS_01_TE0009",
+     "label": "TE0009",
+     "unit": "K",
+     "subsystems": [
+      "multiplexer",
+      "tinternal"
+     ]
+    },
+    {
+     "id": "47891469041946",
+     "name": "NP04_DCS_01_TE0073_",
+     "label": "TE0073",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891485819162",
+     "name": "NP04_DCS_01_TE0074_",
+     "label": "TE0074",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891502596378",
+     "name": "NP04_DCS_01_TE0075_",
+     "label": "TE0075",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891519373594",
+     "name": "NP04_DCS_01_TE0076_",
+     "label": "TE0076",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891536150810",
+     "name": "NP04_DCS_01_TE0077_",
+     "label": "TE0077",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891552928026",
+     "name": "NP04_DCS_01_TE0078_",
+     "label": "TE0078",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891569705242",
+     "name": "NP04_DCS_01_TE0079_",
+     "label": "TE0079",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891586482458",
+     "name": "NP04_DCS_01_TE0080_",
+     "label": "TE0080",
+     "unit": "K",
+     "subsystems": [
+      "spgradient"
+     ]
+    },
+    {
+     "id": "47891670368538",
+     "name": "NP04_DCS_01_TE0085_",
+     "label": "TE0085",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891687145754",
+     "name": "NP04_DCS_01_TE0086_",
+     "label": "TE0086",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891703922970",
+     "name": "NP04_DCS_01_TE0087_",
+     "label": "TE0087",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891720700186",
+     "name": "NP04_DCS_01_TE0088_",
+     "label": "TE0088",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891737477402",
+     "name": "NP04_DCS_01_TE0089_",
+     "label": "TE0089",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891754254618",
+     "name": "NP04_DCS_01_TE0090_",
+     "label": "TE0090",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891771031834",
+     "name": "NP04_DCS_01_TE0091_",
+     "label": "TE0091",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891787809050",
+     "name": "NP04_DCS_01_TE0092_",
+     "label": "TE0092",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891804586266",
+     "name": "NP04_DCS_01_TE0093_",
+     "label": "TE0093",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891821363482",
+     "name": "NP04_DCS_01_TE0094_",
+     "label": "TE0094",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891838140698",
+     "name": "NP04_DCS_01_TE0095_",
+     "label": "TE0095",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891854917914",
+     "name": "NP04_DCS_01_TE0096_",
+     "label": "TE0096",
+     "unit": "K",
+     "subsystems": [
+      "pipes"
+     ]
+    },
+    {
+     "id": "47891871695130",
+     "name": "NP04_DCS_01_TE0097_",
+     "label": "TE0097 (7290 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891888472346",
+     "name": "NP04_DCS_01_TE0098_",
+     "label": "TE0098 (7310 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891905249562",
+     "name": "NP04_DCS_01_TE0099_",
+     "label": "TE0099 (7470 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891922026778",
+     "name": "NP04_DCS_01_TE0100_",
+     "label": "TE0100 (7490 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891938803994",
+     "name": "NP04_DCS_01_TE0101_",
+     "label": "TE0101 (7510 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891955581210",
+     "name": "NP04_DCS_01_TE0102_",
+     "label": "TE0102 (7530 mm)",
+     "unit": "K",
+     "subsystems": [
+      "splevel2"
+     ]
+    },
+    {
+     "id": "47891972358426",
+     "name": "NP04_DCS_01_TE0103_",
+     "label": "TE0103",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47891989135642",
+     "name": "NP04_DCS_01_TE0104_",
+     "label": "TE0104",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892005912858",
+     "name": "NP04_DCS_01_TE0105_",
+     "label": "TE0105",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892022690074",
+     "name": "NP04_DCS_01_TE0106_",
+     "label": "TE0106",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892039467290",
+     "name": "NP04_DCS_01_TE0107_",
+     "label": "TE0107",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892056244506",
+     "name": "NP04_DCS_01_TE0108_",
+     "label": "TE0108",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892073021722",
+     "name": "NP04_DCS_01_TE0109_",
+     "label": "TE0109",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892089798938",
+     "name": "NP04_DCS_01_TE0110_",
+     "label": "TE0110",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892106576154",
+     "name": "NP04_DCS_01_TE0111_",
+     "label": "TE0111",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892123353370",
+     "name": "NP04_DCS_01_TE0112_",
+     "label": "TE0112",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892140130586",
+     "name": "NP04_DCS_01_TE0113_",
+     "label": "TE0113",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892156907802",
+     "name": "NP04_DCS_01_TE0114_",
+     "label": "TE0114",
+     "unit": "K",
+     "subsystems": [
+      "floor"
+     ]
+    },
+    {
+     "id": "47892173685018",
+     "name": "NP04_DCS_01_TE0115_",
+     "label": "TE0115 (6.325 m)",
+     "unit": "K",
+     "subsystems": [
+      "spwall"
+     ]
+    },
+    {
+     "id": "47892190462234",
+     "name": "NP04_DCS_01_TE0116_",
+     "label": "TE0116 (4.965 m)",
+     "unit": "K",
+     "subsystems": [
+      "spwall"
+     ]
+    },
+    {
+     "id": "47892207239450",
+     "name": "NP04_DCS_01_TE0117_",
+     "label": "TE0117 (3.605 m)",
+     "unit": "K",
+     "subsystems": [
+      "spwall"
+     ]
+    },
+    {
+     "id": "47892224016666",
+     "name": "NP04_DCS_01_TE0118_",
+     "label": "TE0118 (2.245 m)",
+     "unit": "K",
+     "subsystems": [
+      "spwall"
+     ]
+    },
+    {
+     "id": "47892240793882",
+     "name": "NP04_DCS_01_TE0119_",
+     "label": "TE0119 (0.885 m)",
+     "unit": "K",
+     "subsystems": [
+      "spwall"
+     ]
+    },
+    {
+     "id": "47892274348314",
+     "name": "NP04_DCS_01_TE0121",
+     "label": "TE0121",
+     "unit": "K",
+     "subsystems": [
+      "bottom",
+      "cryostat",
+      "inside"
+     ]
+    },
+    {
+     "id": "47892291125530",
+     "name": "NP04_DCS_01_TE0122",
+     "label": "TE0122 (Type 1)",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "north"
+     ]
+    },
+    {
+     "id": "47892307902746",
+     "name": "NP04_DCS_01_TE0123",
+     "label": "TE0123",
+     "unit": "K",
+     "subsystems": [
+      "bottom",
+      "cryostat",
+      "inside"
+     ]
+    },
+    {
+     "id": "47892375011610",
+     "name": "NP04_DCS_01_TE0127",
+     "label": "TE0127 (Type 1)",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "east",
+      "inside"
+     ]
+    },
+    {
+     "id": "47892475674906",
+     "name": "NP04_DCS_01_TE0133",
+     "label": "TE0133 (Type 1)",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "south"
+     ]
+    },
+    {
+     "id": "47892509229338",
+     "name": "NP04_DCS_01_TE0135",
+     "label": "TE0135",
+     "unit": "K",
+     "subsystems": [
+      "bottom",
+      "cryostat",
+      "inside"
+     ]
+    },
+    {
+     "id": "47892576338202",
+     "name": "NP04_DCS_01_TE0139",
+     "label": "TE0139 (Type 1)",
+     "unit": "K",
+     "subsystems": [
+      "cryostat",
+      "inside",
+      "west"
+     ]
+    },
+    {
+     "id": "47892593115418",
+     "name": "NP04_DCS_01_TE0140",
+     "label": "TE0140",
+     "unit": "K",
+     "subsystems": [
+      "bottom",
+      "cryostat",
+      "inside"
+     ]
+    },
+    {
+     "id": "47892677001498",
+     "name": "NP04_DCS_01_TE0145_",
+     "label": "TE0145",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892693778714",
+     "name": "NP04_DCS_01_TE0146_",
+     "label": "TE0146",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892710555930",
+     "name": "NP04_DCS_01_TE0147_",
+     "label": "TE0147",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892727333146",
+     "name": "NP04_DCS_01_TE0148_",
+     "label": "TE0148",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892744110362",
+     "name": "NP04_DCS_01_TE0149_",
+     "label": "TE0149",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892760887578",
+     "name": "NP04_DCS_01_TE0150_",
+     "label": "TE0150",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892777664794",
+     "name": "NP04_DCS_01_TE0151_",
+     "label": "TE0151",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892794442010",
+     "name": "NP04_DCS_01_TE0152_",
+     "label": "TE0152",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892811219226",
+     "name": "NP04_DCS_01_TE0153_",
+     "label": "TE0153",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892827996442",
+     "name": "NP04_DCS_01_TE0154_",
+     "label": "TE0154",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892844773658",
+     "name": "NP04_DCS_01_TE0155_",
+     "label": "TE0155",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47892861550874",
+     "name": "NP04_DCS_01_TE0156_",
+     "label": "TE0156",
+     "unit": "K",
+     "subsystems": [
+      "spbottom"
+     ]
+    },
+    {
+     "id": "47893683634458",
+     "name": "NP04_DCS_01_TE0205",
+     "label": "TE205",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893700411674",
+     "name": "NP04_DCS_01_TE0206",
+     "label": "TE206",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893717188890",
+     "name": "NP04_DCS_01_TE0207",
+     "label": "TE207",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893733966106",
+     "name": "NP04_DCS_01_TE0208",
+     "label": "TE208",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893750743322",
+     "name": "NP04_DCS_01_TE0209",
+     "label": "TE209",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893767520538",
+     "name": "NP04_DCS_01_TE0210",
+     "label": "TE210",
+     "unit": "",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "47893784297754",
+     "name": "NP04_DCS_01_TE0211",
+     "label": "TE211",
+     "unit": "%",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020334838298",
+     "name": "NP04_DCS_01_4TT3500",
+     "label": "TT3500",
+     "unit": "K",
+     "subsystems": [
+      "coldbox"
+     ]
+    },
+    {
+     "id": "48020351615514",
+     "name": "NP04_DCS_01_4TT3510",
+     "label": "TT3510",
+     "unit": "K",
+     "subsystems": [
+      "coldbox"
+     ]
+    }
+   ]
+  }
+ }
+}

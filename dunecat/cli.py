@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,14 @@ from .filters import FileFilters, parse_meta, parse_run_range, parse_runs
 from .format import render_dataset_table
 from .query import run_query
 from .server import server_app
+from .slowcontrol import (
+    DETECTORS,
+    fetch_history,
+    list_sensors,
+    parse_when,
+    resolve_sensor,
+    subsystems,
+)
 from .timestamps import (
     DEFAULT_FORMAT,
     DEFAULT_MAX_CANDIDATES,
@@ -38,6 +47,7 @@ from .timestamps import (
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 dataset_app = typer.Typer(no_args_is_help=True, add_completion=False)
 file_app = typer.Typer(no_args_is_help=True, add_completion=False)
+slowcontrol_app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
     dataset_app,
     name="dataset",
@@ -45,6 +55,11 @@ app.add_typer(
 )
 app.add_typer(
     file_app, name="file", help="Inspect files: which datasets contain a file."
+)
+app.add_typer(
+    slowcontrol_app,
+    name="slowcontrol",
+    help="NP02/NP04 slow-control (DCS) sensors: list them, fetch timeseries.",
 )
 
 
@@ -518,6 +533,150 @@ def dataset_show(
         typer.echo(json.dumps(ds, default=str))
     else:
         render_dataset_table(ds)
+
+
+_DETECTOR_OPTION = typer.Option(
+    "np02",
+    "--detector",
+    "-D",
+    help=f"Which detector's slow control to query: {', '.join(DETECTORS)}.",
+)
+
+
+@slowcontrol_app.command("subsystems")
+def slowcontrol_subsystems(
+    detector: str = _DETECTOR_OPTION,
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit a JSON object of subsystem -> sensor count."
+    ),
+) -> None:
+    """List subsystems (dashboard page groupings) and their sensor counts."""
+    with _handled_errors():
+        counts = subsystems(detector)
+    if json_out:
+        typer.echo(json.dumps(counts))
+    else:
+        for name, n in counts.items():
+            typer.echo(f"{name}\t{n}")
+
+
+@slowcontrol_app.command("sensors")
+def slowcontrol_sensors(
+    detector: str = _DETECTOR_OPTION,
+    subsystem: str | None = typer.Option(
+        None,
+        "--subsystem",
+        "-s",
+        help="Only sensors in this subsystem (see `slowcontrol subsystems`).",
+    ),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit JSONL (one sensor object per line)."
+    ),
+) -> None:
+    """List known sensors: element ID, name, label, unit, subsystems.
+
+    The catalog is scraped from the slow-control dashboards and bundled
+    with dunecat; any element ID here can be fed to `slowcontrol history`.
+    """
+    with _handled_errors():
+        sensors = list_sensors(detector)
+    if subsystem is not None:
+        sensors = tuple(s for s in sensors if subsystem in s.subsystems)
+        if not sensors:
+            typer.echo(
+                f"No {detector} sensors in subsystem '{subsystem}'. "
+                "List subsystems with: dunecat slowcontrol subsystems",
+                err=True,
+            )
+            raise typer.Exit(1)
+    for s in sensors:
+        if json_out:
+            typer.echo(
+                json.dumps(
+                    {
+                        "id": s.id,
+                        "name": s.name,
+                        "label": s.label,
+                        "unit": s.unit,
+                        "subsystems": list(s.subsystems),
+                    }
+                )
+            )
+        else:
+            typer.echo(
+                f"{s.id}\t{s.name or '-'}\t{s.label or '-'}\t{s.unit or '-'}\t"
+                + ",".join(s.subsystems)
+            )
+
+
+@slowcontrol_app.command("history")
+def slowcontrol_history(
+    sensor: str = typer.Argument(
+        ...,
+        help="Sensor to fetch: element ID, name (NP02_TT0100AI), or label (TE0516).",
+    ),
+    start: str = typer.Option(
+        ..., "--start", help="Range start, UTC: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS."
+    ),
+    end: str = typer.Option(
+        ...,
+        "--end",
+        help=(
+            "Range end, UTC: YYYY-MM-DD (means end of that day) or "
+            "YYYY-MM-DDTHH:MM:SS."
+        ),
+    ),
+    detector: str = _DETECTOR_OPTION,
+    average: bool = typer.Option(
+        False,
+        "--average",
+        help="Server-side averaged series (lighter for long ranges; may fail on old dates).",
+    ),
+    json_out: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit one JSON object with sensor info and [epoch_ms, value] points.",
+    ),
+) -> None:
+    """Fetch a sensor's archived timeseries between two dates.
+
+    Default output is CSV: a `# sensor=... unit=...` comment line, then
+    `timestamp,value` rows (UTC). Values are in the unit stated.
+    """
+    with _handled_errors():
+        s = resolve_sensor(detector, sensor)
+        data = fetch_history(
+            detector,
+            s.id,
+            parse_when(start),
+            parse_when(end, end_of_day=True),
+            average=average,
+        )
+    if json_out:
+        typer.echo(
+            json.dumps(
+                {
+                    "detector": detector,
+                    "id": s.id,
+                    "name": s.name,
+                    "label": s.label,
+                    "unit": s.unit,
+                    "points": [[ts, val] for ts, val in data.items()],
+                }
+            )
+        )
+        return
+    typer.echo(f"# sensor={s.display_name} id={s.id} unit={s.unit or 'unknown'}")
+    typer.echo("timestamp,value")
+    for ts, val in data.items():
+        stamp = datetime.fromtimestamp(ts / 1000, tz=UTC).strftime(
+            "%Y-%m-%dT%H:%M:%S.%f"
+        )[:-3]
+        typer.echo(f"{stamp},{val}")
+    if not data:
+        typer.echo(
+            f"(no archived points for {s.display_name} in {start}..{end})", err=True
+        )
 
 
 class _handled_errors:
