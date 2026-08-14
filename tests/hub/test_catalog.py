@@ -303,6 +303,130 @@ def test_replicas_validates_did_shape(client):
         assert r.status_code == 400, f"{bad_did!r} → {r.status_code}"
 
 
+# ---- query probe + paging (the hub's own copies of these routes) ---------
+
+
+def _file_item(name: str) -> dict[str, Any]:
+    return {
+        "namespace": "hd-protodune",
+        "name": name,
+        "fid": f"fid-{name}",
+        "size": 100,
+        "created_timestamp": 1.0,
+    }
+
+
+def test_query_validate_previews_first_row(client):
+    """The hub keeps its own copy of this route; it must return the same
+    {ok, matched, row} shape the SPA's preview expects."""
+    _drive_login(client, sub="uuid-probe", credkey="probe")
+
+    class FakeMetaCat:
+        def query(self, mql: str, **kw: Any):
+            # `(...) limit 1` lets the server stop early, and is safe for
+            # every query shape.
+            assert mql == "(files from hd-protodune:ds) limit 1"
+            yield _file_item("first.root")
+            yield _file_item("second.root")
+
+    with patch(
+        "dunecat.hub.routes.catalog.metacat_for", return_value=FakeMetaCat()
+    ):
+        r = client.post("/api/query/validate", json={"mql": "files from hd-protodune:ds"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok"] is True
+    assert body["matched"] is True
+    assert body["row"]["name"] == "first.root"
+
+
+def test_query_validate_rejects_bad_syntax_offline(client):
+    """The offline lint short-circuits before any metacat call."""
+    _drive_login(client, sub="uuid-lint", credkey="lint")
+
+    def boom(*a: Any, **kw: Any):
+        raise AssertionError("should not reach metacat")
+
+    with patch("dunecat.hub.routes.catalog.metacat_for", side_effect=boom):
+        r = client.post(
+            "/api/query/validate",
+            json={"mql": "files from hd-protodune:<dataset-name>"},
+        )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok"] is False
+    assert "'<'" in body["error"]
+
+
+def test_query_run_sends_limit_over_compound_verbatim(client):
+    """metacat 4.1.4 fails on `ordered`/`skip` layered over a `limit` on a
+    compound query, so the hub must not wrap that shape either."""
+    _drive_login(client, sub="uuid-compound", credkey="compound")
+    mql = "files from hd-protodune:a - files from hd-protodune:b limit 50"
+    seen: list[str] = []
+
+    class FakeMetaCat:
+        def query(self, q: str, **kw: Any):
+            seen.append(q)
+            for i in range(20):
+                yield _file_item(f"f{i}.root")
+
+    with patch(
+        "dunecat.hub.routes.catalog.metacat_for", return_value=FakeMetaCat()
+    ):
+        r = client.post(
+            "/api/query/run", json={"mql": mql, "page": 1, "page_size": 5}
+        )
+    assert r.status_code == 200, r.text
+    assert seen == [mql], "must be sent verbatim, not wrapped"
+    body = r.json()
+    assert len(body["rows"]) == 5
+    assert body["has_more"] is True
+
+
+def test_query_run_keeps_pushdown_for_simple_queries(client):
+    _drive_login(client, sub="uuid-simple", credkey="simple")
+    seen: list[str] = []
+
+    class FakeMetaCat:
+        def query(self, q: str, **kw: Any):
+            seen.append(q)
+            yield _file_item("only.root")
+
+    with patch(
+        "dunecat.hub.routes.catalog.metacat_for", return_value=FakeMetaCat()
+    ):
+        r = client.post(
+            "/api/query/run",
+            json={"mql": "files from hd-protodune:ds", "page": 2, "page_size": 100},
+        )
+    assert r.status_code == 200, r.text
+    assert "skip 100 limit 100" in seen[0]
+
+
+def test_query_from_english_passes_warnings_and_parses_through(client, monkeypatch):
+    """The response carries a list and a bool, so the route's return
+    annotation must not be dict[str, str] — FastAPI would reject its own
+    response and 500."""
+    _drive_login(client, sub="uuid-english", credkey="english")
+    monkeypatch.setenv("DUNECAT_LLM_BASE_URL", "https://gateway.test/v1")
+
+    payload = {
+        "mql": "files from hd-protodune:ds",
+        "notes": "ok",
+        "warnings": ["filter 'every_nth' is not registered"],
+        "parses": True,
+    }
+    with patch(
+        "dunecat.hub.routes.catalog.llm.generate_mql", return_value=payload
+    ):
+        r = client.post("/api/query/from-english", json={"english": "raw files"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["parses"] is True
+    assert body["warnings"] == ["filter 'every_nth' is not registered"]
+
+
 def test_catalog_routes_require_auth(client):
     """A representative sample of catalog routes 401 without a cookie."""
     for path, method in [

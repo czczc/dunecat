@@ -30,7 +30,7 @@ from fastapi.responses import Response
 from metacat.webapi import MCWebAPIError
 from pydantic import BaseModel, Field
 
-from dunecat import llm
+from dunecat import llm, mql_lint
 from dunecat.files import build_mql
 from dunecat.filters import FileFilters, parse_run_range, parse_runs, value_matches
 from dunecat.web import condb
@@ -887,17 +887,40 @@ def query_run(
     mql = req.mql.strip()
     if not mql:
         raise HTTPException(status_code=400, detail="mql is required")
-    paged_mql = (
-        f"({mql}) ordered skip {(req.page - 1) * req.page_size} "
-        f"limit {req.page_size}"
-    )
+    skip = (req.page - 1) * req.page_size
     client = metacat_for(user)
     start = time.monotonic()
-    rows = with_timeout(
-        lambda: [_file_row(item) for item in client.query(paged_mql)],
-        timeout=METACAT_TIMEOUT_S,
-        label=f"query (run page={req.page})",
-    )
+
+    if mql_lint.breaks_when_wrapped(mql):
+        # metacat 4.1.4 fails when `ordered`/`skip` are layered on top of a
+        # `limit` over a compound query, so this one can't be wrapped at
+        # all — send it verbatim and page in Python. Costs the server-side
+        # pushdown, but these queries are self-limiting by construction.
+        def _page() -> list[dict[str, Any]]:
+            out: list[dict[str, Any]] = []
+            for i, item in enumerate(client.query(mql)):
+                if i < skip:
+                    continue
+                out.append(_file_row(item))
+                if len(out) > req.page_size:
+                    break
+            return out
+
+        collected = with_timeout(
+            _page,
+            timeout=METACAT_TIMEOUT_S,
+            label=f"query (run page={req.page}, verbatim)",
+        )
+        has_more = len(collected) > req.page_size
+        rows = collected[: req.page_size]
+    else:
+        paged_mql = f"({mql}) ordered skip {skip} limit {req.page_size}"
+        rows = with_timeout(
+            lambda: [_file_row(item) for item in client.query(paged_mql)],
+            timeout=METACAT_TIMEOUT_S,
+            label=f"query (run page={req.page})",
+        )
+        has_more = len(rows) == req.page_size
     log.info(
         "/api/query/run page=%d rows=%d took=%.2fs",
         req.page,
@@ -910,7 +933,7 @@ def query_run(
         "page": req.page,
         "page_size": req.page_size,
         "rows": rows,
-        "has_more": len(rows) == req.page_size,
+        "has_more": has_more,
     }
 
 
@@ -948,31 +971,55 @@ def query_validate(
     req: _QueryRequest,
     user: User = Depends(current_user),
 ) -> dict[str, Any]:
+    """Probe the query: lint it offline, then fetch its first row.
+
+    The round-trip was already being paid to validate; returning the row
+    makes it a preview of what a full run produces.
+
+    ``(mql) limit 1`` is safe for every query shape — an outer `limit`
+    alone is fine even over a compound query; it's `ordered`/`skip` on top
+    of an inner limit that metacat chokes on (see query_run).
+    """
     mql = req.mql.strip()
     if not mql:
-        return {"ok": False, "error": "MQL is empty"}
+        return {"ok": False, "error": "MQL is empty", "warnings": []}
+    checked = mql_lint.lint(mql, llm.known_namespaces())
+    if checked["error"]:
+        return {"ok": False, "error": checked["error"], "warnings": []}
     client = metacat_for(user)
+    start = time.monotonic()
 
-    def _probe() -> None:
-        for _ in client.query(mql, summary="count"):
-            break
+    def _probe() -> dict[str, Any] | None:
+        for item in client.query(f"({mql}) limit 1"):
+            return _file_row(item)
+        return None
 
     try:
-        with_timeout(
+        row = with_timeout(
             _probe, timeout=METACAT_TIMEOUT_S, label="query validate"
         )
     except MCWebAPIError as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": str(e), "warnings": checked["warnings"]}
     except HTTPException:
         raise
-    return {"ok": True}
+    elapsed = time.monotonic() - start
+    log.info(
+        "/api/query/validate matched=%s took=%.2fs", row is not None, elapsed
+    )
+    return {
+        "ok": True,
+        "matched": row is not None,
+        "row": row,
+        "warnings": checked["warnings"],
+        "elapsed_s": round(elapsed, 2),
+    }
 
 
 @router.post("/api/query/from-english")
 def query_from_english(
     req: _FromEnglishRequest,
     _user: User = Depends(current_user),
-) -> dict[str, str]:
+) -> dict[str, Any]:  # {mql, notes, warnings: list, parses: bool}
     if not llm.is_enabled():
         raise HTTPException(
             status_code=503,
@@ -995,7 +1042,11 @@ def query_from_english(
     except llm.LLMModelNotFound as e:
         raise HTTPException(
             status_code=502,
-            detail=f"Model {e.model!r} isn't available — run `ollama pull {e.model}`",
+            detail=(
+                f"Model {e.model!r} isn't available on the configured endpoint. "
+                f"Check DUNECAT_LLM_MODEL against GET "
+                f"$DUNECAT_LLM_BASE_URL/models."
+            ),
         )
     except llm.LLMBadResponse:
         raise HTTPException(
@@ -1008,8 +1059,9 @@ def query_from_english(
             status_code=502, detail="Couldn't generate a query from that"
         )
     log.info(
-        "/api/query/from-english took=%.2fs mql=%r",
+        "/api/query/from-english took=%.2fs warnings=%d mql=%r",
         time.monotonic() - start,
+        len(result.get("warnings") or []),
         result["mql"][:120],
     )
     return result
