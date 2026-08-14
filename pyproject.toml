@@ -6,6 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "metacat-client>=4.1.4",
+    # Direct import in dunecat/mql_lint.py, which parses MQL with metacat's
+    # own grammar. Ships transitively with metacat-client today; declared so
+    # the hub can't fail to boot if that ever changes.
+    "lark>=1.1",
     "typer>=0.12",
     "python-dotenv>=1.0",
     "rich>=13.7",
