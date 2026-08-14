@@ -117,6 +117,8 @@ def _reasoning_effort() -> str | None:
 # Curated metadata keys (hand-maintained). Values shown are real observed
 # examples, not an exhaustive enum.
 _METADATA_KEYS = """\
+namespace         string (file attribute)         the detector's namespace,
+                                                  e.g. namespace = 'hd-protodune'
 core.runs         integer (or list of integers)   run number(s),         e.g. core.runs in (27731, 27732)
 core.data_tier    string                          processing stage,      e.g. 'raw', 'full-reconstructed'
 core.file_type    string                          file format/category
@@ -154,8 +156,8 @@ DECISION PROCEDURE (follow in this exact order):
    and STOP. This is the ONLY case where mql is empty.
 2. Otherwise you MUST produce a query. A missing dataset or detector is
    normal and fine -- it is NEVER a reason to return empty mql:
-   - detector named, no dataset -> files from datasets matching NAMESPACE:* where ...
-     (substitute the real namespace for NAMESPACE, e.g. hd-protodune:*)
+   - detector named, no dataset -> files where namespace = 'NAMESPACE' and ...
+     (substitute the real namespace, e.g. namespace = 'hd-protodune')
    - neither named            -> files where ...        (catalog-wide)
    A run number with no detector (e.g. "3 reco files from run 27362") is a
    plain catalog-wide query: files where core.runs in (27362) ...
@@ -170,9 +172,14 @@ HARD RULES (do not break these):
   detector is NEVER a reason to return empty mql.
 - NEVER write angle brackets in a query. An angle-bracket placeholder is a
   SYNTAX ERROR that metacat rejects. If the user names a detector but no
-  dataset, match all of that namespace's datasets with a wildcard, e.g.
-  "files from datasets matching hd-protodune:*". If the user gives an explicit
-  dataset name, use it verbatim. Never guess dataset names.
+  dataset, filter on the namespace attribute instead, e.g.
+  "files where namespace = 'hd-protodune' and ...". If the user gives an
+  explicit dataset name, use it verbatim. Never guess dataset names.
+- Do NOT write "files from datasets matching NAMESPACE:*" to mean "everything
+  from this detector". It is correct MQL but pathologically slow -- it expands
+  to every dataset in the namespace (22k+ for hd-protodune) and takes minutes
+  or times out. Use "namespace = '...'" instead. Only use "datasets matching"
+  when the user explicitly asks to match dataset NAMES by pattern.
 - ONLY return an EMPTY mql string when the request needs ADVANCED MQL not in
   the supported subset below (set operations like union/join/subtraction,
   parent/child provenance, sampling filters, regex dataset matching). In that
@@ -211,7 +218,7 @@ canonical value, use your best guess and flag the assumption in notes.
 EXAMPLES (each shows a different construct):
 
 User: raw files from run 27731 in ProtoDUNE horizontal drift
-{{"mql": "files from datasets matching hd-protodune:* where core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches every dataset in the hd-protodune namespace. Narrow it by naming a dataset."}}
+{{"mql": "files where namespace = 'hd-protodune' and core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches the whole hd-protodune namespace. Narrow it by naming a dataset."}}
 
 User: fully reconstructed data for runs 27731 and 27732
 {{"mql": "files where core.runs in (27731, 27732) and core.data_tier = 'full-reconstructed'", "notes": "No detector specified, so this searches the whole catalog. Add 'files from <ns>:<dataset>' to narrow it."}}
@@ -223,7 +230,7 @@ User: all files in the dataset np04_reco_v1 in hd-protodune-det-reco
 {{"mql": "files from hd-protodune-det-reco:np04_reco_v1", "notes": "Used the dataset name you gave verbatim."}}
 
 User: the first 10 raw files in iceberg, taken after April 2024
-{{"mql": "files from datasets matching iceberg:* where core.data_tier = 'raw' and core.start_time > datetime(\\"2024-04-01\\") ordered limit 10", "notes": "Date via datetime(); ordered+limit for a deterministic first 10."}}
+{{"mql": "files where namespace = 'iceberg' and core.data_tier = 'raw' and core.start_time > datetime(\\"2024-04-01\\") ordered limit 10", "notes": "Date via datetime(); ordered+limit for a deterministic first 10."}}
 
 User: files that are in dataset A but not dataset B
 {{"mql": "", "notes": "This needs set subtraction, which is advanced MQL outside this tool's supported subset. See https://fermitools.github.io/metacat/mql.html"}}
@@ -290,10 +297,14 @@ The grammar accepts more than this server supports. Obey these too:
 
 - Emit a FILE query ("files ..."). A top-level "datasets ..." query is NOT
   accepted by the endpoint we call, even though the grammar allows it. To
-  filter by dataset, use "files from datasets matching NAMESPACE:* where ...".
+  filter by detector, use "files where namespace = 'NAMESPACE' and ...".
 - NEVER write angle brackets in a query. An angle-bracket placeholder is a
-  SYNTAX ERROR. When the user names a detector but no dataset, use the
-  wildcard form, e.g. "files from datasets matching hd-protodune:*".
+  SYNTAX ERROR. When the user names a detector but no dataset, filter on the
+  namespace attribute, e.g. "files where namespace = 'hd-protodune'".
+- Do NOT write "files from datasets matching NAMESPACE:*" to mean "everything
+  from this detector". Valid MQL, but it expands to every dataset in the
+  namespace (22k+ for hd-protodune) and takes minutes or times out. Only use
+  "datasets matching" when the user explicitly asks to match dataset NAMES.
 - NEVER invent a namespace. Use only the namespaces listed below.
 - NEVER invent a metadata key. Use only the keys listed below. If the request
   needs a concept with no matching key, leave it out and say so in notes.
@@ -321,7 +332,7 @@ canonical value, use your best guess and flag the assumption in notes.
 EXAMPLES:
 
 User: raw files from run 27731 in ProtoDUNE horizontal drift
-{{"mql": "files from datasets matching hd-protodune:* where core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches every dataset in the hd-protodune namespace."}}
+{{"mql": "files where namespace = 'hd-protodune' and core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches the whole hd-protodune namespace."}}
 
 User: show me 3 files from run 27361
 {{"mql": "files where core.runs in (27361) limit 3", "notes": "Catalog-wide search; limit 3 caps the result."}}

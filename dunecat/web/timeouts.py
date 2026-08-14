@@ -4,6 +4,11 @@ FastAPI runs sync route handlers in its thread pool. Wrap any
 blocking call to metacat / Rucio / condb in ``with_timeout(...)`` and
 the handler raises a 504 if the upstream takes too long, freeing the
 worker thread.
+
+Shared by the local app and the hub. Broad catalog queries are the main
+reason this exists for metacat: a condition on file *metadata* across a
+large namespace (e.g. every reco file in hd-protodune, ~5.8M files) can
+run for minutes, and without a cap the request just hangs.
 """
 
 from __future__ import annotations
@@ -34,17 +39,23 @@ def with_timeout(
     *args: Any,
     timeout: float = METACAT_TIMEOUT_S,
     label: str = "external call",
+    hint: str = "retry later",
     **kwargs: Any,
 ) -> T:
     """Run ``fn(*args, **kwargs)`` in a worker thread; abort if it
     takes longer than ``timeout`` seconds. Raises ``HTTPException(504)``
-    on timeout."""
+    on timeout.
+
+    ``hint`` is the remediation shown to the user. The default suits a
+    slow upstream, but a query that's simply too broad won't improve on
+    a retry — pass something actionable instead.
+    """
     fut = _pool.submit(fn, *args, **kwargs)
     try:
         return fut.result(timeout=timeout)
     except FuturesTimeout:
         log.warning(
-            "hub: timeout (%.1fs) waiting on %s — abandoning the worker",
+            "timeout (%.1fs) waiting on %s — abandoning the worker",
             timeout,
             label,
         )
@@ -53,5 +64,5 @@ def with_timeout(
         # completes or dies. The HTTP request, at least, returns promptly.
         raise HTTPException(
             status_code=504,
-            detail=f"{label} timed out after {timeout:.0f}s; retry later",
+            detail=f"{label} timed out after {timeout:.0f}s; {hint}",
         )

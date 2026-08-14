@@ -33,6 +33,10 @@ VERIFIED_FILTERS = frozenset({"sample", "hash"})
 # token to the left of a colon, and must start with a letter so numeric
 # ranges (`core.runs in 27000:28000`) don't match.
 _NAMESPACE_RE = re.compile(r"\b([A-Za-z][\w.-]*)\s*:")
+# `namespace = 'ns'` — the file-attribute form, which is how a detector-wide
+# query is written (the `datasets matching ns:*` alternative expands to every
+# dataset in the namespace and times out on large ones).
+_NAMESPACE_ATTR_RE = re.compile(r"\bnamespace\s*=\s*['\"]([^'\"]+)['\"]")
 _FILTER_RE = re.compile(r"\bfilter\s+([A-Za-z_]\w*)\s*\(")
 
 
@@ -125,6 +129,7 @@ def unknown_namespaces(mql: str, known: set[str]) -> list[str]:
     which is why callers surface these as warnings, not hard failures.
     """
     found = {m.group(1) for m in _NAMESPACE_RE.finditer(mql)}
+    found |= {m.group(1) for m in _NAMESPACE_ATTR_RE.finditer(mql)}
     return sorted(n for n in found if n not in known)
 
 

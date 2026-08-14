@@ -34,6 +34,12 @@ from dunecat import llm, mql_lint
 from dunecat.files import build_mql
 from dunecat.filters import FileFilters, parse_run_range, parse_runs, value_matches
 from dunecat.web import condb
+from dunecat.web.timeouts import (
+    CONDB_TIMEOUT_S,
+    METACAT_TIMEOUT_S,
+    RUCIO_TIMEOUT_S,
+    with_timeout,
+)
 
 from .. import cache as hub_cache
 from .. import rucio as hub_rucio
@@ -45,12 +51,6 @@ from ..detectors import (
     datasets_for_detector,
     datasets_for_namespace,
     detector_by_id,
-)
-from ..timeouts import (
-    CONDB_TIMEOUT_S,
-    METACAT_TIMEOUT_S,
-    RUCIO_TIMEOUT_S,
-    with_timeout,
 )
 
 log = logging.getLogger("uvicorn.error")
@@ -910,6 +910,10 @@ def query_run(
             _page,
             timeout=METACAT_TIMEOUT_S,
             label=f"query (run page={req.page}, verbatim)",
+            hint=(
+                "the query is probably too broad — narrow it with a run "
+                "number, a date range, or a specific dataset"
+            ),
         )
         has_more = len(collected) > req.page_size
         rows = collected[: req.page_size]
@@ -919,6 +923,10 @@ def query_run(
             lambda: [_file_row(item) for item in client.query(paged_mql)],
             timeout=METACAT_TIMEOUT_S,
             label=f"query (run page={req.page})",
+            hint=(
+                "the query is probably too broad — narrow it with a run "
+                "number, a date range, or a specific dataset"
+            ),
         )
         has_more = len(rows) == req.page_size
     log.info(
@@ -996,7 +1004,13 @@ def query_validate(
 
     try:
         row = with_timeout(
-            _probe, timeout=METACAT_TIMEOUT_S, label="query validate"
+            _probe,
+            timeout=METACAT_TIMEOUT_S,
+            label="query preview",
+            hint=(
+                "the query is probably too broad — narrow it with a run "
+                "number, a date range, or a specific dataset"
+            ),
         )
     except MCWebAPIError as e:
         return {"ok": False, "error": str(e), "warnings": checked["warnings"]}

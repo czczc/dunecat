@@ -106,6 +106,20 @@ class TestWhitelists:
             "files from nosuchns:ds", {"hd-protodune"}
         ) == ["nosuchns"]
 
+    def test_checks_the_namespace_attribute_form(self):
+        # A detector-wide query writes `namespace = 'x'` rather than `x:name`,
+        # so the whitelist has to cover both or it validates nothing.
+        assert mql_lint.unknown_namespaces(
+            "files where namespace = 'nosuchns'", {"hd-protodune"}
+        ) == ["nosuchns"]
+        assert (
+            mql_lint.unknown_namespaces(
+                "files where namespace = 'hd-protodune' and core.events > 1",
+                {"hd-protodune"},
+            )
+            == []
+        )
+
     def test_numeric_range_is_not_a_namespace(self):
         assert (
             mql_lint.unknown_namespaces(

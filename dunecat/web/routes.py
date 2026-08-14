@@ -20,6 +20,7 @@ from metacat.webapi import AuthenticationError, MCWebAPIError
 
 from dunecat import llm, mql_lint
 from dunecat.client import get_client as _raw_metacat_client
+from dunecat.web.timeouts import METACAT_TIMEOUT_S, with_timeout
 from dunecat.files import build_mql
 from dunecat.filters import (
     FileFilters,
@@ -375,6 +376,24 @@ def _saved_query_row(row: tuple) -> dict[str, Any]:
     }
 
 
+def _with_query_timeout(fn, label: str):
+    """Cap a metacat query so a too-broad one fails fast with advice.
+
+    A condition on file metadata across a large namespace (every reco
+    file in hd-protodune is ~5.8M) can run for minutes — retrying won't
+    help, narrowing will.
+    """
+    return with_timeout(
+        fn,
+        timeout=METACAT_TIMEOUT_S,
+        label=label,
+        hint=(
+            "the query is probably too broad — narrow it with a run number, "
+            "a date range, or a specific dataset"
+        ),
+    )
+
+
 @app.post("/api/query/run")
 def query_run(req: _QueryRunRequest) -> dict[str, Any]:
     mql = req.mql.strip()
@@ -388,18 +407,25 @@ def query_run(req: _QueryRunRequest) -> dict[str, Any]:
         # `limit` over a compound query, so this one can't be wrapped at
         # all — send it verbatim and page in Python. Costs the server-side
         # pushdown, but these queries are self-limiting by construction.
-        rows = []
-        for i, item in enumerate(client.query(mql)):
-            if i < skip:
-                continue
-            rows.append(_file_row(item))
-            if len(rows) > req.page_size:
-                break
-        has_more = len(rows) > req.page_size
-        rows = rows[: req.page_size]
+        def _page() -> list[dict[str, Any]]:
+            out: list[dict[str, Any]] = []
+            for i, item in enumerate(client.query(mql)):
+                if i < skip:
+                    continue
+                out.append(_file_row(item))
+                if len(out) > req.page_size:
+                    break
+            return out
+
+        collected = _with_query_timeout(_page, f"query (page {req.page})")
+        has_more = len(collected) > req.page_size
+        rows = collected[: req.page_size]
     else:
         paged_mql = f"({mql}) ordered skip {skip} limit {req.page_size}"
-        rows = [_file_row(item) for item in client.query(paged_mql)]
+        rows = _with_query_timeout(
+            lambda: [_file_row(item) for item in client.query(paged_mql)],
+            f"query (page {req.page})",
+        )
         has_more = len(rows) == req.page_size
     log.info(
         "/api/query/run page=%d rows=%d took=%.2fs",
@@ -505,13 +531,15 @@ def query_count(req: _QueryRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="mql is required")
     client = _get_metacat_client()
     start = time.monotonic()
-    total = 0
-    total_size = 0
-    for summary in client.query(mql, summary="count"):
-        if isinstance(summary, dict):
-            total = summary.get("count", 0)
-            total_size = summary.get("total_size", 0)
-        break
+
+    def _count() -> tuple[int, int]:
+        for summary in client.query(mql, summary="count"):
+            if isinstance(summary, dict):
+                return (summary.get("count", 0), summary.get("total_size", 0))
+            break
+        return (0, 0)
+
+    total, total_size = _with_query_timeout(_count, "query count")
     log.info(
         "/api/query/count total=%d took=%.2fs",
         total, time.monotonic() - start,
@@ -543,11 +571,15 @@ def query_validate(req: _QueryRequest) -> dict[str, Any]:
         return {"ok": False, "error": checked["error"], "warnings": []}
     client = _get_metacat_client()
     start = time.monotonic()
+
+    def _probe() -> dict[str, Any] | None:
+        for item in client.query(f"({mql}) limit 1"):
+            return _file_row(item)
+        return None
+
     row = None
     try:
-        for item in client.query(f"({mql}) limit 1"):
-            row = _file_row(item)
-            break
+        row = _with_query_timeout(_probe, "query preview")
     except MCWebAPIError as e:
         return {"ok": False, "error": str(e), "warnings": checked["warnings"]}
     elapsed = time.monotonic() - start
