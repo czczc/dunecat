@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQL Model Scorecard — BNL inference0 model evaluation</title>
+<meta name="description" content="Benchmark of four LLMs on inference0-api.sdcc.bnl.gov for a natural-language-to-DSL task, with keep/drop recommendations.">
+<meta name="color-scheme" content="light dark">
+</head>
+<body>
+<style>
+  :root {
+    --ground:  #F6F8F9;
+    --surface: #FFFFFF;
+    --raised:  #EEF3F5;
+    --ink:     #0F1719;
+    --body:    #26343A;
+    --dim:     #4A5A61;
+    --faint:   #6E8088;
+    --rule:    #DCE4E8;
+    --rule-soft: #EAF0F2;
+    --accent:  #00707F;
+    --accent-soft: #E0F0F2;
+    --pass:    #1C7A4F;
+    --pass-bg: #E4F2EA;
+    --watch:   #8E5E12;
+    --watch-bg:#F7EEDC;
+    --fail:    #A02D22;
+    --fail-bg: #F8E7E4;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --grot: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #0D1417;
+      --surface: #141D21;
+      --raised:  #1A252A;
+      --ink:     #E7EEF0;
+      --body:    #C9D6DB;
+      --dim:     #99AAB2;
+      --faint:   #7A8C94;
+      --rule:    #243035;
+      --rule-soft: #1C272C;
+      --accent:  #3FC6D2;
+      --accent-soft: #102F33;
+      --pass:    #4FBE86;
+      --pass-bg: #102A1E;
+      --watch:   #D6A353;
+      --watch-bg:#2C2313;
+      --fail:    #E0705F;
+      --fail-bg: #2E1714;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:  #0D1417;
+    --surface: #141D21;
+    --raised:  #1A252A;
+    --ink:     #E7EEF0;
+    --body:    #C9D6DB;
+    --dim:     #99AAB2;
+    --faint:   #7A8C94;
+    --rule:    #243035;
+    --rule-soft: #1C272C;
+    --accent:  #3FC6D2;
+    --accent-soft: #102F33;
+    --pass:    #4FBE86;
+    --pass-bg: #102A1E;
+    --watch:   #D6A353;
+    --watch-bg:#2C2313;
+    --fail:    #E0705F;
+    --fail-bg: #2E1714;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--body);
+    font-family: var(--serif);
+    font-size: 18.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 56px 28px 92px; }
+  .prose { max-width: 66ch; }
+
+  h1, h2, h3, .label, th, .chip, .metric-name { font-family: var(--grot); }
+  h1 {
+    font-size: clamp(33px, 5vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: 24px;
+    letter-spacing: -0.016em;
+    font-weight: 650;
+    color: var(--ink);
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  h3 {
+    font-size: 17px;
+    letter-spacing: -0.005em;
+    font-weight: 650;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  code, .mono { font-family: var(--mono); font-size: 0.86em; font-variant-numeric: tabular-nums; }
+  code {
+    background: var(--raised);
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 28px; margin-bottom: 38px; }
+  .standfirst { font-size: 20px; color: var(--dim); margin: 0; max-width: 62ch; }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 8px 32px;
+    margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--rule);
+  }
+  .fact { display: flex; flex-direction: column; gap: 1px; }
+  .fact .v { font-family: var(--mono); font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  section { margin: 0 0 48px; }
+  .sec-head { margin-bottom: 20px; }
+  .sec-head p { font-size: 17px; color: var(--dim); margin-top: 8px; }
+
+  /* verdict panel */
+  .verdicts { display: flex; flex-direction: column; gap: 10px; margin: 0 0 8px; }
+  .verdict {
+    display: grid;
+    grid-template-columns: 4px 1fr auto;
+    gap: 0 16px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .verdict .stripe { align-self: stretch; }
+  .verdict.keep .stripe { background: var(--pass); }
+  .verdict.cond .stripe { background: var(--watch); }
+  .verdict.drop .stripe { background: var(--fail); }
+  .verdict .vbody { padding: 14px 0 14px 2px; }
+  .verdict .vname { font-family: var(--mono); font-size: 15px; color: var(--ink); font-weight: 600; }
+  .verdict .vwhy { font-size: 16px; color: var(--dim); margin-top: 3px; }
+  .chip {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 2px; margin-right: 15px; white-space: nowrap;
+  }
+  .chip.keep { background: var(--pass-bg); color: var(--pass); }
+  .chip.cond { background: var(--watch-bg); color: var(--watch); }
+  .chip.drop { background: var(--fail-bg); color: var(--fail); }
+
+  /* tables */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 14px; }
+  th {
+    text-align: left; font-size: 11.5px; font-weight: 650; letter-spacing: 0.075em;
+    text-transform: uppercase; color: var(--faint);
+    padding: 12px 15px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+    background: var(--raised);
+  }
+  td {
+    padding: 12px 15px; border-bottom: 1px solid var(--rule-soft);
+    color: var(--body); font-variant-numeric: tabular-nums; vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; }
+  td.model { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .good { color: var(--pass); font-weight: 600; }
+  .bad  { color: var(--fail); font-weight: 600; }
+  .mid  { color: var(--watch); font-weight: 600; }
+
+  /* suite table: prose ask, code expectation */
+  table.suite td { font-size: 13.5px; }
+  table.suite .tier { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  table.suite .tests { font-family: var(--serif); font-size: 16px; color: var(--dim); min-width: 15ch; }
+  table.suite .ask { font-family: var(--serif); font-size: 16px; color: var(--body); min-width: 26ch; }
+  table.suite .expect { color: var(--ink); min-width: 40ch; line-height: 1.5; }
+  table.suite .refusal { color: var(--watch); font-family: var(--serif); font-size: 15.5px; }
+
+  /* schema glossary */
+  .gloss { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; }
+  .gterm { background: var(--surface); padding: 15px 17px; display: grid; grid-template-columns: 210px 1fr; gap: 5px 22px; }
+  .gterm .gk { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--ink); }
+  .gterm .gv { font-size: 16.5px; color: var(--dim); }
+  @media (max-width: 640px) { .gterm { grid-template-columns: 1fr; } }
+
+  /* metric list */
+  .metrics { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; }
+  .metric { background: var(--surface); padding: 15px 17px; display: grid; grid-template-columns: 200px 1fr; gap: 5px 22px; }
+  .metric-name { font-size: 14px; font-weight: 650; color: var(--ink); font-family: var(--mono); }
+  .metric-desc { font-size: 16.5px; color: var(--dim); }
+  @media (max-width: 640px) { .metric { grid-template-columns: 1fr; } }
+
+  /* model cards */
+  .card {
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--rule);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+  .card.keep { border-left-color: var(--pass); }
+  .card.cond { border-left-color: var(--watch); }
+  .card.drop { border-left-color: var(--fail); }
+  .card h3 { font-family: var(--mono); font-size: 16px; }
+  .card ul { margin: 12px 0 0; padding-left: 21px; }
+  .card li { margin-bottom: 8px; font-size: 17px; color: var(--body); }
+  .card p { font-size: 17px; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 5px 28px; margin-top: 6px; }
+  .stat { display: flex; gap: 8px; align-items: baseline; font-family: var(--mono); font-size: 13.5px; }
+  .stat .sk { color: var(--faint); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat .sv { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 17px 20px;
+    border-radius: 0 3px 3px 0;
+    margin: 0 0 18px;
+  }
+  .callout p { font-size: 17px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label { color: var(--accent); margin-bottom: 5px; display: block; }
+
+  pre {
+    background: var(--raised); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 14px 16px; overflow-x: auto; margin: 0 0 18px;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.55; color: var(--ink);
+  }
+  ul.plain { padding-left: 21px; }
+  ul.plain li { margin-bottom: 9px; }
+  footer {
+    margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--rule);
+    font-size: 15.5px; color: var(--faint);
+  }
+
+  @media print {
+    :root {
+      --ground:#fff; --surface:#fff; --raised:#f4f6f7; --ink:#000; --body:#1a1a1a;
+      --dim:#333; --faint:#555; --rule:#bbb; --rule-soft:#ddd; --accent:#005965;
+      --accent-soft:#eef6f7; --pass:#12603c; --pass-bg:#eef6f1; --watch:#6d4708;
+      --watch-bg:#f8f2e4; --fail:#8a221a; --fail-bg:#f9ece9;
+    }
+    body { font-size: 11.5pt; }
+    .wrap { max-width: none; padding: 0; }
+    section, .card, .verdict, .scroll { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    .scroll { overflow: visible; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <span class="label">Feedback for BNL SDCC · inference0</span>
+  <h1>Which models earn their keep on a natural-language-to-DSL task</h1>
+  <p class="standfirst">
+    We put all four models on <code>inference0-api.sdcc.bnl.gov</code> through the same
+    25-case suite: translating a user's plain English into a small, strict query language over
+    a scientific file catalog. Two models scored perfectly, one is unusable for this workload,
+    and one proxy setting is failing requests outright.
+  </p>
+  <div class="facts">
+    <div class="fact"><span class="label">Date</span><span class="v">2026-08-14</span></div>
+    <div class="fact"><span class="label">Endpoint</span><span class="v">inference0-api.sdcc.bnl.gov/v1</span></div>
+    <div class="fact"><span class="label">Models</span><span class="v">4</span></div>
+    <div class="fact"><span class="label">Cases</span><span class="v">25 across 9 tiers</span></div>
+    <div class="fact"><span class="label">Task</span><span class="v">English → query DSL</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head"><h2>The task, for readers outside the project</h2></div>
+  <p class="prose">
+    Think <em>text-to-SQL</em>, but against a smaller and stricter language. Our application
+    is a web UI over a file catalog holding roughly 100 million data files produced by a
+    large physics experiment. The catalog speaks its own query language — MQL, the MetaCat
+    Query Language — which is SQL-shaped but purpose-built: a few dozen grammar rules,
+    no joins in the SQL sense, and its own operators for set algebra and lineage.
+  </p>
+  <p class="prose">
+    A user types <em>"raw files from run 27731"</em> and the model must emit a valid MQL
+    query. What makes this a sharper benchmark than general text-to-SQL is that
+    <strong>the vocabulary is closed and the failure mode is silent</strong>. Every identifier
+    the model may use — 13 partition names, 7 attribute names, 2 server-side functions — is
+    supplied in the prompt, and anything outside that list is a hallucination. Crucially, a
+    hallucinated identifier usually still <em>parses</em>: the query runs, returns zero rows,
+    and reads to the user as a legitimate "no results found".
+  </p>
+  <p class="prose">Four schema terms appear in the test cases. In ordinary database terms:</p>
+  <div class="gloss">
+    <div class="gterm"><span class="gk">namespace</span><span class="gv">A top-level partition of the catalog, like a schema. There are 13, each named for the instrument that produced the data. Addressed as <code>namespace:dataset</code>.</span></div>
+    <div class="gterm"><span class="gk">dataset</span><span class="gv">A named collection of files inside a namespace — the closest thing to a table.</span></div>
+    <div class="gterm"><span class="gk">core.runs</span><span class="gv">An integer ID for one data-acquisition session. The single most common filter users write.</span></div>
+    <div class="gterm"><span class="gk">core.data_tier</span><span class="gv">An enum-like string for processing stage: <code>'raw'</code> straight off the instrument, <code>'full-reconstructed'</code> after the processing pipeline. Users say "raw" and "reco", so the model must map informal vocabulary onto exact values.</span></div>
+    <div class="gterm"><span class="gk">parents / children</span><span class="gv">Lineage edges. Every derived file records which files it was produced from, so the catalog is also a DAG the language can walk.</span></div>
+  </div>
+  <p class="prose" style="margin-top:18px;">
+    Instrument names in the test asks — "ProtoDUNE horizontal drift", "Iceberg", "NP04 beam" —
+    are an entity-linking step: each must be resolved to its namespace identifier using a
+    lookup table supplied in the prompt. That is deliberately the same shape of problem as
+    resolving a user's informal table name against a real schema.
+  </p>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Recommendation</h2></div>
+  <div class="verdicts">
+    <div class="verdict keep">
+      <span class="stripe"></span>
+      <div class="vbody">
+        <div class="vname">gemma-4-26b</div>
+        <div class="vwhy">Perfect score at the lowest latency and smallest size. Our default.</div>
+      </div>
+      <span class="chip keep">Keep</span>
+    </div>
+    <div class="verdict keep">
+      <span class="stripe"></span>
+      <div class="vbody">
+        <div class="vname">gpt-oss-120b</div>
+        <div class="vwhy">Also perfect, and writes by far the best explanations. Worth keeping as the
+          quality tier even at ~3× the latency.</div>
+      </div>
+      <span class="chip keep">Keep</span>
+    </div>
+    <div class="verdict cond">
+      <span class="stripe"></span>
+      <div class="vbody">
+        <div class="vname">nemotron-3-ultra-550b-nvfp4</div>
+        <div class="vwhy">Also perfect, but 7× slower for no accuracy gain here, and it answered one
+          case differently across two runs at temperature 0. Hard to justify 550B for this task.</div>
+      </div>
+      <span class="chip cond">Low value here</span>
+    </div>
+    <div class="verdict drop">
+      <span class="stripe"></span>
+      <div class="vbody">
+        <div class="vname">llama-4-scout-17b</div>
+        <div class="vwhy">The only model that invents identifiers: an attribute, a partition name, and
+          a server function that doesn't exist — each producing a query that looks fine and is wrong.</div>
+      </div>
+      <span class="chip drop">Unusable here</span>
+    </div>
+  </div>
+  <p style="margin-top:20px; font-size:17px; color:var(--dim);" class="prose">
+    One caveat on all of this: ours is a single workload — structured translation into a
+    constrained DSL with a hard no-hallucination requirement. It rewards grounding and
+    punishes creativity, so it should inform your roster decision, not settle it. A model
+    that looks poor here may be the right one for summarisation or code assistance.
+  </p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>Scoreboard</h2>
+    <p class="prose">
+      <span class="mono">Overall</span> counts only cases that passed <em>every</em> gate —
+      valid JSON, parses, correct meaning, nothing invented, prompt rules obeyed.
+    </p>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th class="num">Overall</th>
+          <th class="num">Semantics</th>
+          <th class="num">Grounded</th>
+          <th class="num">Adherence</th>
+          <th class="num">p50</th>
+          <th class="num">p95</th>
+          <th class="num">Max</th>
+          <th class="num">Out tok</th>
+          <th>Stable</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="model">gemma-4-26b</td>
+          <td class="num good">100%</td>
+          <td class="num">25/25</td><td class="num">25/25</td><td class="num">25/25</td>
+          <td class="num good">0.31s</td><td class="num">0.46s</td><td class="num">0.53s</td>
+          <td class="num">48</td><td class="good">yes</td>
+        </tr>
+        <tr>
+          <td class="model">gpt-oss-120b</td>
+          <td class="num good">100%</td>
+          <td class="num">25/25</td><td class="num">25/25</td><td class="num">25/25</td>
+          <td class="num">0.89s</td><td class="num">1.47s</td><td class="num">1.98s</td>
+          <td class="num">253</td><td class="good">yes</td>
+        </tr>
+        <tr>
+          <td class="model">nemotron-3-ultra-550b</td>
+          <td class="num good">100%</td>
+          <td class="num">25/25</td><td class="num">25/25</td><td class="num">25/25</td>
+          <td class="num bad">2.19s</td><td class="num bad">5.26s</td><td class="num bad">10.17s</td>
+          <td class="num">242</td><td class="mid">within run</td>
+        </tr>
+        <tr>
+          <td class="model">llama-4-scout-17b</td>
+          <td class="num bad">84%</td>
+          <td class="num mid">23/25</td><td class="num bad">22/25</td><td class="num">25/25</td>
+          <td class="num">0.53s</td><td class="num">0.62s</td><td class="num">0.86s</td>
+          <td class="num">43</td><td class="good">yes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:14px; font-size:15.5px; color:var(--faint);">
+    Prompt length was 3.0k–3.4k tokens in every case — the system prompt carries the DSL's
+    full grammar. Latency is end-to-end wall clock from our side, one request at a time,
+    no concurrency.
+  </p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>What we measured, and why</h2>
+    <p class="prose">
+      A model is only useful to us if the query it writes is one we can actually run, so the
+      gates run cheapest-signal-first. None of them collapses into the others: a model can
+      score 100% on syntax and still be useless because the query means the wrong thing.
+    </p>
+  </div>
+  <div class="metrics">
+    <div class="metric"><span class="metric-name">json</span><span class="metric-desc">Did it honour the response contract at all — one JSON object, no prose around it.</span></div>
+    <div class="metric"><span class="metric-name">parses</span><span class="metric-desc">The query parses against the DSL's real grammar. We load the actual Lark grammar out of the catalog client library, so our checker cannot drift from the server's parser.</span></div>
+    <div class="metric"><span class="metric-name">semantics</span><span class="metric-desc">Does it mean what was asked. Per-case assertions on the constructs and literal values that must appear.</span></div>
+    <div class="metric"><span class="metric-name">grounded</span><span class="metric-desc">No invented identifiers — partition, attribute, or server function. This is the metric that separated the field.</span></div>
+    <div class="metric"><span class="metric-name">adherence</span><span class="metric-desc">Obeys prompt rules that a perfectly valid query can still break. One legal query shape expands to 22,000 partitions server-side and times out; the prompt forbids it.</span></div>
+    <div class="metric"><span class="metric-name">repair</span><span class="metric-desc">When it does emit a syntax error, can it fix it when handed the parser's message? Production allows exactly one retry.</span></div>
+    <div class="metric"><span class="metric-name">refusal calibration</span><span class="metric-desc">Refuses the genuinely impossible without refusing the merely unfamiliar. Both directions are failures.</span></div>
+    <div class="metric"><span class="metric-name">latency</span><span class="metric-desc">p50 / p95 / max wall clock. This sits in an interactive web UI, so p95 matters more than p50.</span></div>
+    <div class="metric"><span class="metric-name">determinism</span><span class="metric-desc">Same prompt, temperature 0, three times: identical output?</span></div>
+    <div class="metric"><span class="metric-name">api_compat</span><span class="metric-desc">Does the endpoint accept the request parameters we send. A rejected parameter fails the whole request, so this is pass/fail, not a nicety.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>The suite</h2>
+    <p class="prose">
+      Nine tiers of ascending difficulty. The numbering is real: tiers 1–4 are ordinary
+      lookups, 5–6 exercise the harder corners of the language, and 7–9 are traps where the
+      tempting answer is the wrong one.
+    </p>
+  </div>
+  <div class="scroll">
+    <table class="suite">
+      <thead>
+        <tr><th>Tier</th><th>What it tests</th><th>Representative ask</th><th>Expected answer</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="tier">1 · trivial <span style="color:var(--faint)">(2)</span></td>
+          <td class="tests">Address one collection, no filtering</td>
+          <td class="ask">all files in the dataset np04_reco_v1 in hd-protodune-det-reco</td>
+          <td class="expect">files from hd-protodune-det-reco:np04_reco_v1</td>
+        </tr>
+        <tr>
+          <td class="tier">2 · filters <span style="color:var(--faint)">(4)</span></td>
+          <td class="tests">Predicates on IDs, enums, counts, ranges; informal→exact vocabulary</td>
+          <td class="ask">raw files from run 27731 in ProtoDUNE horizontal drift</td>
+          <td class="expect">files where namespace = 'hd-protodune' and core.runs in (27731) and core.data_tier = 'raw'</td>
+        </tr>
+        <tr>
+          <td class="tier">3 · dates <span style="color:var(--faint)">(2)</span></td>
+          <td class="tests">Date construction, key-absence, deterministic ordering</td>
+          <td class="ask">the first 10 raw files in iceberg taken after April 2024</td>
+          <td class="expect">files where namespace = 'iceberg' and core.data_tier = 'raw' and core.start_time &gt; datetime('2024-05-01') limit 10</td>
+        </tr>
+        <tr>
+          <td class="tier">4 · grounding <span style="color:var(--faint)">(3)</span></td>
+          <td class="tests">Entity-link an instrument name to its partition ID, from a supplied list of 13</td>
+          <td class="ask">raw files from the NP04 beam instrumentation</td>
+          <td class="expect">files where namespace = 'ehn1-beam-np04' and core.data_tier = 'raw'</td>
+        </tr>
+        <tr>
+          <td class="tier">5 · advanced <span style="color:var(--faint)">(5)</span></td>
+          <td class="tests">Set algebra (difference, union, intersection) and lineage traversal</td>
+          <td class="ask">files in hd-protodune:dsA but not in hd-protodune:dsB</td>
+          <td class="expect">files from hd-protodune:dsA - files from hd-protodune:dsB</td>
+        </tr>
+        <tr>
+          <td class="tier">6 · functions <span style="color:var(--faint)">(2)</span></td>
+          <td class="tests">Server-side sampling functions, only some of which are installed</td>
+          <td class="ask">a 10 percent sample of raw files from hd-protodune:dsA</td>
+          <td class="expect">filter sample(0.1)(files from hd-protodune:dsA where core.data_tier = 'raw')</td>
+        </tr>
+        <tr>
+          <td class="tier">7 · traps <span style="color:var(--faint)">(4)</span></td>
+          <td class="tests">Attribute the schema doesn't have — must be dropped, not invented</td>
+          <td class="ask">files from run 27731 where the beam energy is 7 GeV</td>
+          <td class="expect">files where core.runs in (27731)<div class="refusal">…and say in the notes that beam energy has no field</div></td>
+        </tr>
+        <tr>
+          <td class="tier">7 · traps</td>
+          <td class="tests">Entity absent from the closed list</td>
+          <td class="ask">raw files from the SBND detector</td>
+          <td class="expect"><span class="refusal">Refuse — SBND belongs to a different experiment and has no partition here. Inventing one yields a query that runs and silently matches nothing.</span></td>
+        </tr>
+        <tr>
+          <td class="tier">7 · traps</td>
+          <td class="tests">Legal-but-pathological query shape</td>
+          <td class="ask">everything from ProtoDUNE horizontal drift</td>
+          <td class="expect">files where namespace = 'hd-protodune'<div class="refusal">…not the wildcard form, which expands to 22k partitions and times out</div></td>
+        </tr>
+        <tr>
+          <td class="tier">8 · refusal <span style="color:var(--faint)">(2)</span></td>
+          <td class="tests">Requests the language genuinely cannot express</td>
+          <td class="ask">delete all files from run 27731</td>
+          <td class="expect"><span class="refusal">Refuse — the DSL is read-only. Must not invent DDL.</span></td>
+        </tr>
+        <tr>
+          <td class="tier">9 · adherence <span style="color:var(--faint)">(1)</span></td>
+          <td class="tests">Format discipline under a conflicting instruction</td>
+          <td class="ask">list files from run 27731 and explain your reasoning step by step in detail before answering</td>
+          <td class="expect">files where core.runs in (27731)<div class="refusal">…still one JSON object, no chain-of-thought preamble</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:16px;" class="prose">
+    Tier 7 is where the field separated. Each trap has the same structure: the plausible
+    answer is a well-formed query containing one identifier that does not exist. Nothing
+    downstream catches that — a grammar check passes it, and the user sees an empty result
+    set rather than an error.
+  </p>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Per-model findings</h2></div>
+
+  <div class="card keep">
+    <h3>gemma-4-26b</h3>
+    <div class="stat-row">
+      <span class="stat"><span class="sk">overall</span><span class="sv">100%</span></span>
+      <span class="stat"><span class="sk">p50</span><span class="sv">0.31s</span></span>
+      <span class="stat"><span class="sk">p95</span><span class="sv">0.46s</span></span>
+      <span class="stat"><span class="sk">out tok</span><span class="sv">48</span></span>
+    </div>
+    <ul>
+      <li>Clean sweep, and the fastest by a wide margin — p95 under half a second on a 3.4k-token prompt.</li>
+      <li>Handled every advanced construct: set difference, union, intersection, both lineage directions, and sampling.</li>
+      <li>Told that one sampling function isn't installed, it substituted the available equivalent — <code>filter hash(3, 0)</code> — rather than refusing.</li>
+      <li>Terse explanations (48 output tokens median). Fine for us; a UI that leans on the explanation might prefer gpt-oss.</li>
+      <li><strong>Rejects <code>reasoning_effort</code></strong> with HTTP 400 — see the service-level note below.</li>
+    </ul>
+  </div>
+
+  <div class="card keep">
+    <h3>gpt-oss-120b</h3>
+    <div class="stat-row">
+      <span class="stat"><span class="sk">overall</span><span class="sv">100%</span></span>
+      <span class="stat"><span class="sk">p50</span><span class="sv">0.89s</span></span>
+      <span class="stat"><span class="sk">p95</span><span class="sv">1.47s</span></span>
+      <span class="stat"><span class="sk">out tok</span><span class="sv">253</span></span>
+    </div>
+    <ul>
+      <li>Also a clean sweep, with the best explanations in the field by a distance. On the missing-attribute trap it wrote: <em>"The request asked for beam energy = 7 GeV, but no metadata key for beam energy exists…"</em> — exactly what a user needs to see when a filter is silently dropped.</li>
+      <li>Refused both impossible asks with a correct reason, including noting the language is read-only when asked to delete.</li>
+      <li>The only model that <strong>accepts <code>reasoning_effort</code></strong>, making it the one model our production request body works with unmodified.</li>
+      <li>~5× gemma's output tokens. That's the cost of the better explanations, and a fair trade when the text is user-facing.</li>
+    </ul>
+  </div>
+
+  <div class="card cond">
+    <h3>nemotron-3-ultra-550b-nvfp4</h3>
+    <div class="stat-row">
+      <span class="stat"><span class="sk">overall</span><span class="sv">100%</span></span>
+      <span class="stat"><span class="sk">p50</span><span class="sv">2.19s</span></span>
+      <span class="stat"><span class="sk">p95</span><span class="sv">5.26s</span></span>
+      <span class="stat"><span class="sk">max</span><span class="sv">10.17s</span></span>
+    </div>
+    <ul>
+      <li>Scored as well as the leaders — no accuracy complaint at all.</li>
+      <li>But 7× gemma's p50 and 11× its p95, with a 10s worst case. In an interactive query builder that's the difference between instant and visibly waiting.</li>
+      <li><strong>Not stable across runs.</strong> The three-repeat check passed, but between our two full runs — same prompt, temperature 0 — it answered the sampling-function case differently: a refusal the first time, the correct <code>filter hash(3, 0)</code> the second. Worth investigating on your side whether batching or non-deterministic kernels explain it.</li>
+      <li>Our read: for this task, 550B buys nothing over 26B. It may well earn its place on harder workloads; it doesn't on this one.</li>
+    </ul>
+  </div>
+
+  <div class="card drop">
+    <h3>llama-4-scout-17b</h3>
+    <div class="stat-row">
+      <span class="stat"><span class="sk">overall</span><span class="sv">84%</span></span>
+      <span class="stat"><span class="sk">grounded</span><span class="sv">22/25</span></span>
+      <span class="stat"><span class="sk">p50</span><span class="sv">0.53s</span></span>
+    </div>
+    <p style="margin:12px 0 0;">Fast and format-obedient, but it failed every grounding trap — and each failure produces a query that <em>looks</em> correct:</p>
+    <ul>
+      <li><code>core.beam_energy = 7</code> — invented an attribute that does not exist in the schema. The query runs and silently matches nothing.</li>
+      <li><code>namespace = 'sbnd'</code> — invented a partition for an instrument that isn't in this catalog, instead of saying so.</li>
+      <li><code>filter every_nth(3)</code> — called a server function that isn't installed, so the query errors at execution. It also passed one argument where the function takes two.</li>
+      <li>One genuine syntax error — <code>files from iceberg where …</code>, using a partition name where the grammar requires a fully-qualified <code>partition:collection</code>. To its credit it <strong>repaired that correctly</strong> on the first retry when handed the parser message: 1/1 repairs succeeded.</li>
+    </ul>
+    <p style="margin:14px 0 0;">
+      Silent wrong answers are the one failure mode we cannot mitigate downstream. Our
+      validator catches bad syntax, but a well-formed query against an invented identifier
+      parses cleanly and returns an empty result that reads as a real finding.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Service-level findings</h2></div>
+
+  <div class="callout">
+    <span class="label">Actionable</span>
+    <p><strong>Three of four models reject <code>reasoning_effort</code> with HTTP 400</strong>, failing the
+    entire request:</p>
+    <pre>litellm.UnsupportedParamsError: openai does not support parameters:
+['reasoning_effort'], for model=gemma-4-26b-a4b-it.
+To drop these, set `litellm.drop_params=True` or for proxy: ...</pre>
+    <p>The error text names the fix. Setting <code>drop_params=True</code> on the proxy would let clients
+    send one request body across your whole roster instead of maintaining a per-model
+    parameter matrix. We had to add a config knob to work around it, and every other client
+    will hit the same wall. Only <code>gpt-oss-120b</code> accepts the parameter today.</p>
+  </div>
+
+  <ul class="plain">
+    <li><strong>Latency looks too good to be uncached.</strong> 0.31s p50 from a 26B model on a
+      3.4k-token prompt suggests prompt caching is doing real work — our system prompt is
+      static across requests, so that's plausible. If so it's a genuine strength worth
+      documenting; we'd like to know whether a cold first request is materially slower, since
+      that's what a user's first query of the day would hit.</li>
+    <li><strong><code>response_format: {"type":"json_object"}</code> works on all four models.</strong> That
+      matters a lot for us and is worth keeping as a compatibility guarantee.</li>
+    <li><strong><code>/v1/models</code> and token accounting both behave.</strong> Usage figures came back
+      populated on every request, which is what let us report output-token cost per model.</li>
+    <li><strong>Served model IDs differ from the advertised ones.</strong> The 400 above reveals
+      <code>gemma-4-26b</code> is actually served as <code>gemma-4-26b-a4b-it</code>. Not a problem, but a
+      version manifest would help us report issues precisely and notice when a model changes
+      underneath us.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Method and limits</h2></div>
+  <p class="prose">
+    Scoring uses the <em>production</em> system prompt, so these numbers describe the shipped
+    feature rather than a synthetic proxy. Validation is offline: we parse each query with the
+    DSL's real grammar and check every identifier against the closed lists. We deliberately do
+    <em>not</em> execute all 100 generated queries against the production catalog — a broad
+    query can run for minutes, which would dominate the runtime and load a shared service. The
+    function whitelist was derived from the live server once, which is how "that sampling
+    function isn't installed" is caught without a network call.
+  </p>
+  <p class="prose">Three honest limits:</p>
+  <ul class="plain">
+    <li>Semantic checks are exact-substring assertions, so a correct paraphrase we didn't
+      anticipate would be marked wrong. We hand-reviewed every failure in this report;
+      none was a false positive.</li>
+    <li>Single-request latency with no concurrency. Nothing here says how these models behave
+      under simultaneous load, which is probably the number you care about most.</li>
+    <li>25 cases is enough to separate the field, not enough for a tight confidence interval
+      on a 4-percentage-point difference.</li>
+  </ul>
+  <p class="prose" style="margin-top:18px;">The harness is open source and re-runnable. It reads
+    <code>/v1/models</code>, so it picks up roster changes automatically:</p>
+  <pre>git clone https://github.com/czczc/dunecat
+uv run scripts/llm-bench.py            # all models the endpoint lists
+uv run scripts/llm-bench.py gemma-4-26b gpt-oss-120b</pre>
+  <p class="prose">
+    Happy to re-run it against a candidate model or a changed proxy config, and to share the
+    raw per-case JSON output.
+  </p>
+</section>
+
+<footer>
+  Prepared from a run on 2026-08-14 against <span class="mono">inference0-api.sdcc.bnl.gov/v1</span>.
+  Workload: the natural-language query feature of <span class="mono">dunecat</span>, a web UI
+  over the DUNE experiment's file catalog.
+</footer>
+</div>
+</body>
+</html>
