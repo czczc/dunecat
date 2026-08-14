@@ -1,21 +1,28 @@
-"""English -> MQL translation via a local, OpenAI-compatible LLM.
+"""English -> MQL translation via an OpenAI-compatible LLM.
 
 The ``/api/query/from-english`` routes are thin wrappers over
 :func:`generate_mql`. We target an OpenAI-compatible chat endpoint
-(Ollama, vLLM, llama.cpp, ...) so "local" is just a base-URL config —
-swap ``DUNECAT_LLM_BASE_URL`` to move from a dev Ollama to a hub-hosted
-model without touching this code.
+(Ollama, vLLM, a hosted LiteLLM gateway, ...) so the endpoint is just a
+base-URL config — swap ``DUNECAT_LLM_BASE_URL`` to move from a dev Ollama
+to BNL's inference service without touching this code.
 
 Enablement is opt-in: the feature is OFF unless ``DUNECAT_LLM_BASE_URL``
 is set, so a plain hub stays dark until an operator points it at a model.
 
-Grounding follows the "start simple" decision: the namespace list is
-built live from ``detectors.yaml`` (a local read, always current), while
-the metadata keys and the slang->value vocabulary are hand-curated here.
-Injecting live facet values for tier/file_type is a deliberate follow-up.
+Two prompt modes:
 
-This module deliberately keeps error handling thin (happy path); the
-full failure taxonomy + fence-strip fallback land in a separate slice.
+* **advanced** (default) grounds the model in metacat's *own* Lark grammar
+  — the whole language, including set operations, provenance and filters.
+  Generated queries are checked with :mod:`dunecat.mql_lint` and one
+  repair round is attempted before giving up.
+* **subset** (``DUNECAT_LLM_ADVANCED=0``) is the original hand-curated
+  grammar-free prompt, which refuses advanced constructs. Kept as an
+  escape hatch for small local models that drown in the full grammar.
+
+Grounding: the namespace list is built live from ``detectors.yaml`` (a
+local read, always current), while the metadata keys and the
+slang->value vocabulary are hand-curated here. Injecting live facet
+values for tier/file_type is a deliberate follow-up.
 """
 
 from __future__ import annotations
@@ -27,12 +34,14 @@ import re
 
 import requests
 
+from dunecat import mql_lint
 from dunecat.web.detectors import load_detectors
 
 log = logging.getLogger("uvicorn.error")
 
 DEFAULT_MODEL = "qwen3.5:4b"
 DEFAULT_TIMEOUT_S = 45.0
+DEFAULT_REASONING_EFFORT = "none"
 
 
 class LLMError(Exception):
@@ -80,6 +89,29 @@ def _timeout() -> float:
     return float(raw) if raw else DEFAULT_TIMEOUT_S
 
 
+def _headers() -> dict[str, str]:
+    """Bearer auth for hosted gateways (BNL's LiteLLM proxy, OpenAI, ...).
+    Local Ollama/vLLM need no key, so the header is omitted when unset."""
+    key = os.environ.get("DUNECAT_LLM_API_KEY")
+    return {"Authorization": f"Bearer {key}"} if key else {}
+
+
+def _advanced() -> bool:
+    """Full-grammar prompt + lint/repair. On by default; set
+    DUNECAT_LLM_ADVANCED=0 to fall back to the curated-subset prompt."""
+    return os.environ.get("DUNECAT_LLM_ADVANCED", "1").strip() not in ("0", "false")
+
+
+def _reasoning_effort() -> str | None:
+    """qwen3.5 is a hybrid reasoning model; without "none" it spends 10-50s
+    emitting reasoning tokens before the JSON, and the "/no_think" prompt
+    switch is ignored -- so it must be a request param. But LiteLLM-fronted
+    models that don't support the param reject the whole request with HTTP
+    400, so an empty DUNECAT_LLM_REASONING_EFFORT omits the field."""
+    raw = os.environ.get("DUNECAT_LLM_REASONING_EFFORT", DEFAULT_REASONING_EFFORT)
+    return raw.strip() or None
+
+
 # --- grounding -------------------------------------------------------------
 
 # Curated metadata keys (hand-maintained). Values shown are real observed
@@ -102,6 +134,11 @@ def _namespaces_block() -> str:
     return "\n".join(lines)
 
 
+def known_namespaces() -> set[str]:
+    """Every namespace in detectors.yaml, for the lint whitelist."""
+    return {ns for det in load_detectors() for ns in det["namespaces"]}
+
+
 def _build_system_prompt() -> str:
     return f"""\
 You translate a physicist's plain-English request into a MetaCat Query \
@@ -117,7 +154,8 @@ DECISION PROCEDURE (follow in this exact order):
    and STOP. This is the ONLY case where mql is empty.
 2. Otherwise you MUST produce a query. A missing dataset or detector is
    normal and fine -- it is NEVER a reason to return empty mql:
-   - detector named, no dataset -> files from <namespace>:<dataset-name> where ...
+   - detector named, no dataset -> files from datasets matching NAMESPACE:* where ...
+     (substitute the real namespace for NAMESPACE, e.g. hd-protodune:*)
    - neither named            -> files where ...        (catalog-wide)
    A run number with no detector (e.g. "3 reco files from run 27362") is a
    plain catalog-wide query: files where core.runs in (27362) ...
@@ -130,9 +168,11 @@ HARD RULES (do not break these):
 - A dataset/detector is NOT required. If the user names neither, write a
   catalog-wide query: "files where <conditions>". A missing dataset or
   detector is NEVER a reason to return empty mql.
-- If the user names a detector but no dataset, use that detector's namespace
-  with the <dataset-name> placeholder. If the user gives an explicit dataset
-  name, use it verbatim (no brackets). Never guess dataset names.
+- NEVER write angle brackets in a query. An angle-bracket placeholder is a
+  SYNTAX ERROR that metacat rejects. If the user names a detector but no
+  dataset, match all of that namespace's datasets with a wildcard, e.g.
+  "files from datasets matching hd-protodune:*". If the user gives an explicit
+  dataset name, use it verbatim. Never guess dataset names.
 - ONLY return an EMPTY mql string when the request needs ADVANCED MQL not in
   the supported subset below (set operations like union/join/subtraction,
   parent/child provenance, sampling filters, regex dataset matching). In that
@@ -171,7 +211,7 @@ canonical value, use your best guess and flag the assumption in notes.
 EXAMPLES (each shows a different construct):
 
 User: raw files from run 27731 in ProtoDUNE horizontal drift
-{{"mql": "files from hd-protodune:<dataset-name> where core.runs in (27731) and core.data_tier = 'raw'", "notes": "Used the hd-protodune namespace. Left the dataset as a placeholder -- pick the dataset you want."}}
+{{"mql": "files from datasets matching hd-protodune:* where core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches every dataset in the hd-protodune namespace. Narrow it by naming a dataset."}}
 
 User: fully reconstructed data for runs 27731 and 27732
 {{"mql": "files where core.runs in (27731, 27732) and core.data_tier = 'full-reconstructed'", "notes": "No detector specified, so this searches the whole catalog. Add 'files from <ns>:<dataset>' to narrow it."}}
@@ -183,10 +223,110 @@ User: all files in the dataset np04_reco_v1 in hd-protodune-det-reco
 {{"mql": "files from hd-protodune-det-reco:np04_reco_v1", "notes": "Used the dataset name you gave verbatim."}}
 
 User: the first 10 raw files in iceberg, taken after April 2024
-{{"mql": "files from iceberg:<dataset-name> where core.data_tier = 'raw' and core.start_time > datetime(\\"2024-04-01\\") ordered limit 10", "notes": "Date via datetime(); ordered+limit for a deterministic first 10."}}
+{{"mql": "files from datasets matching iceberg:* where core.data_tier = 'raw' and core.start_time > datetime(\\"2024-04-01\\") ordered limit 10", "notes": "Date via datetime(); ordered+limit for a deterministic first 10."}}
 
 User: files that are in dataset A but not dataset B
 {{"mql": "", "notes": "This needs set subtraction, which is advanced MQL outside this tool's supported subset. See https://fermitools.github.io/metacat/mql.html"}}
+"""
+
+
+# --- advanced prompt (full grammar) ----------------------------------------
+
+# The grammar constrains syntax but names no filters -- `filter FNAME(...)`
+# accepts any identifier -- so the registered filters have to be spelled out.
+# This list is verified against the production server, not the MQL reference;
+# see mql_lint.VERIFIED_FILTERS.
+_FILTERS_BLOCK = """\
+filter sample(f)(<query>)    f is a fraction 0..1; keeps ~that fraction
+filter hash(n, i)(<query>)   keeps bucket i of n, by hash of the file name;
+                             different i never overlap"""
+
+_ADVANCED_EXAMPLES = """\
+User: files in hd-protodune:dsA but not in hd-protodune:dsB
+{"mql": "files from hd-protodune:dsA - files from hd-protodune:dsB", "notes": "Set subtraction with the - operator."}
+
+User: files from either hd-protodune:dsA or hd-protodune:dsB
+{"mql": "union(files from hd-protodune:dsA, files from hd-protodune:dsB)", "notes": "union() merges both file sets."}
+
+User: files present in both hd-protodune:dsA and hd-protodune:dsB
+{"mql": "join(files from hd-protodune:dsA, files from hd-protodune:dsB)", "notes": "join() is the intersection."}
+
+User: the parent files of the reco files in hd-protodune-det-reco:np04_reco_v1
+{"mql": "parents(files from hd-protodune-det-reco:np04_reco_v1)", "notes": "parents() walks provenance up one level; children() walks down."}
+
+User: a 10 percent sample of raw files from hd-protodune:dsA
+{"mql": "filter sample(0.1)(files from hd-protodune:dsA where core.data_tier = 'raw')", "notes": "sample(0.1) keeps roughly one file in ten."}
+
+User: files from hd-protodune:dsA that have no output status recorded
+{"mql": "files from hd-protodune:dsA where dune.output_status not present", "notes": "'not present' matches files missing the key entirely."}
+
+User: files from hd-protodune:dsA with run numbers between 27000 and 28000
+{"mql": "files from hd-protodune:dsA where core.runs in 27000:28000", "notes": "lo:hi is an inclusive range."}"""
+
+
+def _build_advanced_prompt() -> str:
+    """Ground the model in metacat's own grammar instead of a curated subset.
+
+    The grammar comes from the installed metacat package, so it always
+    matches the parser the server runs. It only constrains *syntax*, which
+    is why the namespace/key/filter lists below still matter.
+    """
+    return f"""\
+You translate a physicist's plain-English request into a MetaCat Query \
+Language (MQL) query for the DUNE data catalog.
+
+Respond with ONLY a JSON object, no prose around it:
+  {{"mql": "<the query, or empty string>", "notes": "<short explanation>"}}
+
+Every query you emit MUST parse against this grammar (Lark syntax). It is the
+authoritative definition of MQL -- prefer the simplest form that answers the
+request, and do not invent syntax that isn't here.
+
+--- BEGIN MQL GRAMMAR ---
+{mql_lint.grammar()}
+--- END MQL GRAMMAR ---
+
+The grammar accepts more than this server supports. Obey these too:
+
+- Emit a FILE query ("files ..."). A top-level "datasets ..." query is NOT
+  accepted by the endpoint we call, even though the grammar allows it. To
+  filter by dataset, use "files from datasets matching NAMESPACE:* where ...".
+- NEVER write angle brackets in a query. An angle-bracket placeholder is a
+  SYNTAX ERROR. When the user names a detector but no dataset, use the
+  wildcard form, e.g. "files from datasets matching hd-protodune:*".
+- NEVER invent a namespace. Use only the namespaces listed below.
+- NEVER invent a metadata key. Use only the keys listed below. If the request
+  needs a concept with no matching key, leave it out and say so in notes.
+- Never guess a dataset name. Use one only if the user gave it.
+- Only these external filters exist on this server:
+{_FILTERS_BLOCK}
+  Do NOT use any other filter name (every_nth, for example, is documented
+  upstream but is NOT installed here).
+- Return an empty mql string only if the request genuinely cannot be
+  expressed in MQL at all. Explain why in notes.
+
+NAMESPACES (grouped by detector; pick the namespace, not the detector name):
+{_namespaces_block()}
+
+METADATA KEYS (only these):
+{_METADATA_KEYS}
+
+VOCABULARY (map the physicist's shorthand to the canonical value):
+- "raw" -> core.data_tier = 'raw'
+- "reco", "reconstructed", "fully reconstructed", "full reco"
+      -> core.data_tier = 'full-reconstructed'
+If a term clearly refers to a data tier but you are unsure of the exact
+canonical value, use your best guess and flag the assumption in notes.
+
+EXAMPLES:
+
+User: raw files from run 27731 in ProtoDUNE horizontal drift
+{{"mql": "files from datasets matching hd-protodune:* where core.runs in (27731) and core.data_tier = 'raw'", "notes": "No dataset given, so this searches every dataset in the hd-protodune namespace."}}
+
+User: show me 3 files from run 27361
+{{"mql": "files where core.runs in (27361) limit 3", "notes": "Catalog-wide search; limit 3 caps the result."}}
+
+{_ADVANCED_EXAMPLES}
 """
 
 
@@ -210,32 +350,26 @@ def _parse_json_object(content: str) -> dict | None:
         return None
 
 
-def generate_mql(english: str) -> dict[str, str]:
-    """Translate one English request into {mql, notes}.
-
-    Raises a specific :class:`LLMError` subclass on failure; the caller
-    maps each to an HTTP status code.
-    """
+def _chat(messages: list[dict[str, str]]) -> dict:
+    """One round-trip to the chat endpoint, returning the parsed JSON object
+    the model was asked to produce."""
+    body = {
+        "model": _model(),
+        # Greedy decoding: this is faithful translation, not creative
+        # generation. At 0.1 the model intermittently (~50% on some
+        # borderline queries) talked itself into wrongly refusing a
+        # valid catalog-wide query; 0.0 makes it deterministic.
+        "temperature": 0.0,
+        "response_format": {"type": "json_object"},
+        "messages": messages,
+    }
+    if (effort := _reasoning_effort()) is not None:
+        body["reasoning_effort"] = effort
     try:
         resp = requests.post(
             f"{_base_url()}/chat/completions",
-            json={
-                "model": _model(),
-                # Greedy decoding: this is faithful translation, not creative
-                # generation. At 0.1 the model intermittently (~50% on some
-                # borderline queries) talked itself into wrongly refusing a
-                # valid catalog-wide query; 0.0 makes it deterministic.
-                "temperature": 0.0,
-                # qwen3.5 is a hybrid reasoning model; without this it spends
-                # 10-50s emitting reasoning tokens before the JSON. Must be a
-                # request param -- the "/no_think" prompt switch is ignored.
-                "reasoning_effort": "none",
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": _build_system_prompt()},
-                    {"role": "user", "content": english},
-                ],
-            },
+            json=body,
+            headers=_headers(),
             timeout=_timeout(),
         )
     except requests.Timeout as e:
@@ -249,6 +383,12 @@ def generate_mql(english: str) -> dict[str, str]:
     if resp.status_code == 404:
         raise LLMModelNotFound(_model())
     if resp.status_code >= 400:
+        # Hosted gateways explain themselves in the body (bad key, param the
+        # backing model doesn't support); log it or the 502 is undebuggable.
+        log.warning(
+            "llm: HTTP %s from %s: %s",
+            resp.status_code, _base_url(), resp.text[:300],
+        )
         raise LLMError(f"model endpoint returned HTTP {resp.status_code}")
 
     content = resp.json()["choices"][0]["message"]["content"]
@@ -256,7 +396,74 @@ def generate_mql(english: str) -> dict[str, str]:
     if parsed is None:
         log.warning("llm: unparseable response: %r", content[:500])
         raise LLMBadResponse("could not parse model response")
+    return parsed
+
+
+def _result_of(parsed: dict) -> dict:
     return {
         "mql": (parsed.get("mql") or "").strip(),
         "notes": (parsed.get("notes") or "").strip(),
     }
+
+
+def generate_mql(english: str) -> dict:
+    """Translate one English request into ``{mql, notes, warnings, parses}``.
+
+    In advanced mode the generated query is linted offline (see
+    :mod:`dunecat.mql_lint`) and one repair round is attempted if it fails
+    to parse. A query that still won't parse is returned as-is with the
+    parse error in ``warnings`` — the user gets to see and fix it, which
+    beats swallowing the attempt.
+
+    ``parses`` is the offline syntax verdict on whatever we ended up
+    returning. The UI uses it to decide whether it can go straight on to
+    running the query, so it's reported in both modes even though only
+    advanced mode lints for warnings and repairs.
+
+    Raises a specific :class:`LLMError` subclass on transport failures;
+    the caller maps each to an HTTP status code.
+    """
+    system = _build_advanced_prompt() if _advanced() else _build_system_prompt()
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": english},
+    ]
+    parsed = _chat(messages)
+    result = _result_of(parsed)
+    if not _advanced() or not result["mql"]:
+        return {
+            **result,
+            "warnings": [],
+            "parses": bool(result["mql"])
+            and mql_lint.syntax_error(result["mql"]) is None,
+        }
+
+    checked = mql_lint.lint(result["mql"], known_namespaces())
+    if checked["error"] is None:
+        return {**result, "warnings": checked["warnings"], "parses": True}
+
+    # One repair round: the parse error is precise and mechanical, exactly
+    # the kind of feedback a model fixes on the first retry.
+    log.info("llm: repairing unparseable MQL: %s", checked["error"])
+    messages += [
+        {"role": "assistant", "content": json.dumps(parsed)},
+        {
+            "role": "user",
+            "content": (
+                f"That query does not parse: {checked['error']}\n"
+                f"Fix it and reply in the same JSON format."
+            ),
+        },
+    ]
+    repaired = _result_of(_chat(messages))
+    if not repaired["mql"]:
+        return {
+            **result,
+            "warnings": [f"does not parse: {checked['error']}"],
+            "parses": False,
+        }
+    again = mql_lint.lint(repaired["mql"], known_namespaces())
+    warnings = list(again["warnings"])
+    if again["error"] is not None:
+        warnings.insert(0, f"does not parse: {again['error']}")
+    return {**repaired, "warnings": warnings, "parses": again["error"] is None}
