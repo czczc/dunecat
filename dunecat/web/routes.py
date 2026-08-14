@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from metacat.webapi import AuthenticationError, MCWebAPIError
 
-from dunecat import llm
+from dunecat import llm, mql_lint
 from dunecat.client import get_client as _raw_metacat_client
 from dunecat.files import build_mql
 from dunecat.filters import (
@@ -380,10 +380,27 @@ def query_run(req: _QueryRunRequest) -> dict[str, Any]:
     mql = req.mql.strip()
     if not mql:
         raise HTTPException(status_code=400, detail="mql is required")
-    paged_mql = f"({mql}) ordered skip {(req.page - 1) * req.page_size} limit {req.page_size}"
+    skip = (req.page - 1) * req.page_size
     client = _get_metacat_client()
     start = time.monotonic()
-    rows = [_file_row(item) for item in client.query(paged_mql)]
+    if mql_lint.breaks_when_wrapped(mql):
+        # metacat 4.1.4 fails when `ordered`/`skip` are layered on top of a
+        # `limit` over a compound query, so this one can't be wrapped at
+        # all — send it verbatim and page in Python. Costs the server-side
+        # pushdown, but these queries are self-limiting by construction.
+        rows = []
+        for i, item in enumerate(client.query(mql)):
+            if i < skip:
+                continue
+            rows.append(_file_row(item))
+            if len(rows) > req.page_size:
+                break
+        has_more = len(rows) > req.page_size
+        rows = rows[: req.page_size]
+    else:
+        paged_mql = f"({mql}) ordered skip {skip} limit {req.page_size}"
+        rows = [_file_row(item) for item in client.query(paged_mql)]
+        has_more = len(rows) == req.page_size
     log.info(
         "/api/query/run page=%d rows=%d took=%.2fs",
         req.page, len(rows), time.monotonic() - start,
@@ -398,7 +415,7 @@ def query_run(req: _QueryRunRequest) -> dict[str, Any]:
         "page": req.page,
         "page_size": req.page_size,
         "rows": rows,
-        "has_more": len(rows) == req.page_size,
+        "has_more": has_more,
     }
 
 
@@ -504,20 +521,50 @@ def query_count(req: _QueryRequest) -> dict[str, Any]:
 
 @app.post("/api/query/validate")
 def query_validate(req: _QueryRequest) -> dict[str, Any]:
+    """Probe the query: lint it offline, then fetch its first row.
+
+    The round-trip was already being paid to validate; returning the row
+    makes it a preview of what a full run produces.
+
+    ``(mql) limit 1`` is safe for every query shape — an outer `limit`
+    alone is fine even over a compound query; it's `ordered`/`skip` on top
+    of an inner limit that metacat chokes on (see query_run). The wrap
+    lets the server stop early instead of streaming a whole result set we
+    throw away.
+
+    ``matched`` distinguishes "valid, zero matches" from "invalid", which
+    a bare {ok} could not.
+    """
     mql = req.mql.strip()
     if not mql:
-        return {"ok": False, "error": "MQL is empty"}
+        return {"ok": False, "error": "MQL is empty", "warnings": []}
+    checked = mql_lint.lint(mql, llm.known_namespaces())
+    if checked["error"]:
+        return {"ok": False, "error": checked["error"], "warnings": []}
     client = _get_metacat_client()
+    start = time.monotonic()
+    row = None
     try:
-        for _ in client.query(mql, summary="count"):
+        for item in client.query(f"({mql}) limit 1"):
+            row = _file_row(item)
             break
     except MCWebAPIError as e:
-        return {"ok": False, "error": str(e)}
-    return {"ok": True}
+        return {"ok": False, "error": str(e), "warnings": checked["warnings"]}
+    elapsed = time.monotonic() - start
+    log.info(
+        "/api/query/validate matched=%s took=%.2fs", row is not None, elapsed
+    )
+    return {
+        "ok": True,
+        "matched": row is not None,
+        "row": row,
+        "warnings": checked["warnings"],
+        "elapsed_s": round(elapsed, 2),
+    }
 
 
 @app.post("/api/query/from-english")
-def query_from_english(req: _FromEnglishRequest) -> dict[str, str]:
+def query_from_english(req: _FromEnglishRequest) -> dict[str, Any]:
     if not llm.is_enabled():
         raise HTTPException(
             status_code=503,
@@ -540,7 +587,11 @@ def query_from_english(req: _FromEnglishRequest) -> dict[str, str]:
     except llm.LLMModelNotFound as e:
         raise HTTPException(
             status_code=502,
-            detail=f"Model {e.model!r} isn't available — run `ollama pull {e.model}`",
+            detail=(
+                f"Model {e.model!r} isn't available on the configured endpoint. "
+                f"Check DUNECAT_LLM_MODEL against GET "
+                f"$DUNECAT_LLM_BASE_URL/models."
+            ),
         )
     except llm.LLMBadResponse:
         raise HTTPException(
@@ -553,8 +604,9 @@ def query_from_english(req: _FromEnglishRequest) -> dict[str, str]:
             status_code=502, detail="Couldn't generate a query from that"
         )
     log.info(
-        "/api/query/from-english took=%.2fs mql=%r",
+        "/api/query/from-english took=%.2fs warnings=%d mql=%r",
         time.monotonic() - start,
+        len(result.get("warnings") or []),
         result["mql"][:120],
     )
     return result

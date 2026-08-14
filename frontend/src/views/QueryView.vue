@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   countQuery,
@@ -86,9 +86,10 @@ onMounted(async () => {
   loadPrefill();
   // Re-execute on entry when there's a saved query selected (so the
   // browser back button restores results) or when we were navigated
-  // here from a cross-page link that pre-populated the MQL.
+  // here from a cross-page link that pre-populated the MQL. Straight to
+  // runFull: restoring results shouldn't stop at a preview.
   if ((currentSavedId.value != null || cameWithPrefill) && mql.value.trim()) {
-    onRun();
+    runFull();
   }
 });
 
@@ -162,6 +163,7 @@ const english = ref('');
 const generating = ref(false);
 const generateError = ref(null);
 const generateNotes = ref('');
+const generateWarnings = ref([]);
 
 async function onGenerate() {
   const text = english.value.trim();
@@ -169,13 +171,24 @@ async function onGenerate() {
   generating.value = true;
   generateError.value = null;
   generateNotes.value = '';
+  generateWarnings.value = [];
   try {
-    const { mql: generated, notes } = await queryFromEnglish(text);
+    const { mql: generated, notes, warnings, parses } = await queryFromEnglish(text);
     generateNotes.value = notes || '';
+    generateWarnings.value = warnings || [];
     if (generated) {
       // Clicking Generate is itself the intent to replace; just do it.
       mql.value = generated;
       validateResult.value = null;
+      // The server already parsed it offline against metacat's grammar, so
+      // when it's clean go straight on to the result — Generate then Run is
+      // two clicks for what is one intent. A query that doesn't parse stays
+      // in the editor with the reason shown, waiting to be fixed.
+      if (parses) {
+        // Let the mql watcher clear the stale preview before we set a new one.
+        await nextTick();
+        await onRun();
+      }
     }
   } catch (e) {
     generateError.value = e.message;
@@ -183,6 +196,10 @@ async function onGenerate() {
     generating.value = false;
   }
 }
+
+// Any edit invalidates the preview — showing a row fetched for different MQL
+// would be worse than showing nothing.
+watch(mql, () => { probeResult.value = null; });
 
 async function onValidate() {
   validating.value = true;
@@ -201,7 +218,35 @@ function onClear() {
   validateResult.value = null;
 }
 
+// Probe-before-run, on by default: one metacat round-trip that returns the
+// query's first row, so you see a real result before committing to a full run
+// over a large dataset. The probe is also the only layer that catches what the
+// offline lint can't (unregistered filters, server-side execution errors).
+const validateBeforeRun = ref(true);
+const probing = ref(false);
+const probeResult = ref(null);  // null | {ok, matched, row, warnings, elapsed_s, error}
+const probeSelected = ref(new Set());  // FileTable requires it; unused here
+
 async function onRun() {
+  if (validateBeforeRun.value) {
+    probing.value = true;
+    probeResult.value = null;
+    try {
+      probeResult.value = await validateQuery(mql.value);
+    } catch (e) {
+      probeResult.value = { ok: false, error: e.message };
+    } finally {
+      probing.value = false;
+    }
+    // Either way we stop here: a bad query needs fixing, a good one needs
+    // the user to look at the row and confirm.
+    return;
+  }
+  await runFull();
+}
+
+async function runFull() {
+  probeResult.value = null;
   const token = ++runToken;
   page.value = 1;
   await doFetch(token);
@@ -404,6 +449,9 @@ function fmtBytes(n) {
           </div>
           <div v-if="generateError" class="validate-error">{{ generateError }}</div>
           <div v-else-if="generateNotes" class="ask-notes">{{ generateNotes }}</div>
+          <ul v-if="generateWarnings.length" class="warn-list">
+            <li v-for="w in generateWarnings" :key="w">⚠ {{ w }}</li>
+          </ul>
         </div>
 
         <!-- Editor -->
@@ -438,6 +486,13 @@ function fmtBytes(n) {
           >{{ validateResult.error }}</div>
           <div v-if="saveError" class="validate-error">{{ saveError }}</div>
           <div class="editor-actions">
+            <label
+              class="check"
+              title="Fetch the query's first row from metacat and show it before running the full query"
+            >
+              <input v-model="validateBeforeRun" type="checkbox" />
+              Preview first row before running
+            </label>
             <button
               class="btn"
               :disabled="!mql"
@@ -465,11 +520,48 @@ function fmtBytes(n) {
             </button>
             <button
               class="btn btn-primary"
-              :disabled="running || !mql.trim()"
+              :disabled="running || probing || !mql.trim()"
               @click="onRun"
             >
               <template v-if="running">Running… {{ runElapsed.toFixed(1) }}s</template>
+              <template v-else-if="probing">Previewing…</template>
+              <template v-else-if="validateBeforeRun">▶ Preview</template>
               <template v-else>▶ Run query</template>
+            </button>
+          </div>
+        </div>
+
+        <!-- Probe preview: first row, before committing to the full run -->
+        <div v-if="probeResult" class="card">
+          <div class="card-head">
+            <span>Preview</span>
+            <span v-if="probeResult.elapsed_s != null" class="probe-time">
+              {{ probeResult.elapsed_s }}s
+            </span>
+          </div>
+          <div v-if="!probeResult.ok" class="validate-error">{{ probeResult.error }}</div>
+          <template v-else>
+            <ul v-if="probeResult.warnings?.length" class="warn-list">
+              <li v-for="w in probeResult.warnings" :key="w">⚠ {{ w }}</li>
+            </ul>
+            <FileTable
+              v-if="probeResult.matched"
+              :rows="[probeResult.row]"
+              v-model:selected="probeSelected"
+              @open-file="openFile"
+            />
+            <div v-else class="probe-empty">
+              Valid query, but it matches no files.
+            </div>
+          </template>
+          <div class="editor-actions">
+            <button class="btn" @click="probeResult = null">Dismiss</button>
+            <button
+              class="btn btn-primary"
+              :disabled="!probeResult.ok || running"
+              @click="runFull"
+            >
+              ▶ Run full query
             </button>
           </div>
         </div>
@@ -689,6 +781,42 @@ function fmtBytes(n) {
   border-top: 1px solid var(--rule);
   background: var(--page);
 }
+
+/* Preview-before-run */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;          /* pin left, buttons stay right */
+  font-size: 12.5px;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+}
+.check input { cursor: pointer; }
+.probe-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.probe-empty {
+  padding: 14px;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.warn-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--rule);
+  background: var(--warn-bg);
+  font-size: 11.5px;
+  color: var(--warn);
+  line-height: 1.5;
+}
+.ask-card .warn-list { border-top: none; padding: 8px 0 0; }
 
 /* English -> MQL */
 .ask-card { padding: 12px 14px; }

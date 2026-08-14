@@ -359,7 +359,9 @@ class _FakeQueryClient:
         if summary == "count":
             yield {"count": len(self._items), "total_size": 0}
             return
-        # Crude parse of "(...) ordered skip N limit M" to slice the fixture
+        # Crude parse of "(...) ordered skip N [limit M]" to slice the
+        # fixture. Compound queries get no `limit` (metacat crashes on it),
+        # so skip-only has to be handled too.
         skip = 0
         limit = len(self._items)
         if "skip" in mql and "limit" in mql:
@@ -367,6 +369,8 @@ class _FakeQueryClient:
             parts = tail.split()
             skip = int(parts[1])
             limit = int(parts[3])
+        elif "skip" in mql:
+            skip = int(mql.split("skip ", 1)[1].split()[0])
         for item in self._items[skip : skip + limit]:
             yield item
 
@@ -644,6 +648,51 @@ def test_query_run_pages_via_skip_limit(monkeypatch, client):
     assert "skip 100 limit 100" in fake.queries[0]["mql"]
 
 
+def test_query_run_keeps_pushdown_for_compound_without_limit(monkeypatch, client):
+    """A set operation with no inner `limit` wraps fine — don't give up the
+    server-side skip/limit for it."""
+    items = [_file(f"u{i}.root") for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+    body = client.post(
+        "/api/query/run",
+        json={"mql": "files from ns:a - files from ns:b", "page": 2, "page_size": 100},
+    ).json()
+    assert "skip 100 limit 100" in fake.queries[0]["mql"]
+    assert len(body["rows"]) == 100
+    assert body["rows"][0]["name"] == "u100.root"
+
+
+def test_query_run_sends_limit_over_compound_verbatim(monkeypatch, client):
+    """metacat 4.1.4 fails on `ordered`/`skip` layered over a `limit` that
+    sits on a compound query, so this shape can't be wrapped at all — it
+    goes out as-is and is paged in Python."""
+    items = [_file(f"u{i}.root") for i in range(250)]
+    fake = _install_query_client(monkeypatch, items)
+    mql = "files from ns:a - files from ns:b limit 200"
+    body = client.post(
+        "/api/query/run", json={"mql": mql, "page": 2, "page_size": 100}
+    ).json()
+    assert fake.queries[0]["mql"] == mql, "must not be rewritten"
+    assert len(body["rows"]) == 100
+    assert body["rows"][0]["name"] == "u100.root", "skip applied client-side"
+    assert body["has_more"] is True
+
+
+def test_query_run_verbatim_last_page_reports_no_more(monkeypatch, client):
+    items = [_file(f"u{i}.root") for i in range(150)]
+    _install_query_client(monkeypatch, items)
+    body = client.post(
+        "/api/query/run",
+        json={
+            "mql": "parents(files from ns:a) limit 200",
+            "page": 2,
+            "page_size": 100,
+        },
+    ).json()
+    assert len(body["rows"]) == 50
+    assert body["has_more"] is False
+
+
 def test_query_run_empty_mql_400(client):
     response = client.post("/api/query/run", json={"mql": "   "})
     assert response.status_code == 400
@@ -665,17 +714,56 @@ def test_query_count_returns_total_and_size(monkeypatch, client):
     assert body["total_size"] == 1_690_000_000_000
 
 
-def test_query_validate_happy_path(monkeypatch, client):
+def test_query_validate_previews_the_first_row(monkeypatch, client):
     class FakeClient:
         def query(self, mql, summary=None, **kw):
-            yield {"count": 0, "total_size": 0}
+            # `(...) limit 1` lets the server stop early; an outer limit on
+            # its own is safe for every query shape.
+            assert mql == "(files from ns:ds) limit 1"
+            yield {"namespace": "ns", "name": "a.root", "fid": "1", "size": 10}
+            yield {"namespace": "ns", "name": "b.root", "fid": "2", "size": 20}
 
     monkeypatch.setattr(
         "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
     )
     response = client.post("/api/query/validate", json={"mql": "files from ns:ds"})
     assert response.status_code == 200
-    assert response.json() == {"ok": True}
+    body = response.json()
+    assert body["ok"] is True
+    assert body["matched"] is True
+    assert body["row"]["name"] == "a.root"  # stopped after the first row
+
+
+def test_query_validate_distinguishes_valid_from_zero_matches(monkeypatch, client):
+    class FakeClient:
+        def query(self, mql, summary=None, **kw):
+            return iter([])
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
+    )
+    body = client.post(
+        "/api/query/validate", json={"mql": "files from ns:ds"}
+    ).json()
+    assert body["ok"] is True
+    assert body["matched"] is False
+    assert body["row"] is None
+
+
+def test_query_validate_rejects_bad_syntax_without_calling_metacat(monkeypatch, client):
+    """The offline lint short-circuits, so a typo costs no round-trip."""
+
+    def boom():
+        raise AssertionError("should not reach metacat")
+
+    monkeypatch.setattr(
+        "dunecat.web.routes._get_metacat_client", boom, raising=False
+    )
+    body = client.post(
+        "/api/query/validate", json={"mql": "files from ns:<dataset-name>"}
+    ).json()
+    assert body["ok"] is False
+    assert "'<'" in body["error"]
 
 
 def test_query_validate_returns_ok_false_on_mql_error(monkeypatch, client):
@@ -694,7 +782,9 @@ def test_query_validate_returns_ok_false_on_mql_error(monkeypatch, client):
     monkeypatch.setattr(
         "dunecat.web.routes._get_metacat_client", lambda: FakeClient(), raising=False
     )
-    response = client.post("/api/query/validate", json={"mql": "bogus"})
+    # Syntactically fine, so the lint passes and the server gets to object —
+    # which is the path this test covers.
+    response = client.post("/api/query/validate", json={"mql": "files from ns:ds"})
     assert response.status_code == 200  # validate never raises 400 — caller wants the message
     body = response.json()
     assert body["ok"] is False
