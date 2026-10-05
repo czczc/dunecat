@@ -20,6 +20,8 @@ import os
 import threading
 from typing import Any
 
+from dunecat.web.rucio import ca_cert_path
+
 from .auth.bearer import bearer_for
 from .auth.session import User
 
@@ -82,7 +84,7 @@ def _replica_client_for(user: User):
 
     rucio_host = os.environ.get("RUCIO_HOST", "https://dune-rucio.fnal.gov")
     auth_host = os.environ.get("RUCIO_AUTH_HOST", rucio_host)
-    ca_cert = os.environ.get("RUCIO_CA_CERT", "/etc/ssl/cert.pem")
+    ca_cert = ca_cert_path()
 
     bearer = bearer_for(user)
 

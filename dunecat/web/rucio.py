@@ -67,6 +67,28 @@ def _group_replicas(pfns: dict[str, Any]) -> list[dict[str, Any]]:
     )
 
 
+# System CA bundles, first match wins: macOS/BSD, Debian/Ubuntu, RHEL/Alma.
+_CA_BUNDLES = (
+    "/etc/ssl/cert.pem",
+    "/etc/ssl/certs/ca-certificates.crt",
+    "/etc/pki/tls/certs/ca-bundle.crt",
+)
+
+
+def ca_cert_path() -> str:
+    """CA bundle for talking to Rucio: ``RUCIO_CA_CERT`` if set, else the
+    first system bundle that exists, else certifi's."""
+    explicit = os.environ.get("RUCIO_CA_CERT")
+    if explicit:
+        return explicit
+    for path in _CA_BUNDLES:
+        if os.path.isfile(path):
+            return path
+    import certifi
+
+    return certifi.where()
+
+
 def _ensure_config() -> None:
     """Write ``~/.dunecat/rucio/etc/rucio.cfg`` from env vars unless RUCIO_HOME
     is already set by the operator. Idempotent."""
@@ -90,7 +112,7 @@ def _ensure_config() -> None:
             auth_host = {auth_host}
             auth_type = oidc
             account = {account}
-            ca_cert = /etc/ssl/cert.pem
+            ca_cert = {ca_cert_path()}
         """)
     )
     os.environ["RUCIO_HOME"] = str(cfg_dir)
