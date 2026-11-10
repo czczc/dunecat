@@ -34,6 +34,7 @@ class RucioError(Exception):
 
 
 _client = None  # cached ReplicaClient
+_did_client = None  # cached DIDClient (rule lookups)
 
 # Disk sites before tape sites when ordering the grouped result.
 _TYPE_RANK = {"DISK": 0, "TAPE": 1}
@@ -148,8 +149,8 @@ def _token_path() -> Path:
     return Path(raw)
 
 
-def _get_client():
-    global _client
+def _prepare() -> None:
+    """Config + fresh bearer + token-file check, shared by every client."""
     _ensure_config()
     # Top up the bearer in-memory expiry cache before we hand out a client.
     # Silent re-mint when the vault token is alive; raises VaultExpiredError
@@ -162,23 +163,40 @@ def _get_client():
         # Other transient renewal failure — still try the existing token if
         # the file is there; otherwise propagate.
         log.warning("rucio: bearer renew failed (%s); falling back to disk", e)
-    if _client is not None:
-        return _client
+    if _client is not None or _did_client is not None:
+        return
     token = _token_path()
     if not token.exists():
         raise RucioAuthError(
             f"Bearer token file {token} not found. Run: {HTGETTOKEN_CMD}"
         )
-    from rucio.client.replicaclient import ReplicaClient
 
-    _client = ReplicaClient()
+
+def _get_client():
+    global _client
+    _prepare()
+    if _client is None:
+        from rucio.client.replicaclient import ReplicaClient
+
+        _client = ReplicaClient()
     return _client
 
 
+def _get_did_client():
+    global _did_client
+    _prepare()
+    if _did_client is None:
+        from rucio.client.didclient import DIDClient
+
+        _did_client = DIDClient()
+    return _did_client
+
+
 def reset_client() -> None:
-    """Drop the cached client so the next call re-reads the token file."""
-    global _client
+    """Drop the cached clients so the next call re-reads the token file."""
+    global _client, _did_client
     _client = None
+    _did_client = None
 
 
 def list_replicas(scope: str, name: str) -> dict[str, Any] | None:
@@ -221,3 +239,55 @@ def list_replicas(scope: str, name: str) -> dict[str, Any] | None:
         "adler32": r.get("adler32"),
         "replicas": replicas,
     }
+
+
+_RULE_FIELDS = (
+    "id",
+    "account",
+    "scope",
+    "name",
+    "state",
+    "locks_ok_cnt",
+    "locks_replicating_cnt",
+    "locks_stuck_cnt",
+    "rse_expression",
+    "copies",
+    "bytes",
+    "expires_at",
+    "created_at",
+)
+
+
+def rule_rows(rules: Any) -> list[dict[str, Any]]:
+    """Trim Rucio rule records to the fields `rucio rule list` shows.
+    Timestamps become ``YYYY-MM-DD HH:MM:SS`` strings (UTC)."""
+    rows = []
+    for rule in rules:
+        row = {k: rule.get(k) for k in _RULE_FIELDS}
+        for k in ("expires_at", "created_at"):
+            if row[k] is not None:
+                row[k] = str(row[k])
+        rows.append(row)
+    return rows
+
+
+def list_rules(scope: str, name: str) -> list[dict[str, Any]]:
+    """Replication rules on one DID (dataset or container). Empty when
+    the DID has no rules or Rucio doesn't know it."""
+    client = _get_did_client()
+    try:
+        return rule_rows(client.list_did_rules(scope, name))
+    except Exception as e:  # noqa: BLE001  — narrow below
+        from rucio.common.exception import (  # noqa: PLC0415
+            CannotAuthenticate,
+            DataIdentifierNotFound,
+        )
+
+        if isinstance(e, CannotAuthenticate):
+            reset_client()
+            raise RucioAuthError(
+                f"Rucio rejected token ({e}). Run: {HTGETTOKEN_CMD}"
+            ) from e
+        if isinstance(e, DataIdentifierNotFound):
+            return []
+        raise RucioError(str(e)) from e

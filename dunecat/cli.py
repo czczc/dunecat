@@ -459,6 +459,83 @@ def replicas_cmd(
         raise typer.Exit(1)
 
 
+_RULE_HEADERS = (
+    "ID", "ACCOUNT", "SCOPE:NAME", "STATE[OK/REPL/STUCK]", "RSE_EXPRESSION",
+    "COPIES", "SIZE", "EXPIRES (UTC)", "CREATED (UTC)",
+)
+
+
+def _rule_cells(rule: dict[str, Any]) -> tuple[str, ...]:
+    state = (
+        f"{rule['state']}[{rule['locks_ok_cnt']}/"
+        f"{rule['locks_replicating_cnt']}/{rule['locks_stuck_cnt']}]"
+    )
+    return (
+        rule["id"],
+        rule["account"],
+        f"{rule['scope']}:{rule['name']}",
+        state,
+        rule["rse_expression"],
+        str(rule["copies"]),
+        "" if rule["bytes"] is None else str(rule["bytes"]),
+        rule["expires_at"] or "",
+        rule["created_at"] or "",
+    )
+
+
+@app.command("rules")
+def rules_cmd(
+    dids: list[str] | None = typer.Argument(
+        None,
+        help=(
+            "Dataset DIDs as 'NAMESPACE:NAME'. When omitted, DIDs are read "
+            "from stdin one per line."
+        ),
+    ),
+    json_out: bool = typer.Option(
+        False, "--json", help="Emit JSONL: one object per DID with its rules."
+    ),
+) -> None:
+    """List the Rucio replication rules on datasets.
+
+    Prints the same table as `rucio rule list --did`. Uses the bearer
+    token from `dunecat login`.
+    """
+    from .web import auth
+    from .web.rucio import RucioAuthError, RucioError, list_rules
+
+    load_dotenv()
+    auth.prime()
+    os.environ["BEARER_TOKEN_FILE"] = str(auth._bearer_path())
+
+    if not dids:
+        dids = [line.strip() for line in sys.stdin if line.strip()]
+    rows: list[tuple[str, ...]] = []
+    for did in dids:
+        if ":" not in did:
+            typer.echo(f"not a DID (expected NAMESPACE:NAME): {did}", err=True)
+            raise typer.Exit(2)
+        scope, name = did.split(":", 1)
+        try:
+            rules = list_rules(scope, name)
+        except RucioAuthError as e:
+            typer.echo(str(e), err=True)
+            raise typer.Exit(2)
+        except RucioError as e:
+            typer.echo(f"rucio error for {did}: {e}", err=True)
+            raise typer.Exit(1)
+        if json_out:
+            typer.echo(json.dumps({"did": did, "rules": rules}))
+            continue
+        if not rules:
+            typer.echo(f"no rules: {did}", err=True)
+        rows.extend(_rule_cells(r) for r in rules)
+    if rows:
+        widths = [max(len(c) for c in col) for col in zip(_RULE_HEADERS, *rows)]
+        for line in (_RULE_HEADERS, *rows):
+            typer.echo("  ".join(c.ljust(w) for c, w in zip(line, widths)).rstrip())
+
+
 @dataset_app.command("files")
 def dataset_files(
     did: str = typer.Argument(..., help="Dataset DID as 'NAMESPACE:NAME'."),

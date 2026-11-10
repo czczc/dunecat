@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getDataset, getFiles, getFilesCount } from '../api.js';
+import { getDataset, getFiles, getFilesCount, getRules } from '../api.js';
 import { loadDetectors, nav } from '../composables/useNav.js';
 import { useFileIdCopy } from '../composables/useFileIdCopy.js';
 import FileTable from '../components/FileTable.vue';
@@ -128,7 +128,36 @@ async function fetchDataset() {
   }
 }
 
+// Rucio replication rules: looked up on demand, never cached.
+const rules = ref(null);            // array of rule rows once loaded
+const rulesLoading = ref(false);
+const rulesError = ref(null);
+const rulesOpen = ref(false);
+
+async function toggleRules() {
+  if (rulesOpen.value) {
+    rulesOpen.value = false;
+    return;
+  }
+  rulesOpen.value = true;
+  if (rules.value || rulesLoading.value) return;
+  const forDid = did.value;
+  rulesLoading.value = true;
+  rulesError.value = null;
+  try {
+    const r = await getRules(forDid);
+    if (forDid === did.value) rules.value = r.rules;
+  } catch (e) {
+    if (forDid === did.value) rulesError.value = e;
+  } finally {
+    rulesLoading.value = false;
+  }
+}
+
 watch(did, () => {
+  rules.value = null;
+  rulesError.value = null;
+  rulesOpen.value = false;
   fetchDataset();
   refreshAll();
 });
@@ -196,6 +225,17 @@ function fmtTimestampLong(ts) {
   if (ts == null) return '—';
   const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
   return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+}
+function fmtBytes(n) {
+  if (n == null) return '—';
+  const units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'];
+  let i = 0;
+  let v = n;
+  while (v >= 1000 && i < units.length - 1) {
+    v /= 1000;
+    i += 1;
+  }
+  return `${i === 0 ? v : v.toFixed(2)} ${units[i]}`;
 }
 function fmtBool(b) {
   return b ? 'yes' : 'no';
@@ -266,6 +306,61 @@ function fmtMetaValue(v) {
 
       <!-- Main: file table -->
       <section class="main">
+        <div class="card">
+          <div class="card-head">
+            <span>
+              Rucio rules
+              <span v-if="rules" class="head-meta">· {{ rules.length }}</span>
+            </span>
+            <button class="btn btn-small" @click="toggleRules">
+              {{ rulesOpen ? 'Hide' : (rules ? 'Show' : 'Look up') }}
+            </button>
+          </div>
+          <template v-if="rulesOpen">
+            <div v-if="rulesLoading" class="card-empty">Looking up rules…</div>
+            <div v-else-if="rulesError" class="rules-error">
+              <div class="error-title">
+                {{ rulesError.status === 401 ? 'Rucio auth' : 'Rucio error' }}
+              </div>
+              <div class="error-detail">{{ rulesError.message }}</div>
+            </div>
+            <div v-else-if="rules?.length" class="rules-scroll">
+              <table class="rules-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Account</th>
+                    <th title="Rule state, with file locks OK / replicating / stuck">
+                      State [OK/REPL/STUCK]
+                    </th>
+                    <th>RSE expression</th>
+                    <th class="num">Copies</th>
+                    <th class="num">Size</th>
+                    <th>Expires (UTC)</th>
+                    <th>Created (UTC)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in rules" :key="r.id">
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.account }}</td>
+                    <td>
+                      <span class="rule-state" :class="`state-${(r.state || '').toLowerCase()}`">{{ r.state }}</span>
+                      [{{ r.locks_ok_cnt }}/{{ r.locks_replicating_cnt }}/{{ r.locks_stuck_cnt }}]
+                    </td>
+                    <td>{{ r.rse_expression }}</td>
+                    <td class="num">{{ r.copies }}</td>
+                    <td class="num" :title="r.bytes != null ? `${fmtNum(r.bytes)} bytes` : ''">{{ fmtBytes(r.bytes) }}</td>
+                    <td>{{ r.expires_at || '—' }}</td>
+                    <td>{{ r.created_at || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="card-empty">No Rucio rules for this dataset.</div>
+          </template>
+        </div>
+
         <div v-if="error" class="error-card">
           <div class="error-title">Couldn't load files</div>
           <div class="error-detail">{{ error }}</div>
@@ -460,7 +555,73 @@ function fmtMetaValue(v) {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background: var(--ink); border-color: var(--ink); color: white; }
 
+.btn-small { height: 22px; padding: 0 8px; font-size: 11px; }
+
 .main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* Rucio rules card */
+.card {
+  background: var(--page);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.0px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.head-meta {
+  font-weight: 400;
+  color: var(--dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.card-empty {
+  padding: 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 12.5px;
+  color: var(--faint);
+  font-style: italic;
+}
+.rules-error {
+  padding: 12px 14px;
+  background: var(--bad-bg);
+  border-top: 1px solid var(--bad);
+}
+.rules-scroll { overflow-x: auto; border-top: 1px solid var(--rule); }
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.rules-table th {
+  padding: 7px 14px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+  border-bottom: 1px solid var(--rule);
+}
+.rules-table td { padding: 7px 14px; border-top: 1px solid var(--rule); }
+.rules-table tbody tr:first-child td { border-top: none; }
+.rules-table .num { text-align: right; }
+.rule-state { font-weight: 600; }
+.rule-state.state-ok { color: var(--good); }
+.rule-state.state-replicating { color: var(--warn); }
+.rule-state.state-stuck { color: var(--bad); }
 
 /* Pager */
 .pager {

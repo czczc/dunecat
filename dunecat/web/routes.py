@@ -1061,6 +1061,26 @@ def get_replicas(did: str = Query(..., description="scope:name DID")) -> dict[st
     return {"cached": False, **body}
 
 
+@app.get("/api/rules")
+def get_rules(did: str = Query(..., description="scope:name DID")) -> dict[str, Any]:
+    """Rucio replication rules on one dataset DID. Not cached: rule state
+    changes while replication is in progress."""
+    if ":" not in did:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+    scope, name = did.split(":", 1)
+    if not scope or not name:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+
+    try:
+        rules = rucio_mod.list_rules(scope, name)
+    except rucio_mod.RucioAuthError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except rucio_mod.RucioError as e:
+        log.warning("/api/rules did=%s: rucio error: %s", did, e)
+        raise HTTPException(status_code=502, detail=f"Rucio error: {e}")
+    return {"rules": rules}
+
+
 @app.get("/api/dataset")
 def get_dataset(did: str = Query(...)) -> dict[str, Any]:
     client = _get_metacat_client()

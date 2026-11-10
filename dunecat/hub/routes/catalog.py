@@ -419,6 +419,38 @@ def get_replicas(
     return {"cached": False, **body}
 
 
+@router.get("/api/rules")
+def get_rules(
+    did: str = Query(..., description="scope:name DID"),
+    user: User = Depends(current_user),
+) -> dict[str, Any]:
+    """Rucio replication rules on one dataset DID, as the requesting
+    user. Not cached: rule state changes while replication is in progress."""
+    if ":" not in did:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+    scope, name = did.split(":", 1)
+    if not scope or not name:
+        raise HTTPException(status_code=400, detail="did must be 'scope:name'")
+
+    try:
+        rules = with_timeout(
+            hub_rucio.list_rules_for,
+            user,
+            scope,
+            name,
+            timeout=RUCIO_TIMEOUT_S,
+            label=f"rucio list_did_rules {did}",
+        )
+    except HTTPException:
+        raise
+    except hub_rucio.RucioAuthError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except hub_rucio.RucioError as e:
+        log.warning("/api/rules did=%s: rucio error: %s", did, e)
+        raise HTTPException(status_code=502, detail=f"Rucio error: {e}")
+    return {"rules": rules}
+
+
 @router.get("/api/dataset")
 def get_dataset(
     did: str = Query(...),

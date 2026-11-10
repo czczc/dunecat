@@ -296,6 +296,39 @@ def test_replicas_endpoint_with_mocked_rucio(client):
     assert r.status_code == 404
 
 
+def test_rules_endpoint_with_mocked_rucio(client):
+    """/api/rules: rules returned, empty for an unknown DID, 401 on
+    auth failure, 400 on a malformed DID. Never cached."""
+    _drive_login(client, sub="uuid-rita", credkey="rita")
+
+    rule = {"id": "abc", "state": "OK", "rse_expression": "RSE_X"}
+    with patch(
+        "dunecat.hub.rucio.list_rules_for", return_value=[rule]
+    ) as mocked:
+        r1 = client.get("/api/rules", params={"did": "ns:ds"})
+        r2 = client.get("/api/rules", params={"did": "ns:ds"})
+    assert r1.status_code == 200, r1.text
+    assert r1.json() == {"rules": [rule]}
+    assert r2.json() == {"rules": [rule]}
+    assert mocked.call_count == 2  # no caching
+
+    with patch("dunecat.hub.rucio.list_rules_for", return_value=[]):
+        r = client.get("/api/rules", params={"did": "ns:gone"})
+    assert r.status_code == 200
+    assert r.json() == {"rules": []}
+
+    from dunecat.hub.rucio import RucioAuthError
+    with patch(
+        "dunecat.hub.rucio.list_rules_for",
+        side_effect=RucioAuthError("bearer rejected"),
+    ):
+        r = client.get("/api/rules", params={"did": "ns:ds"})
+    assert r.status_code == 401
+    assert "bearer rejected" in r.json()["detail"]
+
+    assert client.get("/api/rules", params={"did": "no-colon"}).status_code == 400
+
+
 def test_replicas_validates_did_shape(client):
     _drive_login(client, sub="uuid-gina", credkey="gina")
     for bad_did in ("missing-colon", ":no-scope", "no-name:"):
@@ -436,6 +469,7 @@ def test_catalog_routes_require_auth(client):
         ("/api/file?did=x:y", "GET"),
         ("/api/files?dataset=x:y", "GET"),
         ("/api/replicas?did=x:y", "GET"),
+        ("/api/rules?did=x:y", "GET"),
         ("/api/queries", "GET"),
         ("/api/query/run", "POST"),
     ]:

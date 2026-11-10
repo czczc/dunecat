@@ -1033,3 +1033,61 @@ def test_datasets_sort_rejects_unknown_column(monkeypatch, client):
         "/api/datasets", params={"detector": "protodune-hd", "sort": "creator"}
     )
     assert response.status_code == 422
+
+
+def test_rules_endpoint(monkeypatch, client):
+    from dunecat.web import rucio as rucio_mod
+
+    rule = {"id": "abc", "state": "OK", "rse_expression": "RSE_X"}
+    monkeypatch.setattr(rucio_mod, "list_rules", lambda scope, name: [rule])
+    r = client.get("/api/rules", params={"did": "ns:ds"})
+    assert r.status_code == 200
+    assert r.json() == {"rules": [rule]}
+
+    # DID unknown to Rucio: empty list, not an error.
+    monkeypatch.setattr(rucio_mod, "list_rules", lambda scope, name: [])
+    assert client.get("/api/rules", params={"did": "ns:gone"}).json() == {"rules": []}
+
+    def _auth_fail(scope, name):
+        raise rucio_mod.RucioAuthError("run dunecat login")
+
+    monkeypatch.setattr(rucio_mod, "list_rules", _auth_fail)
+    r = client.get("/api/rules", params={"did": "ns:ds"})
+    assert r.status_code == 401
+    assert "run dunecat login" in r.json()["detail"]
+
+    def _rucio_fail(scope, name):
+        raise rucio_mod.RucioError("boom")
+
+    monkeypatch.setattr(rucio_mod, "list_rules", _rucio_fail)
+    assert client.get("/api/rules", params={"did": "ns:ds"}).status_code == 502
+
+    assert client.get("/api/rules", params={"did": "no-colon"}).status_code == 400
+
+
+def test_rule_rows_trims_fields_and_stringifies_timestamps():
+    from datetime import datetime
+
+    from dunecat.web.rucio import rule_rows
+
+    raw = {
+        "id": "abc",
+        "account": "dunepro",
+        "scope": "ns",
+        "name": "ds",
+        "state": "OK",
+        "locks_ok_cnt": 3,
+        "locks_replicating_cnt": 0,
+        "locks_stuck_cnt": 0,
+        "rse_expression": "RSE_X",
+        "copies": 1,
+        "bytes": 42,
+        "expires_at": None,
+        "created_at": datetime(2024, 8, 24, 6, 31, 36),
+        "activity": "User Subscriptions",
+    }
+    (row,) = rule_rows([raw])
+    assert "activity" not in row
+    assert row["created_at"] == "2024-08-24 06:31:36"
+    assert row["expires_at"] is None
+    assert row["bytes"] == 42

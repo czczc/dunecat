@@ -20,7 +20,7 @@ import os
 import threading
 from typing import Any
 
-from dunecat.web.rucio import ca_cert_path
+from dunecat.web.rucio import ca_cert_path, rule_rows
 
 from .auth.bearer import bearer_for
 from .auth.session import User
@@ -74,14 +74,18 @@ def _group_replicas(pfns: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _replica_client_for(user: User):
-    """Build a fresh ReplicaClient bound to this user's bearer.
+    from rucio.client.replicaclient import ReplicaClient
+
+    return _client_for(user, ReplicaClient)
+
+
+def _client_for(user: User, client_cls):
+    """Build a fresh Rucio client of ``client_cls`` bound to this user's bearer.
 
     All Rucio config lives in env vars (`.env`) — RUCIO_HOST,
     RUCIO_AUTH_HOST. No rucio.cfg file is written or read; everything
     is passed via constructor args.
     """
-    from rucio.client.replicaclient import ReplicaClient
-
     rucio_host = os.environ.get("RUCIO_HOST", "https://dune-rucio.fnal.gov")
     auth_host = os.environ.get("RUCIO_AUTH_HOST", rucio_host)
     ca_cert = ca_cert_path()
@@ -92,7 +96,7 @@ def _replica_client_for(user: User):
         prev = os.environ.get("BEARER_TOKEN")
         os.environ["BEARER_TOKEN"] = bearer
         try:
-            return ReplicaClient(
+            return client_cls(
                 rucio_host=rucio_host,
                 auth_host=auth_host,
                 account=user.metacat_username,
@@ -156,3 +160,33 @@ def list_replicas_for(
         "adler32": r.get("adler32"),
         "replicas": replicas,
     }
+
+
+def list_rules_for(user: User, scope: str, name: str) -> list[dict[str, Any]]:
+    """Replication rules on ``scope:name`` as the given user.
+
+    Empty when the DID has no rules or Rucio doesn't know it.
+    Raises :class:`RucioAuthError` when the bearer is rejected.
+    """
+    from rucio.client.didclient import DIDClient
+
+    try:
+        client = _client_for(user, DIDClient)
+    except Exception as e:
+        log.warning("hub: building rucio client failed for %s: %s",
+                    user.metacat_username, e)
+        raise RucioAuthError(str(e))
+
+    try:
+        return rule_rows(client.list_did_rules(scope, name))
+    except Exception as e:
+        from rucio.common.exception import (  # noqa: PLC0415
+            CannotAuthenticate,
+            DataIdentifierNotFound,
+        )
+
+        if isinstance(e, CannotAuthenticate):
+            raise RucioAuthError(f"Rucio rejected bearer: {e}") from e
+        if isinstance(e, DataIdentifierNotFound):
+            return []
+        raise RucioError(str(e)) from e

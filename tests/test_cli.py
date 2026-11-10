@@ -572,3 +572,71 @@ def test_replicas_json_emits_record(monkeypatch):
 
     assert result.exit_code == 0
     assert json.loads(result.stdout)["replicas"][0]["rse"] == "FNAL_DCACHE"
+
+
+_SAMPLE_RULE = {
+    "id": "4f12bb51ec254ec8bb1a61eca174acac",
+    "account": "dunepro",
+    "scope": "pdsp_mc_reco",
+    "name": "PDSPProd4a",
+    "state": "OK",
+    "locks_ok_cnt": 7710,
+    "locks_replicating_cnt": 0,
+    "locks_stuck_cnt": 0,
+    "rse_expression": "DUNE_UK_MANCHESTER_CEPH",
+    "copies": 1,
+    "bytes": 14879627618743,
+    "expires_at": None,
+    "created_at": "2024-08-24 06:31:36",
+}
+
+
+def _patch_rules(monkeypatch, lookup):
+    from dunecat.web import auth, rucio
+
+    monkeypatch.setattr(cli, "load_dotenv", lambda: None)
+    monkeypatch.setattr(auth, "prime", lambda: None)
+    monkeypatch.setattr(rucio, "list_rules", lookup)
+
+
+def test_rules_prints_table_from_stdin(monkeypatch):
+    _patch_rules(
+        monkeypatch,
+        lambda scope, name: [_SAMPLE_RULE] if name == "PDSPProd4a" else [],
+    )
+    result = runner.invoke(
+        cli.app, ["rules"], input="pdsp_mc_reco:PDSPProd4a\npdsp_mc_reco:norules\n"
+    )
+
+    assert result.exit_code == 0
+    header, row = result.stdout.splitlines()
+    assert header.split()[:3] == ["ID", "ACCOUNT", "SCOPE:NAME"]
+    assert row.split() == [
+        "4f12bb51ec254ec8bb1a61eca174acac",
+        "dunepro",
+        "pdsp_mc_reco:PDSPProd4a",
+        "OK[7710/0/0]",
+        "DUNE_UK_MANCHESTER_CEPH",
+        "1",
+        "14879627618743",
+        "2024-08-24",
+        "06:31:36",
+    ]
+    assert "no rules: pdsp_mc_reco:norules" in result.stderr
+
+
+def test_rules_json_emits_record(monkeypatch):
+    _patch_rules(monkeypatch, lambda scope, name: [_SAMPLE_RULE])
+    result = runner.invoke(cli.app, ["rules", "--json", "pdsp_mc_reco:PDSPProd4a"])
+
+    assert result.exit_code == 0
+    rec = json.loads(result.stdout)
+    assert rec["did"] == "pdsp_mc_reco:PDSPProd4a"
+    assert rec["rules"] == [_SAMPLE_RULE]
+
+
+def test_rules_rejects_malformed_did(monkeypatch):
+    _patch_rules(monkeypatch, lambda scope, name: [])
+    result = runner.invoke(cli.app, ["rules", "no-colon"])
+
+    assert result.exit_code == 2

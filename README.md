@@ -54,6 +54,13 @@ dunecat query "files where namespace = 'hd-protodune' and core.runs in (32814) a
 xargs -n1 dunecat download --dest ./data < urls.txt
 ```
 
+List the Rucio replication rules on a dataset (same table as
+`rucio rule list --did`; `--json` for JSONL):
+
+```bash
+dunecat rules pdsp_mc_reco:PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_01
+```
+
 ## Managing the servers
 
 ```bash
